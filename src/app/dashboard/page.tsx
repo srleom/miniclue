@@ -1,10 +1,10 @@
 import { Header } from "@/components/header";
 import HeroSection from "@/components/hero-section";
 
-export default function Home() {
+export default async function Dashboard() {
   return (
     <div>
-      <Header authenticated={false} />
+      <Header authenticated={true} />
       <HeroSection />
     </div>
   );
