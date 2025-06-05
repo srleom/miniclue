@@ -3,13 +3,10 @@ import { GalleryVerticalEnd } from "lucide-react";
 import Link from "next/link";
 import { handleLogin } from "@/app/actions";
 
-
 export default function LoginPage() {
   return (
     <section className="flex min-h-screen bg-zinc-50 px-4 py-16 md:py-32 dark:bg-transparent">
-      <div
-        className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]"
-      >
+      <div className="bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border p-0.5 shadow-md dark:[--color-muted:var(--color-zinc-900)]">
         <div className="p-8 pb-6">
           <div>
             <Link
@@ -21,14 +18,19 @@ export default function LoginPage() {
               </div>
               MiniClue
             </Link>
-            <h1 className="mb-1 mt-4 text-xl font-semibold">
+            <h1 className="mt-4 mb-1 text-xl font-semibold">
               Sign in to MiniClue
             </h1>
             <p className="text-sm">Welcome! Sign in to continue.</p>
           </div>
 
           <div className="mt-6 grid grid-cols-1 gap-3">
-            <Button type="button" variant="outline" onClick={handleLogin} className="hover:cursor-pointer">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleLogin}
+              className="hover:cursor-pointer"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="0.98em"
