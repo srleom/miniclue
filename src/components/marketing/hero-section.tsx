@@ -4,6 +4,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TextEffect } from "@/components/ui/text-effect";
 import { AnimatedGroup } from "@/components/ui/animated-group";
+import Image from "next/image";
 
 const transitionVariants = {
   item: {
@@ -39,7 +40,6 @@ export default function HeroSection() {
         </div>
         <section>
           <div className="relative pt-24 md:pt-36">
-            
             <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"></div>
             <div className="mx-auto max-w-7xl px-6">
               <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
@@ -168,77 +168,77 @@ export default function HeroSection() {
             </div>
             <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50 sm:gap-x-16 sm:gap-y-14">
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-5 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/nvidia.svg"
                   alt="Nvidia Logo"
                   height="20"
-                  width="auto"
+                  width="20"
                 />
               </div>
 
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-4 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/column.svg"
                   alt="Column Logo"
                   height="16"
-                  width="auto"
+                  width="16"
                 />
               </div>
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-4 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/github.svg"
                   alt="GitHub Logo"
                   height="16"
-                  width="auto"
+                  width="16"
                 />
               </div>
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-5 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/nike.svg"
                   alt="Nike Logo"
                   height="20"
-                  width="auto"
+                  width="20"
                 />
               </div>
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-5 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/lemonsqueezy.svg"
                   alt="Lemon Squeezy Logo"
                   height="20"
-                  width="auto"
+                  width="20"
                 />
               </div>
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-4 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/laravel.svg"
                   alt="Laravel Logo"
                   height="16"
-                  width="auto"
+                  width="16"
                 />
               </div>
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-7 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/lilly.svg"
                   alt="Lilly Logo"
                   height="28"
-                  width="auto"
+                  width="28"
                 />
               </div>
 
               <div className="flex">
-                <img
+                <Image
                   className="mx-auto h-6 w-fit dark:invert"
                   src="https://html.tailus.io/blocks/customers/openai.svg"
                   alt="OpenAI Logo"
                   height="24"
-                  width="auto"
+                  width="24"
                 />
               </div>
             </div>

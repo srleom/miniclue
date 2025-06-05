@@ -5,7 +5,6 @@ import { GalleryVerticalEnd, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import React from "react";
 import { cn } from "@/lib/utils";
-import { handleLogout } from "@/app/actions";
 
 const menuItems = [
   { name: "Product", href: "#link" },
@@ -13,11 +12,7 @@ const menuItems = [
   { name: "Blog", href: "#link" },
 ];
 
-export const Header = ({
-  authenticated = false,
-}: {
-  authenticated: boolean;
-}) => {
+export default function MarketingHeader() {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 
@@ -93,28 +88,19 @@ export const Header = ({
                   ))}
                 </ul>
               </div>
-              {authenticated ? (
-                <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                  <Button asChild size="sm" onClick={() => handleLogout()}>
-                    <Link href="/auth">
-                      <span>Signout</span>
-                    </Link>
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                  <Button asChild variant="outline" size="sm">
-                    <Link href="/auth">
-                      <span>Login</span>
-                    </Link>
-                  </Button>
-                  <Button asChild size="sm">
-                    <Link href="/auth">
-                      <span>Signup</span>
-                    </Link>
-                  </Button>
-                </div>
-              )}
+
+              <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
+                <Button asChild variant="outline" size="sm">
+                  <Link href="/auth">
+                    <span>Login</span>
+                  </Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/auth">
+                    <span>Signup</span>
+                  </Link>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
