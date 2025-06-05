@@ -12,7 +12,7 @@ const menuItems = [
   { name: "Blog", href: "#link" },
 ];
 
-export default function MarketingHeader() {
+export default function MarketingNav() {
   const [menuState, setMenuState] = React.useState(false);
   const [isScrolled, setIsScrolled] = React.useState(false);
 

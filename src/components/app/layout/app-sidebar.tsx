@@ -16,10 +16,10 @@ import {
   SquareTerminal,
 } from "lucide-react";
 
-import { NavCourses } from "@/components/app/nav-courses";
-import { NavRecents } from "@/components/app/nav-recents";
-import { NavSecondary } from "@/components/app/nav-secondary";
-import { NavUser } from "@/components/app/nav-user";
+import { NavCourses } from "@/components/app/layout/nav-courses";
+import { NavRecents } from "@/components/app/layout/nav-recents";
+import { NavSecondary } from "@/components/app/layout/nav-secondary";
+import { NavUser } from "@/components/app/layout/nav-user";
 import {
   Sidebar,
   SidebarContent,

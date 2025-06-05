@@ -1,12 +1,20 @@
+import { DropzoneComponent } from "@/components/app/dashboard/dropzone";
+import { Button } from "@/components/ui/button";
+
 export default function Page() {
   return (
-    <>
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-      </div>
-      <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
-    </>
+    <div className="mt-16 flex flex-col items-center">
+      <Button variant="outline" size="sm" className="w-fit text-xs">
+        BETA
+      </Button>
+      <h1 className="mt-4 text-center text-4xl font-semibold">
+        Ready when you are.
+      </h1>
+      <p className="text-muted-foreground mt-2 mb-10 text-center">
+        Upload your PDF lecture slides and get started.
+      </p>
+      <DropzoneComponent />
+      <Button className="mt-6">Submit</Button>
+    </div>
   );
 }
