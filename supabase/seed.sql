@@ -1,42 +1,50 @@
--- Insert sample data for testing
+-- Seed data for Supabase schema
 
--- Insert sample lectures
-INSERT INTO lectures (id, user_id, title, status)
-VALUES 
-  ('11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222', 'Sample Lecture 1', 'explained'),
-  ('33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', 'Sample Lecture 2', 'parsed'),
-  ('44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222', 'Advanced Mathematics', 'explained'),
-  ('55555555-5555-5555-5555-555555555555', '22222222-2222-2222-2222-222222222222', 'Physics Fundamentals', 'parsed'),
-  ('66666666-6666-6666-6666-666666666666', '22222222-2222-2222-2222-222222222222', 'Chemistry Basics', 'uploaded'),
-  ('77777777-7777-7777-7777-777777777777', '22222222-2222-2222-2222-222222222222', 'Biology Overview', 'explained'),
-  ('88888888-8888-8888-8888-888888888888', '22222222-2222-2222-2222-222222222222', 'Computer Science 101', 'parsed');
+-- 1. Insert a user into auth.users (replace UUIDs as needed)
+INSERT INTO auth.users (id, email, encrypted_password)
+VALUES
+('00000000-0000-0000-0000-000000000001', 'user1@example.com', 'password1');
 
+-- Log users table before inserting into user_profiles
+SELECT * FROM auth.users;
 
--- Insert sample slides
-INSERT INTO slides (lecture_id, slide_number, image_keys)
-VALUES 
-  ('11111111-1111-1111-1111-111111111111', 1, ARRAY['slides/lecture1/slide1.jpg']),
-  ('11111111-1111-1111-1111-111111111111', 2, ARRAY['slides/lecture1/slide2.jpg']),
-  ('33333333-3333-3333-3333-333333333333', 1, ARRAY['slides/lecture2/slide1.jpg']);
+-- 2. User Profile
+INSERT INTO user_profiles (user_id, full_name, avatar_url)
+VALUES
+  ('00000000-0000-0000-0000-000000000001', 'Alice Example', 'https://example.com/avatar1.png');
 
--- Insert sample explanations
-INSERT INTO explanations (lecture_id, slide_number, content)
-VALUES 
-  ('11111111-1111-1111-1111-111111111111', 1, 'This slide introduces the main topic and provides an overview of key concepts that will be covered in detail later.'),
-  ('11111111-1111-1111-1111-111111111111', 2, 'Here we dive deeper into concept A, explaining its importance and applications.');
+-- 3. Courses
+INSERT INTO courses (id, user_id, title, description, is_default)
+VALUES
+  ('10000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', 'Drafts', 'A beginner course on AI', TRUE),
+  ('10000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Intro to AI', 'A beginner course on AI', FALSE);
 
--- Insert sample summaries
+-- 4. Lectures
+INSERT INTO lectures (id, user_id, course_id, title, status)
+VALUES
+  ('20000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Lecture 1: What is AI?', 'uploaded');
+
+-- 5. Slides
+INSERT INTO slides (id, lecture_id, slide_number)
+VALUES
+  ('30000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 1);
+
+-- 6. Summaries
 INSERT INTO summaries (lecture_id, content)
-VALUES 
-  ('11111111-1111-1111-1111-111111111111', 'This lecture covers the fundamental concepts of the topic, with a focus on concept A and its practical applications.');
+VALUES
+  ('20000000-0000-0000-0000-000000000001', 'This lecture introduces the basics of AI.');
 
--- Insert sample notes
-INSERT INTO notes (user_id, lecture_id, content)
-VALUES 
-  ('22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', 'Important points to remember about concept A');
+-- 7. Explanations
+INSERT INTO explanations (id, lecture_id, slide_number, content)
+VALUES
+  ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 1, 'AI is the simulation of human intelligence by machines.');
 
--- Insert sample slide images
-INSERT INTO slide_images (lecture_id, slide_number, image_index, storage_path, caption, width, height)
-VALUES 
-  ('11111111-1111-1111-1111-111111111111', 1, 0, 'slides/lecture1/slide1.jpg', 'Introduction slide with key concepts', 1920, 1080),
-  ('11111111-1111-1111-1111-111111111111', 2, 0, 'slides/lecture1/slide2.jpg', 'Detailed explanation of concept A', 1920, 1080);
+-- 8. Slide Images
+INSERT INTO slide_images (id, lecture_id, slide_number, image_index, storage_path, caption, width, height)
+VALUES
+  ('60000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 1, 1, '/slides/ai_intro/slide1.png', 'AI Concept', 800, 600);
+
+-- 9. Notes
+INSERT INTO notes (id, user_id, lecture_id, content)
+VALUES
+  ('70000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'Remember to review the definition of AI.');
