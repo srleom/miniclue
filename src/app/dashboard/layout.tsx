@@ -14,6 +14,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+import { cookies } from "next/headers";
 
 const data = {
   user: {
@@ -23,13 +24,17 @@ const data = {
   },
 };
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const sidebarCookie = cookieStore.get("sidebar_state")?.value;
+  const sidebarOpen = sidebarCookie === "true";
+
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={sidebarOpen}>
       <AppSidebar />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2">

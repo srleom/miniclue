@@ -2,24 +2,17 @@
 
 import * as React from "react";
 import {
-  BookOpen,
-  Bot,
   Folder,
-  Frame,
   GalleryVerticalEnd,
   LifeBuoy,
-  Map,
-  PieChart,
   Presentation,
   Send,
-  Settings2,
-  SquareTerminal,
 } from "lucide-react";
 
+import { NavPrimary } from "@/components/app/layout/nav-primary";
 import { NavCourses } from "@/components/app/layout/nav-courses";
 import { NavRecents } from "@/components/app/layout/nav-recents";
 import { NavSecondary } from "@/components/app/layout/nav-secondary";
-import { NavUser } from "@/components/app/layout/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -176,6 +169,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
+        <NavPrimary />
         <NavCourses items={data.navCourses} />
         <NavRecents items={data.navRecents} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />

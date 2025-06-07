@@ -33,11 +33,16 @@ export function NavCourses({
     }[];
   }[];
 }) {
+  const sortedItems = [
+    ...items.filter((item) => item.title === "Drafts"),
+    ...items.filter((item) => item.title !== "Drafts"),
+  ];
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Courses</SidebarGroupLabel>
       <SidebarMenu>
-        {items.map((item) => (
+        {sortedItems.map((item) => (
           <Collapsible key={item.title} asChild defaultOpen={item.isActive}>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
