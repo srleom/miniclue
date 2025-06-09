@@ -14,6 +14,7 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
+	"github.com/rs/cors"
 )
 
 func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
@@ -85,5 +86,14 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 		http.Redirect(w, r, "/api/v1"+restOfPath, http.StatusMovedPermanently)
 	})
 
-	return mux, db, nil
+	// Apply CORS middleware
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Allow all origins for development
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		AllowCredentials: true,
+		Debug:            false, // Enable debug logging for CORS
+	})
+
+	return middleware.LoggerMiddleware(c.Handler(mux)), db, nil
 }

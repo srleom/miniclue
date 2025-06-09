@@ -8,9 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	"app/internal/api/v1/router"
 	"app/internal/config"
 	"app/internal/logger"
-	"app/internal/api/v1/router"
 
 	"github.com/joho/godotenv"
 )
@@ -20,6 +20,7 @@ import (
 // @description MiniClue API documentation
 // @host localhost:8080
 // @BasePath /api/v1
+// @Schemes http https
 
 func main() {
 	logger := logger.New()
