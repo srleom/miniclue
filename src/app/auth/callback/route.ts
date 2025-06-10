@@ -23,7 +23,7 @@ export async function GET(request: Request) {
       // Check if this is a new user based on created_at timestamp
       const userCreatedAt = new Date(data.user.created_at).getTime();
       const currentTime = Date.now();
-      const isNewUser = (currentTime - userCreatedAt) < 5000; // Consider new if created within last 5 seconds
+      const isNewUser = currentTime - userCreatedAt < 5000; // Consider new if created within last 5 seconds
 
       // create/update user profile
       await api.POST("/users/me", {

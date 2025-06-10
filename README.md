@@ -11,7 +11,7 @@
 - **Courses & Lectures**
 
   - **(Sidebar)** Your courses live in a persistent sidebar under the dashboard layout.
-  - `/dashboard/courses/[courseId]`
+  - `/dashboard/course/[courseId]`
 
     - Course home:
 
@@ -19,7 +19,7 @@
       - “Upload PDF” form (creates new lecture in this course)
       - Course settings (edit title/description, delete course)
 
-  - `/dashboard/courses/[courseId]/lectures/[lectureId]`
+  - `/dashboard/lecture/[lectureId]`
 
     - Lecture detail page:
 

@@ -7,14 +7,14 @@ export default function AuthCodeErrorPage() {
     <div className="bg-background flex min-h-[100dvh] flex-col items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
       <Link
         href="/"
-        className="flex items-center gap-2 self-center font-medium text-xl"
+        className="flex items-center gap-2 self-center text-xl font-medium"
       >
         <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
           <GalleryVerticalEnd className="size-4" />
         </div>
         MiniClue
       </Link>
-      <div className="mx-auto max-w-sm text-center mt-3">
+      <div className="mx-auto mt-3 max-w-sm text-center">
         <h1 className="text-foreground mt-4 text-6xl font-bold tracking-tight sm:text-7xl">
           Oops.
         </h1>

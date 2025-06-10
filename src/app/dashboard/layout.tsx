@@ -18,14 +18,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import createApi from "@/lib/api";
 
-const data = {
-  user: {
-    name: "srleom",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-};
-
 export default async function DashboardLayout({
   children,
 }: {
@@ -43,11 +35,40 @@ export default async function DashboardLayout({
 
   const api = createApi(session!.access_token);
 
-  const { data: response } = await api.GET("/users/me");
+  const userResult = await api.GET("/users/me");
+  const userResponse = userResult.data ?? {
+    name: "",
+    email: "",
+    avatar_url: "",
+  };
+  const user = {
+    name: userResponse.name ?? "",
+    email: userResponse.email ?? "",
+    avatar: userResponse.avatar_url ?? "",
+  };
+
+  const recentsResult = await api.GET("/users/me/recents", {
+    query: { limit: 10, offset: 0 },
+  });
+  const recentsData = recentsResult.data ?? [];
+  console.log(recentsData);
+  const navRecents = recentsData.map((r) => ({
+    name: r.title ?? "",
+    url: `/dashboard/lecture/${r.lecture_id}`,
+  }));
+
+  const coursesResult = await api.GET("/users/me/courses");
+  const coursesData = coursesResult.data ?? [];
+  const navCourses = coursesData.map((c: any) => ({
+    title: c.title ?? "",
+    url: `/dashboard/course/${c.course_id}`,
+    isActive: false,
+    items: [],
+  }));
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar />
+      <AppSidebar navCourses={navCourses} navRecents={navRecents} />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center justify-between gap-2">
           <div className="flex items-center gap-2 px-4">
@@ -69,7 +90,7 @@ export default async function DashboardLayout({
             </Breadcrumb>
           </div>
           <div className="flex items-center gap-2 px-4">
-            <NavUser user={data.user} />
+            <NavUser user={user} />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>

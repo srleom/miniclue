@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Folder,
-  MoreHorizontal,
-  Share,
-  Trash2,
-  type LucideIcon,
-} from "lucide-react";
+import { Presentation, MoreHorizontal, Share, Trash2 } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -28,11 +22,7 @@ import {
 export function NavRecents({
   items,
 }: {
-  items: {
-    name: string;
-    url: string;
-    icon: LucideIcon;
-  }[];
+  items: { name: string; url: string }[];
 }) {
   const { isMobile } = useSidebar();
 
@@ -44,7 +34,7 @@ export function NavRecents({
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>
-                <item.icon />
+                <Presentation />
                 <span>{item.name}</span>
               </a>
             </SidebarMenuButton>
@@ -61,17 +51,17 @@ export function NavRecents({
                 align={isMobile ? "end" : "start"}
               >
                 <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
+                  <Presentation className="text-muted-foreground" />
+                  <span>View Lecture</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Share className="text-muted-foreground" />
-                  <span>Share Project</span>
+                  <span>Share Lecture</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
+                  <span>Delete Lecture</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

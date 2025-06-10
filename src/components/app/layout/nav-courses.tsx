@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Plus, type LucideIcon } from "lucide-react";
+import { ChevronRight, Plus, Folder } from "lucide-react";
 
 import {
   Collapsible,
@@ -25,12 +25,8 @@ export function NavCourses({
   items: {
     title: string;
     url: string;
-    icon: LucideIcon;
     isActive?: boolean;
-    items?: {
-      title: string;
-      url: string;
-    }[];
+    items?: { title: string; url: string }[];
   }[];
 }) {
   const sortedItems = [
@@ -47,7 +43,7 @@ export function NavCourses({
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip={item.title}>
                 <a href={item.url}>
-                  <item.icon />
+                  <Folder />
                   <span>{item.title}</span>
                 </a>
               </SidebarMenuButton>

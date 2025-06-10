@@ -1,13 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Folder,
-  GalleryVerticalEnd,
-  LifeBuoy,
-  Presentation,
-  Send,
-} from "lucide-react";
+import { GalleryVerticalEnd, LifeBuoy, Send } from "lucide-react";
 
 import { NavPrimary } from "@/components/app/layout/nav-primary";
 import { NavCourses } from "@/components/app/layout/nav-courses";
@@ -25,128 +19,22 @@ import {
 
 import Link from "next/link";
 
-const data = {
-  user: {
-    name: "srleom",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navCourses: [
-    {
-      title: "Drafts",
-      url: "#",
-      icon: Folder,
-      isActive: false,
-      items: [
-        {
-          title: "EEE Chapter 1",
-          url: "#",
-        },
-        {
-          title: "EEE Chapter 2",
-          url: "#",
-        },
-        {
-          title: "EEE Chapter 3",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "EEE",
-      url: "#",
-      icon: Folder,
-      isActive: false,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Bioengineering",
-      url: "#",
-      icon: Folder,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Chemical Engineering",
-      url: "#",
-      icon: Folder,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  navRecents: [
-    {
-      name: "EEE Chapter 1",
-      url: "#",
-      icon: Presentation,
-    },
-    {
-      name: "EEE Chapter 2",
-      url: "#",
-      icon: Presentation,
-    },
-    {
-      name: "EEE Chapter 3",
-      url: "#",
-      icon: Presentation,
-    },
-  ],
-};
-
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({
+  navCourses,
+  navRecents,
+  ...props
+}: {
+  navCourses: {
+    title: string;
+    url: string;
+    isActive?: boolean;
+    items?: { title: string; url: string }[];
+  }[];
+  navRecents: {
+    name: string;
+    url: string;
+  }[];
+} & React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
@@ -170,9 +58,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavPrimary />
-        <NavCourses items={data.navCourses} />
-        <NavRecents items={data.navRecents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <NavCourses items={navCourses} />
+        <NavRecents items={navRecents} />
+        <NavSecondary
+          items={[
+            {
+              title: "Support",
+              url: "#",
+              icon: LifeBuoy,
+            },
+            {
+              title: "Feedback",
+              url: "#",
+              icon: Send,
+            },
+          ]}
+          className="mt-auto"
+        />
       </SidebarContent>
       <SidebarFooter></SidebarFooter>
     </Sidebar>
