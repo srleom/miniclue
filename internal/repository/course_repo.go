@@ -32,10 +32,10 @@ func NewCourseRepo(db *sql.DB) CourseRepository {
 func (r *courseRepo) GetCoursesByUserID(ctx context.Context, userID string) ([]model.Course, error) {
 	var courses []model.Course
 	query := `
-		SELECT id, title, description
+		SELECT id, title, description, is_default, updated_at
 		FROM courses
 		WHERE user_id = $1
-		ORDER BY title ASC
+		ORDER BY updated_at DESC
 	`
 
 	rows, err := r.db.QueryContext(ctx, query, userID)
@@ -50,6 +50,8 @@ func (r *courseRepo) GetCoursesByUserID(ctx context.Context, userID string) ([]m
 			&course.CourseID,
 			&course.Title,
 			&course.Description,
+			&course.IsDefault,
+			&course.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

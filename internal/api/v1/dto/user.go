@@ -20,9 +20,11 @@ type UserResponseDTO struct {
 }
 
 type UserCourseResponseDTO struct {
-	CourseID    string `json:"course_id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	CourseID    string    `json:"course_id"`
+	Title       string    `json:"title"`
+	Description string    `json:"description"`
+	IsDefault   bool      `json:"is_default"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 type UserRecentLectureResponseDTO struct {

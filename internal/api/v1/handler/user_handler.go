@@ -148,7 +148,7 @@ func (h *UserHandler) getUser(w http.ResponseWriter, r *http.Request) {
 
 // getUserCourses godoc
 // @Summary Get user's courses
-// @Description Retrieves the list of courses associated with the authenticated user.
+// @Description Retrieves the list of courses associated with the authenticated user, sorted by most recent update.
 // @Tags users
 // @Produce json
 // @Success 200 {array} dto.UserCourseResponseDTO
@@ -182,6 +182,8 @@ func (h *UserHandler) getUserCourses(w http.ResponseWriter, r *http.Request) {
 			CourseID:    course.CourseID,
 			Title:       course.Title,
 			Description: course.Description,
+			IsDefault:   course.IsDefault,
+			UpdatedAt:   course.UpdatedAt,
 		})
 	}
 
