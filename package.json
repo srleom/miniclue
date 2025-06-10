@@ -9,9 +9,9 @@
     "lint": "next lint",
     "format": "prettier --write .",
     "test:ts": "tsc --noEmit",
-    "gen:openapi:convert": "swagger2openapi http://localhost:8080/swagger/swagger.json --outfile docs/swagger.json --yaml=false --patch",
-    "gen:openapi:types": "openapi-typescript docs/swagger.json --output src/types/api.ts",
-    "gen:openapi:all": "pnpm gen:openapi:convert && pnpm gen:openapi:types"
+    "openapi:convert": "swagger2openapi http://localhost:8080/swagger/swagger.json --outfile docs/swagger.json --yaml=false --patch",
+    "openapi:types": "openapi-typescript docs/swagger.json --output src/types/api.ts",
+    "openapi:all": "pnpm openapi:convert && pnpm openapi:types"
   },
   "dependencies": {
     "@radix-ui/primitive": "1.1.2",

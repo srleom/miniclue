@@ -3,9 +3,9 @@ import type { paths } from "@/types/api";
 
 export default function createApi(access_token: string) {
   return createClient<paths>({
-    baseUrl: "http://localhost:8080/api/v1",
+    baseUrl: process.env.DEV_API_BASE_URL,
     headers: {
-      origin: "http://localhost:3000",
+      origin: process.env.DEV_FE_BASE_URL,
       Authorization: `Bearer ${access_token}`,
     },
   });

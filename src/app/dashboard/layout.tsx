@@ -45,8 +45,6 @@ export default async function DashboardLayout({
 
   const { data: response } = await api.GET("/users/me");
 
-  console.log(response);
-
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
       <AppSidebar />
