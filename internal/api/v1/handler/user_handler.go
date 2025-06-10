@@ -198,7 +198,7 @@ func (h *UserHandler) getUserCourses(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param limit query int false "Number of lectures to return (default 10)"
 // @Param offset query int false "Offset for pagination (default 0)"
-// @Success 200 {array} model.Lecture
+// @Success 200 {array} dto.UserRecentLectureResponseDTO
 // @Failure 401 {string} string "Unauthorized: user ID not found in context"
 // @Failure 500 {string} string "Failed to retrieve recent lectures"
 // @Router /users/me/recents [get]
