@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"app/internal/model"
 	"app/internal/repository"
@@ -44,6 +45,17 @@ func (s *courseService) GetCourseByID(ctx context.Context, courseID string) (*mo
 
 // UpdateCourse updates an existing course record
 func (s *courseService) UpdateCourse(ctx context.Context, c *model.Course) (*model.Course, error) {
+	existingCourse, err := s.repo.GetCourseByID(ctx, c.CourseID)
+	if err != nil {
+		return nil, err
+	}
+	if existingCourse == nil {
+		return nil, errors.New("course not found")
+	}
+	if existingCourse.IsDefault {
+		return nil, errors.New("default courses cannot be updated")
+	}
+
 	if err := s.repo.UpdateCourse(ctx, c); err != nil {
 		return nil, err
 	}
@@ -52,5 +64,15 @@ func (s *courseService) UpdateCourse(ctx context.Context, c *model.Course) (*mod
 
 // DeleteCourse deletes a course by its ID
 func (s *courseService) DeleteCourse(ctx context.Context, courseID string) error {
+	existingCourse, err := s.repo.GetCourseByID(ctx, courseID)
+	if err != nil {
+		return err
+	}
+	if existingCourse == nil {
+		return errors.New("course not found")
+	}
+	if existingCourse.IsDefault {
+		return errors.New("default courses cannot be deleted")
+	}
 	return s.repo.DeleteCourse(ctx, courseID)
 }

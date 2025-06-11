@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"app/internal/api/v1/dto"
+	"app/internal/middleware"
 	"app/internal/model"
 	"app/internal/service"
-	"app/internal/middleware"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -174,6 +174,7 @@ func (h *CourseHandler) updateCourse(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Course not found", http.StatusNotFound)
 		return
 	}
+
 	if req.Title != nil {
 		course.Title = *req.Title
 	}
@@ -227,6 +228,7 @@ func (h *CourseHandler) deleteCourse(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Course not found", http.StatusNotFound)
 		return
 	}
+
 	if err := h.courseService.DeleteCourse(r.Context(), courseID); err != nil {
 		http.Error(w, "Failed to delete course: "+err.Error(), http.StatusInternalServerError)
 		return
