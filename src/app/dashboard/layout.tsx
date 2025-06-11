@@ -66,6 +66,7 @@ export default async function DashboardLayout({
   const navCourses = coursesData.map((c: any) => ({
     title: c.title ?? "",
     url: `/dashboard/course/${c.course_id}`,
+    courseId: c.course_id,
     isDefault: c.is_default,
     isActive: false,
     items: [],

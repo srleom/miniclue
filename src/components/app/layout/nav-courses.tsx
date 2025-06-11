@@ -29,7 +29,7 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { createUntitledCourse } from "@/app/actions";
+import { createUntitledCourse, deleteCourse } from "@/app/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +44,7 @@ export function NavCourses({
   items: {
     title: string;
     url: string;
+    courseId: string;
     isDefault: boolean;
     isActive?: boolean;
     items?: { title: string; url: string }[];
@@ -77,7 +78,7 @@ export function NavCourses({
       </SidebarGroupLabel>
       <SidebarMenu>
         {sortedItems.map((item) => (
-          <SidebarMenuItem key={item.url}>
+          <SidebarMenuItem key={item.courseId}>
             <Collapsible
               className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
               defaultOpen={item.isActive}
@@ -94,6 +95,9 @@ export function NavCourses({
                       <SidebarMenuAction
                         showOnHover
                         className="hover:cursor-pointer"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
                       >
                         <MoreHorizontal />
                         <span className="sr-only">More</span>
@@ -104,18 +108,41 @@ export function NavCourses({
                       side={isMobile ? "bottom" : "right"}
                       align={isMobile ? "end" : "start"}
                     >
-                      <DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="hover:cursor-pointer"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Folder className="text-muted-foreground" />
-                        <span>View Project</span>
+                        <span>View course</span>
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="hover:cursor-pointer"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Forward className="text-muted-foreground" />
-                        <span>Share Project</span>
+                        <span>Share course</span>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="hover:cursor-pointer"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          const { error } = await deleteCourse(item.courseId);
+                          if (error) {
+                            toast.error(error);
+                            return;
+                          }
+                          toast.success("Course deleted");
+                        }}
+                      >
                         <Trash2 className="text-muted-foreground" />
-                        <span>Delete Project</span>
+                        <span>Delete course</span>
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

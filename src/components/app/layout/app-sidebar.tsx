@@ -27,6 +27,8 @@ export function AppSidebar({
   navCourses: {
     title: string;
     url: string;
+    courseId: string;
+    isDefault: boolean;
     isActive?: boolean;
     items?: { title: string; url: string }[];
   }[];
