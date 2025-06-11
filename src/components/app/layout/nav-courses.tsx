@@ -7,9 +7,14 @@ import {
   MoreHorizontal,
   Plus,
   Trash2,
+  Presentation,
+  Share,
 } from "lucide-react";
 import { toast } from "sonner";
 import { truncateString } from "@/lib/utils";
+import { getCourseLectures } from "@/app/actions";
+import { useState } from "react";
+import Link from "next/link";
 
 import {
   Collapsible,
@@ -47,10 +52,13 @@ export function NavCourses({
     courseId: string;
     isDefault: boolean;
     isActive?: boolean;
-    items?: { title: string; url: string }[];
   }[];
 }) {
   const { isMobile } = useSidebar();
+
+  const [lecturesMap, setLecturesMap] = useState<
+    Record<string, { lecture_id: string; title: string }[]>
+  >({});
 
   const defaultCourse = items.find((item) => item.isDefault);
   const otherCourses = items.filter((item) => !item.isDefault);
@@ -80,10 +88,27 @@ export function NavCourses({
         {sortedItems.map((item) => (
           <SidebarMenuItem key={item.courseId}>
             <Collapsible
-              className="group/collapsible [&[data-state=open]>button>svg:first-child]:rotate-90"
               defaultOpen={item.isActive}
+              onOpenChange={(open) => {
+                if (open && !lecturesMap[item.courseId]) {
+                  getCourseLectures(item.courseId).then((res) => {
+                    if (!res.error) {
+                      setLecturesMap((prev) => ({
+                        ...prev,
+                        [item.courseId]: (res.data || []).filter(
+                          (
+                            lecture,
+                          ): lecture is { lecture_id: string; title: string } =>
+                            lecture.lecture_id !== undefined &&
+                            lecture.title !== undefined,
+                        ),
+                      }));
+                    }
+                  });
+                }
+              }}
             >
-              <CollapsibleTrigger asChild>
+              <CollapsibleTrigger asChild className="group/collapsible">
                 <div>
                   <SidebarMenuButton>
                     <ChevronRight className="hidden transition-transform group-hover/collapsible:block group-data-[state=open]/collapsible:rotate-90" />
@@ -92,13 +117,7 @@ export function NavCourses({
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction
-                        showOnHover
-                        className="hover:cursor-pointer"
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <SidebarMenuAction className="opacity-0 group-hover/collapsible:opacity-100 hover:cursor-pointer">
                         <MoreHorizontal />
                         <span className="sr-only">More</span>
                       </SidebarMenuAction>
@@ -150,16 +169,49 @@ export function NavCourses({
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <SidebarMenuSub>
-                  {item.items &&
-                    item.items.map((subItem) => (
-                      <SidebarMenuSubItem key={subItem.url}>
-                        <SidebarMenuSubButton asChild>
-                          <a href={subItem.url}>
-                            <span>{subItem.title}</span>
-                          </a>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                    ))}
+                  {(lecturesMap[item.courseId] || []).map((lecture) => (
+                    <SidebarMenuItem
+                      key={lecture.lecture_id}
+                      className="group/lecture"
+                    >
+                      <SidebarMenuButton asChild>
+                        <Link href={`/dashboard/lecture/${lecture.lecture_id}`}>
+                          <Presentation />
+                          <span>{lecture.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          asChild
+                          className="hover:cursor-pointer"
+                        >
+                          <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100 hover:cursor-pointer">
+                            <MoreHorizontal />
+                            <span className="sr-only">More</span>
+                          </SidebarMenuAction>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          className="w-48"
+                          side={isMobile ? "bottom" : "right"}
+                          align={isMobile ? "end" : "start"}
+                        >
+                          <DropdownMenuItem className="hover:cursor-pointer">
+                            <Presentation className="text-muted-foreground" />
+                            <span>View Lecture</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="hover:cursor-pointer">
+                            <Share className="text-muted-foreground" />
+                            <span>Share Lecture</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="hover:cursor-pointer">
+                            <Trash2 className="text-muted-foreground" />
+                            <span>Delete Lecture</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </SidebarMenuItem>
+                  ))}
                 </SidebarMenuSub>
               </CollapsibleContent>
             </Collapsible>

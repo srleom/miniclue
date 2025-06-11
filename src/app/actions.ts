@@ -103,3 +103,27 @@ export async function deleteCourse(courseId: string) {
 
   return { error: undefined };
 }
+
+export async function getCourseLectures(courseId: string) {
+  const supabase = await createClient();
+  const {
+    data: { session },
+    error: authError,
+  } = await supabase.auth.getSession();
+  if (authError) {
+    return { error: "Auth error" };
+  }
+  if (!session) {
+    return { error: "No session found" };
+  }
+  const api = createApi(session.access_token);
+  const { data, error } = await api.GET("/courses/{courseId}/lectures", {
+    params: { path: { courseId }, query: {} },
+    next: { tags: [`lectures:${courseId}`] },
+  });
+  if (error) {
+    console.error("Get lectures error:", error);
+    return { data: [], error };
+  }
+  return { data, error: undefined };
+}

@@ -264,6 +264,80 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/courses/{courseId}/lectures": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get lectures of a course
+     * @description Retrieves lectures under a course by ID, supports limit & offset
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Number of lectures to return (default 10) */
+          limit?: number;
+          /** @description Offset for pagination (default 0) */
+          offset?: number;
+        };
+        header?: never;
+        path: {
+          /** @description Course ID */
+          courseId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseLectureResponseDTO"][];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Course not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to retrieve lectures */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/me": {
     parameters: {
       query?: never;
@@ -512,6 +586,10 @@ export interface components {
       description?: string;
       is_default?: boolean;
       title: string;
+    };
+    "app_internal_api_v1_dto.CourseLectureResponseDTO": {
+      lecture_id?: string;
+      title?: string;
     };
     "app_internal_api_v1_dto.CourseResponseDTO": {
       course_id?: string;
