@@ -99,7 +99,9 @@ export default async function DashboardLayout({
             <NavUser user={user} />
           </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        <div className="mx-auto flex w-full flex-1 flex-col gap-4 p-4 pt-0 lg:w-3xl">
+          {children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

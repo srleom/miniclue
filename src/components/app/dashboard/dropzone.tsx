@@ -22,7 +22,11 @@ import {
   FileListSize,
 } from "@/components/ui/file-list";
 
-export function DropzoneComponent() {
+export function DropzoneComponent({
+  isCoursePage = false,
+}: {
+  isCoursePage?: boolean;
+}) {
   const [files, setFiles] = React.useState<File[]>([]);
 
   return (
@@ -33,13 +37,17 @@ export function DropzoneComponent() {
       }}
       onDropAccepted={setFiles}
     >
-      <div className="grid gap-4">
-        <DropzoneZone className="flex items-center justify-center lg:min-h-[15em] lg:min-w-[40em]">
+      <div className="grid w-full gap-4">
+        <DropzoneZone className="flex min-h-[14em] items-center justify-center md:min-h-[16em]">
           <DropzoneInput />
           <DropzoneGroup className="gap-4">
             <DropzoneUploadIcon />
             <DropzoneGroup>
-              <DropzoneTitle>Drop files here or click to upload</DropzoneTitle>
+              <DropzoneTitle>
+                {isCoursePage
+                  ? "Upload lectures here"
+                  : "Drop files here or click to upload"}
+              </DropzoneTitle>
               <DropzoneDescription className="text-center">
                 You can upload files up to 10MB in size. Supported formats: JPG,
                 PNG, PDF.

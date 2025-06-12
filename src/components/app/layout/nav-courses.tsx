@@ -113,11 +113,16 @@ export function NavCourses({
                   <SidebarMenuButton>
                     <ChevronRight className="hidden transition-transform group-hover/collapsible:block group-data-[state=open]/collapsible:rotate-90" />
                     <Folder className="group-hover/collapsible:hidden" />
-                    {truncateString(item.title, 20)}
+                    <Link
+                      href={`/dashboard/course/${item.courseId}`}
+                      className="w-full"
+                    >
+                      {truncateString(item.title, 20)}
+                    </Link>
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction className="opacity-0 group-hover/collapsible:opacity-100 hover:cursor-pointer">
+                      <SidebarMenuAction className="opacity-0 group-hover/collapsible:opacity-100">
                         <MoreHorizontal />
                         <span className="sr-only">More</span>
                       </SidebarMenuAction>
@@ -181,11 +186,8 @@ export function NavCourses({
                         </Link>
                       </SidebarMenuButton>
                       <DropdownMenu>
-                        <DropdownMenuTrigger
-                          asChild
-                          className="hover:cursor-pointer"
-                        >
-                          <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100 hover:cursor-pointer">
+                        <DropdownMenuTrigger asChild>
+                          <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100">
                             <MoreHorizontal />
                             <span className="sr-only">More</span>
                           </SidebarMenuAction>
@@ -195,16 +197,31 @@ export function NavCourses({
                           side={isMobile ? "bottom" : "right"}
                           align={isMobile ? "end" : "start"}
                         >
-                          <DropdownMenuItem className="hover:cursor-pointer">
+                          <DropdownMenuItem
+                            className="hover:cursor-pointer"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Presentation className="text-muted-foreground" />
                             <span>View Lecture</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="hover:cursor-pointer">
+                          <DropdownMenuItem
+                            className="hover:cursor-pointer"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Share className="text-muted-foreground" />
                             <span>Share Lecture</span>
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="hover:cursor-pointer">
+                          <DropdownMenuItem
+                            className="hover:cursor-pointer"
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <Trash2 className="text-muted-foreground" />
                             <span>Delete Lecture</span>
                           </DropdownMenuItem>

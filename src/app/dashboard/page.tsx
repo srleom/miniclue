@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Page() {
   return (
-    <div className="mt-16 flex flex-col items-center">
+    <div className="mt-16 flex w-full flex-col items-center">
       <Button variant="outline" size="sm" className="w-fit text-xs">
         BETA
       </Button>
@@ -13,8 +13,9 @@ export default function Page() {
       <p className="text-muted-foreground mt-2 mb-10 text-center">
         Upload your PDF lecture slides and get started.
       </p>
-      <DropzoneComponent />
-      <Button className="mt-6">Submit</Button>
+      <div className="w-full">
+        <DropzoneComponent />
+      </div>
     </div>
   );
 }
