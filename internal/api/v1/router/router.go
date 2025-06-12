@@ -55,19 +55,21 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 	userRepo := repository.NewUserRepo(db)
 	lectureRepo := repository.NewLectureRepository(db)
 	courseRepo := repository.NewCourseRepo(db)
+	summaryRepo := repository.NewSummaryRepository(db)
 
 	userSvc := service.NewUserService(userRepo, courseRepo, lectureRepo)
 	courseSvc := service.NewCourseService(courseRepo)
 	lectureSvc := service.NewLectureService(lectureRepo)
+	summarySvc := service.NewSummaryService(summaryRepo)
 
 	userHandler := handler.NewUserHandler(userSvc, validate)
 	courseHandler := handler.NewCourseHandler(courseSvc, validate)
-	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, validate)
+	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, summarySvc, validate)
 
-	// 4. Initialize middleware
+	// 5. Initialize middleware
 	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
 
-	// 5. Create ServeMux router
+	// 6. Create ServeMux router
 	mux := http.NewServeMux()
 
 	// Create a subrouter for API v1 with the /api/v1 prefix
@@ -92,7 +94,7 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 		http.Redirect(w, r, "/api/v1"+restOfPath, http.StatusMovedPermanently)
 	})
 
-	// Apply CORS middleware
+	// 7. Apply CORS middleware
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Allow all origins for development
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
