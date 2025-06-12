@@ -526,6 +526,500 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/lectures/{lectureId}/explanations": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List lecture explanations
+     * @description Retrieves explanations for a lecture with pagination
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Limit number of results */
+          limit?: number;
+          /** @description Pagination offset */
+          offset?: number;
+        };
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to retrieve explanations */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    /**
+     * Create a lecture explanation
+     * @description Creates a new explanation for a lecture.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Explanation create data */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationCreateDTO"];
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to create explanation */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/lectures/{lectureId}/notes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List lecture notes
+     * @description Retrieves notes for a lecture with pagination
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Limit number of results */
+          limit?: number;
+          /** @description Pagination offset */
+          offset?: number;
+        };
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"][];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to retrieve notes */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    /**
+     * Update a lecture note
+     * @description Updates the content of a note for a lecture.
+     */
+    put: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Note update data */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to update note */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    /**
+     * Create a lecture note
+     * @description Creates a new note for a lecture.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Note create data */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteCreateDTO"];
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to create note */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/lectures/{lectureId}/summary": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get lecture summary
+     * @description Retrieves a lecture's summary by its ID.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to retrieve summary */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    /**
+     * Create a lecture summary
+     * @description Creates or updates summary for a lecture.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Summary create data */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryCreateDTO"];
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Summary already exists for this lecture */
+        409: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to create summary */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/me": {
     parameters: {
       query?: never;
@@ -789,6 +1283,31 @@ export interface components {
       is_default?: boolean;
       title?: string;
     };
+    "app_internal_api_v1_dto.LectureExplanationCreateDTO": {
+      content: string;
+      slide_number: number;
+    };
+    "app_internal_api_v1_dto.LectureExplanationResponseDTO": {
+      content?: string;
+      created_at?: string;
+      id?: string;
+      lecture_id?: string;
+      slide_number?: number;
+      updated_at?: string;
+    };
+    "app_internal_api_v1_dto.LectureNoteCreateDTO": {
+      content: string;
+    };
+    "app_internal_api_v1_dto.LectureNoteResponseDTO": {
+      content?: string;
+      created_at?: string;
+      id?: string;
+      lecture_id?: string;
+      updated_at?: string;
+    };
+    "app_internal_api_v1_dto.LectureNoteUpdateDTO": {
+      content: string;
+    };
     "app_internal_api_v1_dto.LectureResponseDTO": {
       accessed_at?: string;
       course_id?: string;
@@ -798,6 +1317,13 @@ export interface components {
       status?: string;
       title?: string;
       updated_at?: string;
+    };
+    "app_internal_api_v1_dto.LectureSummaryCreateDTO": {
+      content: string;
+    };
+    "app_internal_api_v1_dto.LectureSummaryResponseDTO": {
+      content?: string;
+      lecture_id?: string;
     };
     "app_internal_api_v1_dto.LectureUpdateDTO": {
       accessed_at?: string;

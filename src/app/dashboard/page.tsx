@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 
 export default function Page() {
   return (
-    <div className="mt-16 flex w-full flex-col items-center">
+    <div className="mx-auto mt-16 flex w-full flex-col items-center lg:w-3xl">
       <Button variant="outline" size="sm" className="w-fit text-xs">
         BETA
       </Button>

@@ -14,6 +14,7 @@
     "openapi:all": "pnpm openapi:convert && pnpm openapi:types"
   },
   "dependencies": {
+    "@fileforge/pdfreader": "^0.1.46",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/primitive": "1.1.2",
     "@radix-ui/react-avatar": "^1.1.10",
@@ -25,6 +26,7 @@
     "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
@@ -41,6 +43,7 @@
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.57.0",
+    "react-resizable-panels": "^3.0.2",
     "sonner": "^2.0.5",
     "tailwind-merge": "^3.3.0",
     "zod": "^3.25.57"

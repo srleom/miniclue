@@ -24,7 +24,6 @@ export async function generateMetadata({
 
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseId } = await params;
-  console.log(courseId);
 
   const course = await getCourseDetails(courseId);
   const lecturesDTO = await getCourseLectures(courseId);
@@ -38,7 +37,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
   }
 
   return (
-    <div className="mt-16 flex w-full flex-col items-center">
+    <div className="mx-auto mt-16 flex w-full flex-col items-center lg:w-3xl">
       <div className="mb-7 flex items-center gap-2">
         <Folder />
         <h1 className="text-center text-4xl font-semibold">{course.title}</h1>
