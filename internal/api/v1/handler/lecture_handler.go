@@ -284,7 +284,17 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
-// getLectureSummary retrieves a lecture's summary
+// getLectureSummary godoc
+// @Summary Get lecture summary
+// @Description Retrieves a lecture's summary by its ID.
+// @Tags lectures
+// @Produce json
+// @Param lectureId path string true "Lecture ID"
+// @Success 200 {object} dto.LectureSummaryResponseDTO
+// @Failure 401 {string} string "Unauthorized: User ID not found in context"
+// @Failure 404 {string} string "Lecture not found"
+// @Failure 500 {string} string "Failed to retrieve summary"
+// @Router /lectures/{lectureId}/summary [get]
 func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
