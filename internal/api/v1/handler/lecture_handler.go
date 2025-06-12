@@ -18,14 +18,21 @@ import (
 type LectureHandler struct {
 	lectureService service.LectureService
 	courseService  service.CourseService
+	summaryService service.SummaryService
 	validate       *validator.Validate
 }
 
 // NewLectureHandler creates a new LectureHandler
-func NewLectureHandler(lectureService service.LectureService, courseService service.CourseService, validate *validator.Validate) *LectureHandler {
+func NewLectureHandler(
+	lectureService service.LectureService,
+	courseService service.CourseService,
+	summaryService service.SummaryService,
+	validate *validator.Validate,
+) *LectureHandler {
 	return &LectureHandler{
 		lectureService: lectureService,
 		courseService:  courseService,
+		summaryService: summaryService,
 		validate:       validate,
 	}
 }
@@ -44,6 +51,10 @@ func (h *LectureHandler) handleLecture(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case http.MethodGet:
+		if strings.HasSuffix(path, "/summary") {
+			h.getLectureSummary(w, r)
+			return
+		}
 		h.getLecture(w, r)
 	case http.MethodPut:
 		h.updateLecture(w, r)
@@ -269,6 +280,44 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 			AccessedAt: lec.AccessedAt,
 		})
 	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+// getLectureSummary retrieves a lecture's summary
+func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+	lectureID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/lectures/"), "/summary")
+	// verify lecture exists and ownership
+	lecture, err := h.lectureService.GetLectureByID(r.Context(), lectureID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve lecture: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if lecture == nil {
+		http.Error(w, "Lecture not found", http.StatusNotFound)
+		return
+	}
+	course, err := h.courseService.GetCourseByID(r.Context(), lecture.CourseID)
+	if err != nil || course == nil || course.UserID != userID {
+		http.Error(w, "Lecture not found", http.StatusNotFound)
+		return
+	}
+	// fetch summary
+	summary, err := h.summaryService.GetSummaryByLectureID(r.Context(), lectureID)
+	if err != nil {
+		http.Error(w, "Failed to retrieve summary: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	content := ""
+	if summary != nil {
+		content = summary.Content
+	}
+	resp := dto.LectureSummaryResponseDTO{LectureID: lectureID, Content: content}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }
