@@ -28,11 +28,6 @@ type CourseUpdateDTO struct {
 }
 
 // CourseLectureResponseDTO is returned for lectures under a course
-// @Summary Lecture info under a course
-// @Tags courses
-// @Produce json
-// @Success 200 {array} dto.CourseLectureResponseDTO
-// @Router /courses/{courseId}/lectures [get]
 type CourseLectureResponseDTO struct {
     LectureID string `json:"lecture_id"`
     Title     string `json:"title"`
@@ -40,10 +35,10 @@ type CourseLectureResponseDTO struct {
 
 // LectureResponseDTO is returned for a single lecture
 // @Summary Lecture info
-// @Tags courses
+// @Tags lectures
 // @Produce json
 // @Success 200 {object} dto.LectureResponseDTO
-// @Router /courses/{courseId}/lectures/{lectureId} [get]
+// @Router /lectures/{lectureId} [get]
 type LectureResponseDTO struct {
     LectureID  string    `json:"lecture_id"`
     CourseID   string    `json:"course_id"`
