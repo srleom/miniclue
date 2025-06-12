@@ -20,16 +20,16 @@
 
 **Lectures**
 
-* `GET    /api/v1/courses/{courseId}/lectures`
-  * List lectures in that course (`?status=&limit=&offset=`)
-* `POST   /api/v1/courses/{courseId}/lectures/upload`
-  * Upload PDF + metadata → creates a new lecture under that course (or default drafts course if using `/courses/default/lectures/upload`) and returns `{ lectureId }`
-* `GET    /api/v1/courses/{courseId}/lectures/{lectureId}`
+* `POST   /api/v1/lectures/upload`
+  * Upload PDF + metadata; include `course_id` in body to assign to a course (defaults to drafts)
+* `GET    /api/v1/lectures/{lectureId}`
   * Fetch lecture metadata, status & PDF
-* `PUT    /api/v1/courses/{courseId}/lectures/{lectureId}`
+* `PUT    /api/v1/lectures/{lectureId}`
   * Update lecture metadata (title, tags, etc.)
-* `DELETE /api/v1/courses/{courseId}/lectures/{lectureId}`
+* `DELETE /api/v1/lectures/{lectureId}`
   * Delete a lecture and all its derived data
+* `GET    /api/v1/lectures?course_id={courseId}&limit=&offset=`
+  * List lectures under a course
 
 ---
 
