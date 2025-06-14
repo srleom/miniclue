@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 import { handleUpdateLectureAccessedAt } from "@/app/actions";
+import NavLecture from "./nav-lecture";
 
 export function NavRecents({
   items,
@@ -51,46 +52,12 @@ export function NavRecents({
       </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton
-              asChild
-              onClick={async () =>
-                await handleUpdateLectureAccessedAt(item.lectureId)
-              }
-            >
-              <Link href={item.url}>
-                <Presentation />
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <Presentation className="text-muted-foreground" />
-                  <span>View Lecture</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Share className="text-muted-foreground" />
-                  <span>Share Lecture</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Lecture</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
+          <NavLecture
+            key={item.lectureId}
+            lecture={{ lecture_id: item.lectureId, title: item.name }}
+            isMobile={isMobile}
+            handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
+          />
         ))}
         <SidebarMenuItem>
           <SidebarMenuButton>

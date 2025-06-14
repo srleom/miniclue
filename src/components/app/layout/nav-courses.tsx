@@ -43,6 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import NavLecture from "./nav-lecture";
 
 export function NavCourses({
   items,
@@ -173,66 +174,14 @@ export function NavCourses({
               <CollapsibleContent>
                 <SidebarMenuSub>
                   {(lecturesMap[item.courseId] || []).map((lecture) => (
-                    <SidebarMenuItem
+                    <NavLecture
                       key={lecture.lecture_id}
-                      className="group/lecture"
-                    >
-                      <SidebarMenuButton
-                        asChild
-                        onClick={async () =>
-                          await handleUpdateLectureAccessedAt(
-                            lecture.lecture_id,
-                          )
-                        }
-                      >
-                        <Link href={`/lecture/${lecture.lecture_id}`}>
-                          <Presentation />
-                          <span>{lecture.title}</span>
-                        </Link>
-                      </SidebarMenuButton>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100">
-                            <MoreHorizontal />
-                            <span className="sr-only">More</span>
-                          </SidebarMenuAction>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="w-48"
-                          side={isMobile ? "bottom" : "right"}
-                          align={isMobile ? "end" : "start"}
-                        >
-                          <DropdownMenuItem
-                            className="hover:cursor-pointer"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Presentation className="text-muted-foreground" />
-                            <span>View Lecture</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="hover:cursor-pointer"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Share className="text-muted-foreground" />
-                            <span>Share Lecture</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="hover:cursor-pointer"
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="text-muted-foreground" />
-                            <span>Delete Lecture</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </SidebarMenuItem>
+                      lecture={lecture}
+                      isMobile={isMobile}
+                      handleUpdateLectureAccessedAt={
+                        handleUpdateLectureAccessedAt
+                      }
+                    />
                   ))}
                 </SidebarMenuSub>
               </CollapsibleContent>

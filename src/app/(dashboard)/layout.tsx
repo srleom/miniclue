@@ -57,7 +57,7 @@ export default async function DashboardLayout({
   const navRecents = recentsData.map((r: any) => ({
     name: r.title ?? "",
     lectureId: r.lecture_id,
-    url: `/dashboard/lecture/${r.lecture_id}`,
+    url: `/lecture/${r.lecture_id}`,
   }));
 
   const coursesResult = await api.GET("/users/me/courses", {
@@ -66,7 +66,7 @@ export default async function DashboardLayout({
   const coursesData = coursesResult.data ?? [];
   const navCourses = coursesData.map((c: any) => ({
     title: c.title ?? "",
-    url: `/dashboard/course/${c.course_id}`,
+    url: `/course/${c.course_id}`,
     courseId: c.course_id,
     isDefault: c.is_default,
     isActive: false,
@@ -87,7 +87,7 @@ export default async function DashboardLayout({
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="/dashboard">Drafts</BreadcrumbLink>
+                  <BreadcrumbLink href="/">Drafts</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>

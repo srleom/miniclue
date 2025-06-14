@@ -5,6 +5,29 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidateTag } from "next/cache";
 
+export type ActionResponse<T> = {
+  data?: T;
+  error?: any;
+};
+
+async function createAuthenticatedApi() {
+  const supabase = await createClient();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    return { error: "Auth error" };
+  }
+
+  if (!session) {
+    return { error: "No session found" };
+  }
+
+  return { api: createApi(session.access_token), error: undefined };
+}
+
 export async function handleLogin() {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -40,22 +63,12 @@ export async function handleLogout() {
   redirect("/auth");
 }
 
-export async function createUntitledCourse() {
-  const supabase = await createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    return { error: "Auth error" };
+export async function createUntitledCourse(): Promise<ActionResponse<void>> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
   }
 
-  if (!session) {
-    return { error: "No session found" };
-  }
-
-  const api = createApi(session.access_token);
   const { error: courseError } = await api.POST("/courses", {
     body: {
       title: "Untitled Course",
@@ -68,27 +81,18 @@ export async function createUntitledCourse() {
     return { error: courseError };
   }
 
-  // Revalidate
   revalidateTag("courses");
-
   return { error: undefined };
 }
 
-export async function deleteCourse(courseId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-    error: authError,
-  } = await supabase.auth.getSession();
-
-  if (authError) {
-    return { error: "Auth error" };
-  }
-  if (!session) {
-    return { error: "No session found" };
+export async function deleteCourse(
+  courseId: string,
+): Promise<ActionResponse<void>> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
   }
 
-  const api = createApi(session.access_token);
   const { error: deleteError } = await api.DELETE("/courses/{courseId}", {
     params: { path: { courseId } },
   });
@@ -98,52 +102,39 @@ export async function deleteCourse(courseId: string) {
     return { error: deleteError };
   }
 
-  // Revalidate
   revalidateTag("courses");
-
   return { error: undefined };
 }
 
-export async function getCourseLectures(courseId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-    error: authError,
-  } = await supabase.auth.getSession();
-  if (authError) {
-    return { error: "Auth error" };
+export async function getCourseLectures(
+  courseId: string,
+): Promise<ActionResponse<any[]>> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
   }
-  if (!session) {
-    return { error: "No session found" };
-  }
-  const api = createApi(session.access_token);
-  const { data, error } = await api.GET("/lectures", {
+
+  const { data, error: fetchError } = await api.GET("/lectures", {
     params: { query: { course_id: courseId } },
     next: { tags: [`lectures:${courseId}`] },
   });
-  if (error) {
-    console.error("Get lectures error:", error);
-    return { data: [], error };
+
+  if (fetchError) {
+    console.error("Get lectures error:", fetchError);
+    return { data: [], error: fetchError };
   }
+
   return { data, error: undefined };
 }
 
-export async function handleUpdateLectureAccessedAt(lectureId: string) {
-  const supabase = await createClient();
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
-
-  if (error) {
-    return { error: "Auth error" };
+export async function handleUpdateLectureAccessedAt(
+  lectureId: string,
+): Promise<ActionResponse<void>> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
   }
 
-  if (!session) {
-    return { error: "No session found" };
-  }
-
-  const api = createApi(session.access_token);
   const { error: lectureError } = await api.PUT("/lectures/{lectureId}", {
     params: { path: { lectureId } },
     body: {
@@ -156,8 +147,6 @@ export async function handleUpdateLectureAccessedAt(lectureId: string) {
     return { error: lectureError };
   }
 
-  // Revalidate tag
   revalidateTag("recents");
-
   return { error: undefined };
 }

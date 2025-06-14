@@ -24,7 +24,7 @@ export const columns: ColumnDef<Lecture>[] = [
     header: "Title",
     cell: (info) => (
       <Link
-        href={`/dashboard/lecture/${info.row.original.lectureId}`}
+        href={`/lecture/${info.row.original.lectureId}`}
         className="block h-full w-full"
       >
         {info.getValue<string>()}
@@ -45,7 +45,7 @@ export const columns: ColumnDef<Lecture>[] = [
       }).format(date);
       return (
         <Link
-          href={`/dashboard/lecture/${info.row.original.lectureId}`}
+          href={`/lecture/${info.row.original.lectureId}`}
           className="block h-full w-full"
         >
           {formatted}
