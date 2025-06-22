@@ -16,6 +16,7 @@ import {
 } from "@/app/actions";
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import {
   Collapsible,
@@ -55,6 +56,7 @@ export function NavCourses({
   }[];
 }) {
   const { isMobile } = useSidebar();
+  const pathname = usePathname();
 
   const [lecturesMap, setLecturesMap] = useState<
     Record<string, { lecture_id: string; title: string }[]>
@@ -110,7 +112,13 @@ export function NavCourses({
             >
               <CollapsibleTrigger asChild className="group/collapsible">
                 <div>
-                  <SidebarMenuButton>
+                  <SidebarMenuButton
+                    className={
+                      pathname === `/course/${item.courseId}`
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                        : undefined
+                    }
+                  >
                     <ChevronRight className="hidden transition-transform group-hover/collapsible:block group-data-[state=open]/collapsible:rotate-90" />
                     <Folder className="group-hover/collapsible:hidden" />
                     <Link href={`/course/${item.courseId}`} className="w-full">

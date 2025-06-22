@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { Presentation, MoreHorizontal, Share, Trash2 } from "lucide-react";
 import { ActionResponse } from "@/app/actions";
+import { usePathname } from "next/navigation";
 
 export default function NavLecture({
   lecture,
@@ -25,10 +26,17 @@ export default function NavLecture({
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
 }) {
+  const pathname = usePathname();
+  const isActive = pathname === `/lecture/${lecture.lecture_id}`;
   return (
     <SidebarMenuItem key={lecture.lecture_id} className="group/lecture">
       <SidebarMenuButton
         asChild
+        className={
+          isActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+            : undefined
+        }
         onClick={async () =>
           await handleUpdateLectureAccessedAt(lecture.lecture_id)
         }

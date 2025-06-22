@@ -17,7 +17,7 @@ import {
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import createApi from "@/lib/api";
-import { components } from "@/types/api";
+import { getUserData, getUserRecents, getUserCourses } from "@/app/actions";
 
 export default async function DashboardLayout({
   children,
@@ -36,51 +36,31 @@ export default async function DashboardLayout({
 
   const api = createApi(session!.access_token);
 
-  const userResult = await api.GET("/users/me", {
-    next: { tags: ["user"] },
-  });
-  const userResponse = userResult.data ?? {
-    name: "",
-    email: "",
-    avatar_url: "",
-  };
-  const user = {
-    name: userResponse.name ?? "",
-    email: userResponse.email ?? "",
-    avatar: userResponse.avatar_url ?? "",
-  };
+  let user = { name: "", email: "", avatar: "" };
+  let navRecents: { name: string; lectureId: string; url: string }[] = [];
+  let navCourses: {
+    title: string;
+    url: string;
+    courseId: string;
+    isDefault: boolean;
+    isActive: boolean;
+    items: any[];
+  }[] = [];
 
-  const recentsResult = await api.GET("/users/me/recents", {
-    query: { limit: 10, offset: 0 },
-    next: { tags: ["recents"] },
-  });
-  const recentsData = recentsResult.data ?? [];
-  const navRecents = recentsData.map(
-    (
-      r: components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"],
-    ) => ({
-      name: r.title ?? "",
-      lectureId: r.lecture_id!,
-      url: `/lecture/${r.lecture_id!}`,
-    }),
-  );
+  const userRes = await getUserData();
+  if (userRes.data) {
+    user = userRes.data;
+  }
 
-  const coursesResult = await api.GET("/users/me/courses", {
-    next: { tags: ["courses"] },
-  });
-  const coursesData = coursesResult.data ?? [];
-  const navCourses = coursesData.map(
-    (
-      c: components["schemas"]["app_internal_api_v1_dto.UserCourseResponseDTO"],
-    ) => ({
-      title: c.title ?? "",
-      url: `/course/${c.course_id!}`,
-      courseId: c.course_id!,
-      isDefault: c.is_default!,
-      isActive: false,
-      items: [],
-    }),
-  );
+  const recentsRes = await getUserRecents();
+  if (recentsRes.data) {
+    navRecents = recentsRes.data;
+  }
+
+  const coursesRes = await getUserCourses();
+  if (coursesRes.data) {
+    navCourses = coursesRes.data;
+  }
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
