@@ -11,6 +11,7 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { getCourseDetails } from "@/app/(dashboard)/actions";
+import { Separator } from "@/components/ui/separator";
 
 export default async function CourseLayout({
   children,
@@ -36,6 +37,10 @@ export default async function CourseLayout({
       <header className="flex h-16 shrink-0 items-center justify-between gap-2">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1 hover:cursor-pointer" />
+          <Separator
+            orientation="vertical"
+            className="mr-2 data-[orientation=vertical]:h-4"
+          />
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -49,8 +54,6 @@ export default async function CourseLayout({
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-
-          {/* <DynamicBreadcrumb navCourses={navCourses} /> */}
         </div>
         <div className="flex items-center gap-2 px-4">
           <NavUser user={user} handleLogout={handleLogout} />
