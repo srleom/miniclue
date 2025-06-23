@@ -10,26 +10,34 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getCourseDetails } from "@/app/(dashboard)/actions";
+import { getLecture } from "./actions";
+import { getCourseDetails } from "../../actions";
 
-export default async function CourseLayout({
+export default async function LectureLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: { courseId: string };
+  params: { lectureId: string };
 }) {
-  const { courseId } = await params;
-  const courseRes = await getCourseDetails(courseId);
-  if (!courseRes.data) {
-    return <p>Course not found</p>;
-  }
-  const { title: courseTitle } = courseRes.data;
   let user = { name: "", email: "", avatar: "" };
   const userRes = await getUserData();
   if (userRes.data) {
     user = userRes.data;
   }
+
+  const { lectureId } = await params;
+  const lectureRes = await getLecture(lectureId);
+  if (!lectureRes.data) {
+    return <p>Lecture not found</p>;
+  }
+  const { title: lectureTitle, course_id: courseId } = lectureRes.data;
+
+  const courseRes = await getCourseDetails(courseId!);
+  if (!courseRes.data) {
+    return <p>Course not found</p>;
+  }
+  const { title: courseTitle } = courseRes.data;
 
   return (
     <>
@@ -45,12 +53,10 @@ export default async function CourseLayout({
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>New</BreadcrumbPage>
+                <BreadcrumbPage>{lectureTitle}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
-
-          {/* <DynamicBreadcrumb navCourses={navCourses} /> */}
         </div>
         <div className="flex items-center gap-2 px-4">
           <NavUser user={user} handleLogout={handleLogout} />

@@ -6,6 +6,7 @@ import {
   ActionResponse,
 } from "@/lib/api/authenticated-api";
 import { revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
 
 export async function createUntitledCourse(): Promise<
   ActionResponse<
@@ -51,6 +52,8 @@ export async function deleteCourse(
   }
 
   revalidateTag("courses");
+  revalidateTag("recents");
+  redirect("/");
   return { error: undefined };
 }
 
@@ -68,7 +71,7 @@ export async function getCourseLectures(
 
   const { data, error: fetchError } = await api.GET("/lectures", {
     params: { query: { course_id: courseId } },
-    next: { tags: [`lectures:${courseId}`], revalidate: 300 },
+    next: { tags: [`lectures:${courseId}`] },
   });
 
   if (fetchError) {
@@ -77,6 +80,31 @@ export async function getCourseLectures(
   }
 
   return { data, error: undefined };
+}
+
+export async function getCourseDetails(
+  courseId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: fetchError } = await api.GET("/courses/{courseId}", {
+    params: { path: { courseId } },
+    next: { tags: [`course:${courseId}`] },
+  });
+
+  if (fetchError) {
+    console.error("Get lecture error:", fetchError);
+    return { data: undefined, error: fetchError };
+  }
+
+  return { data: data ?? undefined, error: undefined };
 }
 
 export async function handleUpdateLectureAccessedAt(

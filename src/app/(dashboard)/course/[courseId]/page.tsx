@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { getCourseDetails, getCourseLectures } from "./utils";
+import { getCourseLectures, getCourseDetails } from "@/app/(dashboard)/actions";
 import { DropzoneComponent } from "@/components/app/dashboard/dropzone";
 import { Folder } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,13 @@ export async function generateMetadata({
   params,
 }: CoursePageProps): Promise<Metadata> {
   const { courseId } = await params;
-  const { title: courseName } = await getCourseDetails(courseId);
+  const courseRes = await getCourseDetails(courseId);
+  if (!courseRes.data) {
+    return {
+      title: "Course not found",
+    };
+  }
+  const { title: courseName } = courseRes.data;
 
   return {
     title: `${courseName} | MiniClue`,
@@ -24,23 +30,28 @@ export async function generateMetadata({
 export default async function CoursePage({ params }: CoursePageProps) {
   const { courseId } = await params;
 
-  const course = await getCourseDetails(courseId);
-  const lecturesDTO = await getCourseLectures(courseId);
-  const tableLectures: LectureResponseDTO[] = lecturesDTO.map((lec) => ({
-    lectureId: lec.lecture_id ?? "",
-    title: lec.title ?? "",
-    createdAt: lec.created_at ?? "",
-  }));
-  if (!course) {
+  const courseRes = await getCourseDetails(courseId);
+  if (!courseRes.data) {
     return <p>Course not found</p>;
   }
+  const { title: courseTitle, is_default: isDefault } = courseRes.data;
+  const lecturesDTO = await getCourseLectures(courseId);
+  console.log(lecturesDTO);
+  const tableLectures: LectureResponseDTO[] =
+    lecturesDTO.data?.map((lec) => ({
+      lecture_id: lec.lecture_id ?? "",
+      title: lec.title ?? "",
+      created_at: lec.created_at ?? "",
+    })) ?? [];
+
+  console.log("First lecture:", tableLectures[0]);
 
   return (
     <div className="mx-auto mt-16 flex w-full flex-col items-center lg:w-3xl">
       <div className="mb-7 flex items-center gap-2">
         <Folder />
-        <h1 className="text-center text-4xl font-semibold">{course.title}</h1>
-        {course.is_default && <Badge variant="outline">Default</Badge>}
+        <h1 className="text-center text-4xl font-semibold">{courseTitle}</h1>
+        {isDefault && <Badge variant="outline">Default</Badge>}
       </div>
 
       <div className="mb-12 w-full">

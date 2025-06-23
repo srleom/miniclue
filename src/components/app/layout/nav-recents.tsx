@@ -12,13 +12,17 @@ import {
   SidebarGroupAction,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
-import { handleUpdateLectureAccessedAt } from "@/app/(dashboard)/actions";
 import NavLecture from "./nav-lecture";
+import { ActionResponse } from "@/lib/api/authenticated-api";
 
 export function NavRecents({
   items,
+  handleUpdateLectureAccessedAt,
 }: {
   items: { name: string; url: string; lectureId: string }[];
+  handleUpdateLectureAccessedAt: (
+    lectureId: string,
+  ) => Promise<ActionResponse<void>>;
 }) {
   const { isMobile } = useSidebar();
 

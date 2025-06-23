@@ -17,16 +17,17 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { handleLogout } from "@/app/auth/actions";
 
 export function NavUser({
   user,
+  handleLogout,
 }: {
   user: {
     name: string;
     email: string;
     avatar: string;
   };
+  handleLogout: () => Promise<void>;
 }) {
   return (
     <SidebarMenu>

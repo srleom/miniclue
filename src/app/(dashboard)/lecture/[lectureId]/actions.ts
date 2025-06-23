@@ -20,7 +20,7 @@ export async function getLecture(
 
   const { data, error: fetchError } = await api.GET("/lectures/{lectureId}", {
     params: { path: { lectureId } },
-    next: { tags: [`lecture:${lectureId}`], revalidate: 300 },
+    next: { tags: [`lecture:${lectureId}`] },
   });
 
   if (fetchError) {

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { GalleryVerticalEnd, LifeBuoy, Send } from "lucide-react";
+import { ActionResponse } from "@/lib/api/authenticated-api";
 
 import { NavPrimary } from "@/components/app/layout/nav-primary";
 import { NavCourses } from "@/components/app/layout/nav-courses";
@@ -18,10 +19,15 @@ import {
 } from "@/components/ui/sidebar";
 
 import Link from "next/link";
+import { components } from "@/types/api";
 
 export function AppSidebar({
   navCourses,
   navRecents,
+  createUntitledCourse,
+  deleteCourse,
+  getCourseLectures,
+  handleUpdateLectureAccessedAt,
   ...props
 }: {
   navCourses: {
@@ -37,6 +43,22 @@ export function AppSidebar({
     lectureId: string;
     url: string;
   }[];
+  createUntitledCourse: () => Promise<
+    ActionResponse<
+      components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
+    >
+  >;
+  deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
+  getCourseLectures: (
+    courseId: string,
+  ) => Promise<
+    ActionResponse<
+      components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][]
+    >
+  >;
+  handleUpdateLectureAccessedAt: (
+    lectureId: string,
+  ) => Promise<ActionResponse<void>>;
 } & React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
@@ -61,8 +83,17 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>
         <NavPrimary />
-        <NavCourses items={navCourses} />
-        <NavRecents items={navRecents} />
+        <NavCourses
+          items={navCourses}
+          createUntitledCourse={createUntitledCourse}
+          deleteCourse={deleteCourse}
+          getCourseLectures={getCourseLectures}
+          handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
+        />
+        <NavRecents
+          items={navRecents}
+          handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
+        />
         <NavSecondary
           items={[
             {

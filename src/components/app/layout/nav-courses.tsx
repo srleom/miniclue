@@ -10,10 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { truncateString } from "@/lib/utils";
-import {
-  getCourseLectures,
-  handleUpdateLectureAccessedAt,
-} from "@/app/(dashboard)/actions";
+import { ActionResponse } from "@/lib/api/authenticated-api";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,7 +31,6 @@ import {
   SidebarMenuSub,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { createUntitledCourse, deleteCourse } from "@/app/(dashboard)/actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,9 +39,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import NavLecture from "./nav-lecture";
+import { components } from "@/types/api";
 
 export function NavCourses({
   items,
+  createUntitledCourse,
+  deleteCourse,
+  getCourseLectures,
+  handleUpdateLectureAccessedAt,
 }: {
   items: {
     title: string;
@@ -54,6 +55,22 @@ export function NavCourses({
     isDefault: boolean;
     isActive?: boolean;
   }[];
+  createUntitledCourse: () => Promise<
+    ActionResponse<
+      components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
+    >
+  >;
+  deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
+  getCourseLectures: (
+    courseId: string,
+  ) => Promise<
+    ActionResponse<
+      components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][]
+    >
+  >;
+  handleUpdateLectureAccessedAt: (
+    lectureId: string,
+  ) => Promise<ActionResponse<void>>;
 }) {
   const { isMobile } = useSidebar();
   const pathname = usePathname();
@@ -74,9 +91,9 @@ export function NavCourses({
         <SidebarGroupAction
           className="hover:bg-sidebar-border absolute top-1.5 right-1 group-hover/courses:opacity-100 hover:cursor-pointer data-[state=open]:opacity-100 md:opacity-0"
           onClick={async () => {
-            const { error } = await createUntitledCourse();
-            if (error) {
-              toast.error("Failed to create course");
+            const result = await createUntitledCourse();
+            if (result.error) {
+              toast.error(result.error);
               return;
             }
             toast.success("Course created");
@@ -93,17 +110,18 @@ export function NavCourses({
               defaultOpen={item.isActive}
               onOpenChange={(open) => {
                 if (open && !lecturesMap[item.courseId]) {
-                  getCourseLectures(item.courseId).then((res) => {
-                    if (!res.error) {
+                  getCourseLectures(item.courseId).then((result) => {
+                    if (!result.error && result.data) {
+                      const lectures = result.data.filter(
+                        (
+                          lecture,
+                        ): lecture is { lecture_id: string; title: string } =>
+                          lecture.lecture_id !== undefined &&
+                          lecture.title !== undefined,
+                      );
                       setLecturesMap((prev) => ({
                         ...prev,
-                        [item.courseId]: (res.data || []).filter(
-                          (
-                            lecture,
-                          ): lecture is { lecture_id: string; title: string } =>
-                            lecture.lecture_id !== undefined &&
-                            lecture.title !== undefined,
-                        ),
+                        [item.courseId]: lectures,
                       }));
                     }
                   });
@@ -162,9 +180,9 @@ export function NavCourses({
                         onMouseDown={(e) => e.stopPropagation()}
                         onClick={async (e) => {
                           e.stopPropagation();
-                          const { error } = await deleteCourse(item.courseId);
-                          if (error) {
-                            toast.error(error);
+                          const result = await deleteCourse(item.courseId);
+                          if (result.error) {
+                            toast.error(result.error);
                             return;
                           }
                           toast.success("Course deleted");

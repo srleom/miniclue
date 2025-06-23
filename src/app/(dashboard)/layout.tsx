@@ -2,6 +2,12 @@ import { AppSidebar } from "@/components/app/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cookies } from "next/headers";
 import { getUserRecents, getUserCourses } from "./sidebar-actions";
+import {
+  createUntitledCourse,
+  deleteCourse,
+  getCourseLectures,
+  handleUpdateLectureAccessedAt,
+} from "./actions";
 
 export default async function DashboardLayout({
   children,
@@ -32,7 +38,14 @@ export default async function DashboardLayout({
 
   return (
     <SidebarProvider defaultOpen={sidebarOpen}>
-      <AppSidebar navCourses={navCourses} navRecents={navRecents} />
+      <AppSidebar
+        navCourses={navCourses}
+        navRecents={navRecents}
+        createUntitledCourse={createUntitledCourse}
+        deleteCourse={deleteCourse}
+        getCourseLectures={getCourseLectures}
+        handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
+      />
       <SidebarInset>{children}</SidebarInset>
     </SidebarProvider>
   );

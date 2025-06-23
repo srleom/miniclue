@@ -31,7 +31,7 @@ export const columns: ColumnDef<LectureResponseDTO>[] = [
     size: 350,
   },
   {
-    accessorKey: "createdAt",
+    accessorKey: "created_at",
     header: "Created At",
     cell: (info) => {
       const raw = info.row.original.created_at;

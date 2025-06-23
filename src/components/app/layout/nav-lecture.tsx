@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { Presentation, MoreHorizontal, Share, Trash2 } from "lucide-react";
-import { ActionResponse } from "@/app/actions";
+import { ActionResponse } from "@/lib/api/authenticated-api";
 import { usePathname } from "next/navigation";
 
 export default function NavLecture({
