@@ -1,3 +1,6 @@
+"use client";
+
+import * as React from "react";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -16,12 +19,34 @@ import { ExplainerCarousel } from "./_components/carousel";
 import { placeholderMarkdown } from "./constants";
 import { Card, CardContent } from "@/components/ui/card";
 
-export default async function LecturePage() {
+export default function LecturePage() {
+  const [pageNumber, setPageNumber] = React.useState(1);
+  const [totalPageCount, setTotalPageCount] = React.useState(0);
+  const [scrollSource, setScrollSource] = React.useState<
+    "pdf" | "carousel" | null
+  >(null);
+
+  const handlePdfPageChange = (newPage: number) => {
+    setScrollSource("pdf");
+    setPageNumber(newPage);
+  };
+
+  const handleCarouselPageChange = (newPage: number) => {
+    setScrollSource("carousel");
+    setPageNumber(newPage);
+  };
+
   return (
     <div className="mx-auto h-[calc(100vh-6rem)] w-full overflow-hidden">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         <ResizablePanel className="h-full pr-6">
-          <PdfViewer fileUrl="/Week 9.pdf" />
+          <PdfViewer
+            fileUrl="/Week 9.pdf"
+            pageNumber={pageNumber}
+            onPageChange={handlePdfPageChange}
+            onDocumentLoad={setTotalPageCount}
+            scrollSource={scrollSource}
+          />
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="flex flex-col pl-6">
@@ -44,7 +69,12 @@ export default async function LecturePage() {
               value="explanation"
               className="mt-3 flex min-h-0 flex-1 flex-col"
             >
-              <ExplainerCarousel />
+              <ExplainerCarousel
+                pageNumber={pageNumber}
+                onPageChange={handleCarouselPageChange}
+                totalPageCount={totalPageCount}
+                scrollSource={scrollSource}
+              />
             </TabsContent>
             <TabsContent
               value="summary"
