@@ -18,7 +18,7 @@
 ├── POST /explanations → create lecture explanation
 ├── GET /notes → get lecture notes
 ├── POST /notes → create lecture note
-└── PUT /notes → update lecture note
+└── PATCH /notes → update lecture note
 
 /api/v1/users/me
 ├── GET / → fetch user profile

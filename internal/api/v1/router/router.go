@@ -101,7 +101,7 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 	// 7. Apply CORS middleware
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Allow all origins for development
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"*"},
 		AllowCredentials: true,
 		Debug:            false, // Enable debug logging for CORS

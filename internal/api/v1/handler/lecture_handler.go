@@ -26,12 +26,12 @@ type LectureHandler struct {
 
 // NewLectureHandler creates a new LectureHandler
 func NewLectureHandler(
-	lectureService     service.LectureService,
-	courseService      service.CourseService,
-	summaryService     service.SummaryService,
+	lectureService service.LectureService,
+	courseService service.CourseService,
+	summaryService service.SummaryService,
 	explanationService service.ExplanationService,
-	noteService        service.NoteService,
-	validate           *validator.Validate,
+	noteService service.NoteService,
+	validate *validator.Validate,
 ) *LectureHandler {
 	return &LectureHandler{
 		lectureService:     lectureService,
@@ -70,11 +70,12 @@ func (h *LectureHandler) handleLecture(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		h.getLecture(w, r)
-	case http.MethodPut:
+	case http.MethodPatch:
 		if strings.HasSuffix(path, "/notes") {
 			h.updateLectureNote(w, r)
 			return
 		}
+	case http.MethodPut:
 		h.updateLecture(w, r)
 	case http.MethodPost:
 		if strings.HasSuffix(path, "/summary") {
@@ -513,7 +514,7 @@ func (h *LectureHandler) listLectureNotes(w http.ResponseWriter, r *http.Request
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
 // @Failure 404 {string} string "Lecture not found"
 // @Failure 500 {string} string "Failed to update note"
-// @Router /lectures/{lectureId}/notes [put]
+// @Router /lectures/{lectureId}/notes [patch]
 func (h *LectureHandler) updateLectureNote(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
