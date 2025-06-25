@@ -1,82 +1,27 @@
-**Base & Versioning**
+/api/v1/courses
+├── POST / → create course
+├── GET /:courseId → fetch course
+├── PUT /:courseId → update course
+└── DELETE /:courseId → delete course
 
-* **Base path:** `/api/v1`
-* Bump to `/api/v2` on breaking changes
+/api/v1/lectures
+├── POST / → create lecture
+├── GET / → list lectures (query by course_id) (`?limit=&offset=`)
+├── GET /:lectureId → fetch lecture
+├── PUT /:lectureId → update lecture metadata
+└── DELETE /:lectureId → delete lecture
 
----
+/api/v1/lectures/:lectureId
+├── GET /summary → get lecture summary
+├── POST /summary → create lecture summary
+├── GET /explanations → list lecture explanations (`?limit=&offset=`)
+├── POST /explanations → create lecture explanation
+├── GET /notes → get lecture notes
+├── POST /notes → create lecture note
+└── PUT /notes → update lecture note
 
-**Courses**
-
-* `POST   /api/v1/courses`
-  * Create a new course (`{ title, description?, isDefault?: boolean }`)
-* `GET    /api/v1/courses/{courseId}`
-  * Fetch metadata & status for one course
-* `PUT    /api/v1/courses/{courseId}`
-  * Update title/description/etc.
-* `DELETE /api/v1/courses/{courseId}`
-  * Delete a course and all its lectures
-
----
-
-**Lectures**
-
-* `POST   /api/v1/lectures/upload`
-  * Upload PDF + metadata; include `course_id` in body to assign to a course (defaults to drafts)
-* `GET    /api/v1/lectures/{lectureId}`
-  * Fetch lecture metadata, status & PDF
-* `PUT    /api/v1/lectures/{lectureId}`
-  * Update lecture metadata (title, tags, etc.)
-* `DELETE /api/v1/lectures/{lectureId}`
-  * Delete a lecture and all its derived data
-* `GET    /api/v1/lectures?course_id={courseId}&limit=&offset=`
-  * List lectures under a course
-
----
-
-**Summary**
-
-* `GET /api/v1/courses/{courseId}/lectures/{lectureId}/summary`
-  * Retrieve (or trigger+retrieve) TLDR summary; responds with `Cache-Control: max-age=<TTL>`
-
----
-
-**Slides & Explanations**
-
-* `GET /api/v1/courses/{courseId}/lectures/{lectureId}/explanations`
-  * Use limit and offset params
-  * Cached in Redis
-
----
-
-**Notes**
-
-* `GET    /api/v1/courses/{courseId}/lectures/{lectureId}/notes`
-  * List user-saved notes (`?limit=&offset=`)
-* `POST   /api/v1/courses/{courseId}/lectures/{lectureId}/notes`
-  * Create new note (`{ content: string }`)
-* `PUT    /api/v1/courses/{courseId}/lectures/{lectureId}/notes/{noteId}`
-  * Update existing note
-* `DELETE /api/v1/courses/{courseId}/lectures/{lectureId}/notes/{noteId}`
-  * Delete a note
-
----
-
-**Users & Dashboard**
-
-* `GET  /api/v1/users/me`
-  * Fetch current user’s profile for dashboard
-* `POST /api/v1/users/me`
-  * Create a new user profile
-* `PUT  /api/v1/users/me` (to be implemented)
-  * Update own profile (name, avatar, prefs)
-* `GET  /api/v1/users/me/courses`
-  * List courses the user owns or is enrolled in
-* `GET  /api/v1/users/me/recents`
-  * List the user’s most recently created or accessed lectures (`?limit=&offset=`)
-
-
-**Filtering, Pagination & Caching**
-
-* **Filtering:** via query params (e.g. `?status=parsed`)
-* **Pagination:** `?limit=&offset=` (or `?page=&pageSize=`)
-* **Cache-Control:** summary & explanation endpoints include `Cache-Control: max-age=<TTL>`; clients revalidate after TTL
+/api/v1/users/me
+├── GET / → fetch user profile
+├── POST / → create or update profile
+├── GET /courses → list user's courses
+└── GET /recents → list recent lectures (`?limit=&offset=`)

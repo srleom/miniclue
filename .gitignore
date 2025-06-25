@@ -7,9 +7,6 @@
 # Ignore env
 .env*
 
-# Ignore Cursor rules
-.cursor/
-
 # Ignore swagger docs
 docs/swagger
 
