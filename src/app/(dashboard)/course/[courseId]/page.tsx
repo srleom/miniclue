@@ -58,7 +58,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
       </div>
 
       <div className="mb-12 w-full">
-        <DropzoneComponent isCoursePage={true} />
+        <DropzoneComponent isCoursePage={true} courseId={courseId} />
       </div>
       <DataTable columns={columns} data={tableLectures} />
     </div>

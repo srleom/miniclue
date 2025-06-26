@@ -129,3 +129,39 @@ export async function handleUpdateLectureAccessedAt(
 
   return { error: undefined };
 }
+
+export async function uploadLectures(
+  courseId: string,
+  formData: FormData,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureUploadResponseDTO"][]
+  >
+> {
+  formData.append("course_id", courseId);
+
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: uploadError } = await api.POST("/lectures", {
+    body: formData as any,
+    bodySerializer: (body) => body,
+  });
+
+  if (uploadError) {
+    console.error("Upload lectures error:", uploadError);
+    return { error: uploadError };
+  }
+
+  revalidateTag(`lectures:${courseId}`);
+  revalidateTag("recents");
+
+  const firstLectureId = data?.[0]?.lecture_id;
+  if (firstLectureId) {
+    redirect(`/lecture/${firstLectureId}`);
+  }
+
+  return { data, error: undefined };
+}
