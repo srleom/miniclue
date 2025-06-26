@@ -100,6 +100,7 @@ export default function NavLecture({
             <DropdownMenuItem
               className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
               onSelect={(e) => e.preventDefault()}
+              onClick={(e) => e.stopPropagation()}
             >
               <Trash2 className="text-destructive" />
               <span>Delete lecture</span>

@@ -140,31 +140,37 @@ export function NavCourses({
                           <Forward className="text-muted-foreground" />
                           <span>Share course</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DeleteDialog
-                          title="Are you sure you want to delete this course?"
-                          description="This will permanently delete all lectures and all associated data. This action cannot be undone."
-                          onConfirm={async () => {
-                            const toastId = toast.loading(`Deleting course...`);
-                            let result;
-                            try {
-                              result = await deleteCourse(item.courseId!);
-                            } finally {
-                              toast.dismiss(toastId);
-                            }
-                            if (result?.error) {
-                              toast.error(result.error);
-                            }
-                          }}
-                        >
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
-                            onSelect={(e) => e.preventDefault()}
-                          >
-                            <Trash2 className="text-destructive" />
-                            <span>Delete course</span>
-                          </DropdownMenuItem>
-                        </DeleteDialog>
+                        {!item.isDefault ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DeleteDialog
+                              title="Are you sure you want to delete this course?"
+                              description="This will permanently delete all lectures and all associated data. This action cannot be undone."
+                              onConfirm={async () => {
+                                const toastId =
+                                  toast.loading(`Deleting course...`);
+                                let result;
+                                try {
+                                  result = await deleteCourse(item.courseId!);
+                                } finally {
+                                  toast.dismiss(toastId);
+                                }
+                                if (result?.error) {
+                                  toast.error(result.error);
+                                }
+                              }}
+                            >
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
+                                onSelect={(e) => e.preventDefault()}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash2 className="text-destructive" />
+                                <span>Delete course</span>
+                              </DropdownMenuItem>
+                            </DeleteDialog>
+                          </>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
