@@ -9,7 +9,7 @@ SET search_path TO public;
 -------------------------------------------------------------------------------
 -- ENUM Type for Lecture Status
 -------------------------------------------------------------------------------
-CREATE TYPE lecture_status AS ENUM ('uploaded', 'parsed', 'completed');
+CREATE TYPE lecture_status AS ENUM ('uploading', 'uploaded', 'parsed', 'completed');
 
 -------------------------------------------------------------------------------
 -- 1. Course Table

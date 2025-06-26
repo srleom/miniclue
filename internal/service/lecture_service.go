@@ -50,8 +50,35 @@ func (s *lectureService) GetLectureByID(ctx context.Context, lectureID string) (
 	return s.repo.GetLectureByID(ctx, lectureID)
 }
 
-// DeleteLecture removes a lecture by ID
+// DeleteLecture removes a lecture by ID and cleans up external resources.
 func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) error {
+	// Retrieve lecture metadata for cleanup
+	lecture, err := s.repo.GetLectureByID(ctx, lectureID)
+	if err != nil {
+		return fmt.Errorf("failed to get lecture: %w", err)
+	}
+	if lecture == nil {
+		return fmt.Errorf("lecture not found")
+	}
+
+	// Delete the original PDF from S3 storage
+	if lecture.PDFURL != "" {
+		storagePath := fmt.Sprintf("lectures/%s/original.pdf", lectureID)
+		if _, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+			Bucket: aws.String(s.bucketName),
+			Key:    aws.String(storagePath),
+		}); err != nil {
+			// Best-effort: log and continue
+			fmt.Printf("failed to delete PDF from storage: %v\n", err)
+		}
+	}
+
+	// Clear any pending jobs from all related queues
+	if err := s.repo.DeletePendingJobs(ctx, lectureID); err != nil {
+		fmt.Printf("failed to delete pending jobs: %v\n", err)
+	}
+
+	// Delete lecture and cascade database cleanup
 	return s.repo.DeleteLecture(ctx, lectureID)
 }
 
@@ -66,7 +93,7 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 		CourseID: courseID,
 		UserID:   userID,
 		Title:    title,
-		Status:   "uploaded",
+		Status:   "uploading",
 	}
 	createdLecture, err := s.repo.CreateLecture(ctx, lecture)
 	if err != nil {

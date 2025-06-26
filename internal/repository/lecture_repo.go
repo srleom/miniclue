@@ -16,6 +16,7 @@ type LectureRepository interface {
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
 	CreateLecture(ctx context.Context, lecture *model.Lecture) (*model.Lecture, error)
 	EnqueueIngestionJob(ctx context.Context, lectureID string, storagePath string) error
+	DeletePendingJobs(ctx context.Context, lectureID string) error
 }
 
 type lectureRepository struct {
@@ -146,12 +147,12 @@ func (r *lectureRepository) DeleteLecture(ctx context.Context, lectureID string)
 func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture) error {
 	query := `
 		UPDATE lectures
-		SET title = $1, accessed_at = $2, updated_at = NOW()
-		WHERE id = $3
+		SET title = $1, accessed_at = $2, pdf_url = $3, status = $4, updated_at = NOW()
+		WHERE id = $5
 		RETURNING user_id, course_id, title, pdf_url, status, created_at, updated_at, accessed_at
 	`
 	return r.db.QueryRowContext(ctx, query,
-		l.Title, l.AccessedAt, l.ID,
+		l.Title, l.AccessedAt, l.PDFURL, l.Status, l.ID,
 	).Scan(
 		&l.UserID,
 		&l.CourseID,
@@ -179,6 +180,29 @@ func (r *lectureRepository) EnqueueIngestionJob(ctx context.Context, lectureID s
 	_, err := r.db.ExecContext(ctx, query, job)
 	if err != nil {
 		return fmt.Errorf("failed to enqueue ingestion job: %w", err)
+	}
+	return nil
+}
+
+// DeletePendingJobs deletes any pending jobs related to a lecture across all pgmq queues.
+func (r *lectureRepository) DeletePendingJobs(ctx context.Context, lectureID string) error {
+	queues := []string{"ingestion_queue", "embedding_queue", "explanation_queue", "summary_queue"}
+	for _, q := range queues {
+		// Delete all messages containing this lecture ID via pgmq.delete,
+		// querying the actual queue table q_<queue>_queue in pgmq schema.
+		sqlStmt := fmt.Sprintf(
+			`SELECT pgmq.delete('%s', ARRAY(
+				SELECT msg_id FROM pgmq.q_%s WHERE message->>'lecture_id' = $1
+			))`,
+			q, q,
+		)
+		// Use QueryContext since SELECT returns rows
+		rows, err := r.db.QueryContext(ctx, sqlStmt, lectureID)
+		if err != nil {
+			fmt.Printf("failed to delete pending jobs from %s: %v\n", q, err)
+			continue
+		}
+		rows.Close()
 	}
 	return nil
 }

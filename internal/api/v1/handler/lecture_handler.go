@@ -210,7 +210,7 @@ func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
 
 // deleteLecture godoc
 // @Summary Delete a lecture
-// @Description Deletes a lecture and all its derived data.
+// @Description Deletes a lecture and all its derived database records, removes its PDF from storage, and clears related pending jobs from ingestion, embedding, explanation, and summary queues.
 // @Tags lectures
 // @Produce json
 // @Param lectureId path string true "Lecture ID"
