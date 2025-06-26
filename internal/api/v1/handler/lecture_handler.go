@@ -329,34 +329,38 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 }
 
 // uploadLecture godoc
-// @Summary Upload lecture PDF
-// @Description Uploads a PDF file to create a new lecture under the specified course.
+// @Summary Upload lecture PDFs
+// @Description Uploads one or more PDF files to create new lectures under the specified course.
 // @Tags lectures
 // @Accept multipart/form-data
 // @Produce json
 // @Param course_id formData string true "Course ID"
-// @Param title formData string false "Lecture title"
-// @Param file formData file true "PDF file"
-// @Success 201 {object} dto.LectureUploadResponseDTO
+// @Param title formData string false "Lecture title (used as default for all files)"
+// @Param files formData []file true "PDF files" collectionFormat(multi)
+// @Success 201 {array} dto.LectureUploadResponseDTO
 // @Failure 400 {string} string "Bad Request"
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
 // @Failure 404 {string} string "Course not found or access denied"
-// @Failure 500 {string} string "Failed to upload lecture PDF"
+// @Failure 500 {string} string "Failed to upload lecture PDFs"
 // @Router /lectures [post]
 func (h *LectureHandler) uploadLecture(w http.ResponseWriter, r *http.Request) {
+	// Authenticate
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
 		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
 		return
 	}
+	// Only POST /lectures
 	if r.Method != http.MethodPost || r.URL.Path != "/lectures" {
 		http.NotFound(w, r)
 		return
 	}
+	// Parse multipart form (10 MB)
 	if err := r.ParseMultipartForm(10 << 20); err != nil {
 		http.Error(w, "Error parsing multipart form: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	// Get course ID and verify access
 	courseID := r.FormValue("course_id")
 	if courseID == "" {
 		http.Error(w, "Missing course_id", http.StatusBadRequest)
@@ -371,28 +375,42 @@ func (h *LectureHandler) uploadLecture(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Course not found or access denied", http.StatusNotFound)
 		return
 	}
-	file, header, err := r.FormFile("file")
-	if err != nil {
-		http.Error(w, "Error retrieving the file: "+err.Error(), http.StatusBadRequest)
+	// Gather multiple files
+	files := r.MultipartForm.File["files"]
+	if len(files) == 0 {
+		http.Error(w, "No files uploaded", http.StatusBadRequest)
 		return
 	}
-	defer file.Close()
-	title := r.FormValue("title")
-	if title == "" {
-		title = header.Filename
+	// Optional common title
+	commonTitle := r.FormValue("title")
+	// Process each file
+	var results []dto.LectureUploadResponseDTO
+	for _, header := range files {
+		f, err := header.Open()
+		if err != nil {
+			http.Error(w, "Error opening file: "+err.Error(), http.StatusBadRequest)
+			return
+		}
+		// Determine title per file
+		title := commonTitle
+		if title == "" {
+			title = header.Filename
+		}
+		lec, err := h.lectureService.CreateLectureWithPDF(r.Context(), courseID, userID, title, f, header)
+		f.Close()
+		if err != nil {
+			http.Error(w, "Failed to create lecture: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		results = append(results, dto.LectureUploadResponseDTO{
+			LectureID: lec.ID,
+			Status:    lec.Status,
+		})
 	}
-	lecture, err := h.lectureService.CreateLectureWithPDF(r.Context(), courseID, userID, title, file, header)
-	if err != nil {
-		http.Error(w, "Failed to create lecture: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	resp := dto.LectureUploadResponseDTO{
-		LectureID: lecture.ID,
-		Status:    lecture.Status,
-	}
+	// Return array of responses
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	json.NewEncoder(w).Encode(results)
 }
 
 // getLectureSummary godoc
