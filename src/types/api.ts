@@ -330,7 +330,77 @@ export interface paths {
       };
     };
     put?: never;
-    post?: never;
+    /**
+     * Upload lecture PDFs
+     * @description Uploads one or more PDF files to create new lectures under the specified course.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody: {
+        content: {
+          "multipart/form-data": {
+            /** @description Course ID */
+            course_id: string;
+            /** @description Lecture title (used as default for all files) */
+            title?: string;
+            /** @description PDF files */
+            files: Record<string, never>[];
+          };
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadResponseDTO"][];
+          };
+        };
+        /** @description Bad Request */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Course not found or access denied */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to upload lecture PDFs */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
     delete?: never;
     options?: never;
     head?: never;
@@ -733,74 +803,7 @@ export interface paths {
         };
       };
     };
-    /**
-     * Update a lecture note
-     * @description Updates the content of a note for a lecture.
-     */
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Note update data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to update note */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
+    put?: never;
     /**
      * Create a lecture note
      * @description Creates a new note for a lecture.
@@ -872,7 +875,74 @@ export interface paths {
     delete?: never;
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Update a lecture note
+     * @description Updates the content of a note for a lecture.
+     */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Note update data */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to update note */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
     trace?: never;
   };
   "/lectures/{lectureId}/summary": {
@@ -1328,6 +1398,12 @@ export interface components {
     "app_internal_api_v1_dto.LectureUpdateDTO": {
       accessed_at?: string;
       title?: string;
+    };
+    "app_internal_api_v1_dto.LectureUploadResponseDTO": {
+      /** @description The ID of the newly created lecture */
+      lecture_id?: string;
+      /** @description The status of the lecture */
+      status?: string;
     };
     "app_internal_api_v1_dto.UserCourseResponseDTO": {
       course_id?: string;

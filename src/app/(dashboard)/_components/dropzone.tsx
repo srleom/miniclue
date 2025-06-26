@@ -1,7 +1,10 @@
 "use client";
 
 import * as React from "react";
+import { toast } from "sonner";
 
+import { uploadLectures } from "@/app/(dashboard)/actions";
+import { Button } from "@/components/ui/button";
 import {
   Dropzone,
   DropzoneDescription,
@@ -24,18 +27,65 @@ import {
 
 export function DropzoneComponent({
   isCoursePage = false,
+  courseId,
 }: {
   isCoursePage?: boolean;
+  courseId?: string;
 }) {
   const [files, setFiles] = React.useState<File[]>([]);
+  const [isLoading, setIsLoading] = React.useState(false);
+
+  const onDrop = (acceptedFiles: File[]) => {
+    setFiles(acceptedFiles);
+  };
+
+  const handleUpload = async () => {
+    if (!isCoursePage || !courseId) {
+      toast.error("Course ID is missing. Cannot upload files.");
+      return;
+    }
+
+    if (files.length === 0) {
+      toast.info("No files to upload.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    const toastId = toast.loading(`Uploading ${files.length} file(s)...`);
+
+    try {
+      await uploadLectures(courseId, formData);
+      toast.success("Files uploaded successfully!", { id: toastId });
+      setFiles([]);
+    } catch (error: any) {
+      // The redirect() function throws an error to stop execution, which we can catch.
+      // We only want to show an error toast if it's not a redirect error.
+      if (error.digest?.includes("NEXT_REDIRECT")) {
+        // This is expected, clean up the loading toast before redirect.
+        toast.dismiss(toastId);
+      } else {
+        toast.error("An error occurred while uploading files.", {
+          id: toastId,
+        });
+        console.error("Upload failed:", error);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dropzone
       accept={{
-        "image/*": [".jpg", ".png"],
         "application/pdf": [".pdf"],
       }}
-      onDropAccepted={setFiles}
+      onDropAccepted={onDrop}
     >
       <div className="grid w-full gap-4">
         <DropzoneZone className="flex min-h-[14em] items-center justify-center md:min-h-[16em]">
@@ -49,27 +99,41 @@ export function DropzoneComponent({
                   : "Drop files here or click to upload"}
               </DropzoneTitle>
               <DropzoneDescription className="text-center">
-                You can upload files up to 10MB in size. Supported formats: JPG,
-                PNG, PDF.
+                You can upload PDF files up to 10MB in size.
               </DropzoneDescription>
             </DropzoneGroup>
           </DropzoneGroup>
         </DropzoneZone>
-        <FileList>
-          {files.map((file) => (
-            <FileListItem key={file.name}>
-              <FileListHeader>
-                <FileListIcon />
-                <FileListInfo>
-                  <FileListName>{file.name}</FileListName>
-                  <FileListDescription>
-                    <FileListSize>{file.size}</FileListSize>
-                  </FileListDescription>
-                </FileListInfo>
-              </FileListHeader>
-            </FileListItem>
-          ))}
-        </FileList>
+        {files.length > 0 && (
+          <FileList>
+            {files.map((file) => (
+              <FileListItem key={file.name}>
+                <FileListHeader>
+                  <FileListIcon />
+                  <FileListInfo>
+                    <FileListName>{file.name}</FileListName>
+                    <FileListDescription>
+                      <FileListSize>{file.size}</FileListSize>
+                    </FileListDescription>
+                  </FileListInfo>
+                </FileListHeader>
+              </FileListItem>
+            ))}
+          </FileList>
+        )}
+        {isCoursePage && files.length > 0 && (
+          <div className="flex justify-end">
+            <Button
+              onClick={handleUpload}
+              disabled={isLoading}
+              className="w-full hover:cursor-pointer sm:w-auto"
+            >
+              {isLoading
+                ? "Uploading..."
+                : `Upload ${files.length} file${files.length > 1 ? "s" : ""}`}
+            </Button>
+          </div>
+        )}
       </div>
     </Dropzone>
   );
