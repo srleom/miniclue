@@ -13,6 +13,7 @@ func LoggerMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r)
 
 		logger := logger.New()
-		logger.Info().Msgf("%s %s", r.Method, r.URL.Path)
+		// Log original message format with full request URI including query params
+		logger.Info().Msgf("%s %s", r.Method, r.URL.RequestURI())
 	})
 }
