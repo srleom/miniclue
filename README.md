@@ -13,9 +13,7 @@
 
 /api/v1/lectures/:lectureId
 ├── GET /summary → get lecture summary
-├── POST /summary → create lecture summary
 ├── GET /explanations → list lecture explanations (`?limit=&offset=`)
-├── POST /explanations → create lecture explanation
 ├── GET /notes → get lecture notes
 ├── POST /notes → create lecture note
 └── PATCH /notes → update lecture note

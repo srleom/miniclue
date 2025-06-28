@@ -9,7 +9,7 @@ SET search_path TO public;
 -------------------------------------------------------------------------------
 -- ENUM Type for Lecture Status
 -------------------------------------------------------------------------------
-CREATE TYPE lecture_status AS ENUM ('uploading', 'pending_processing', 'parsing', 'embedding', 'explaining', 'summarizing', 'complete', 'failed');
+CREATE TYPE lecture_status AS ENUM ('uploading', 'pending_processing', 'parsing', 'embedding', 'explaining', 'summarising', 'complete', 'failed');
 
 -------------------------------------------------------------------------------
 -- 1. Course Table
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS lectures (
   status                 lecture_status  NOT NULL DEFAULT 'uploading',
   error_message          TEXT            DEFAULT '',
   total_slides           INT             NOT NULL DEFAULT 0,
-  processed_explanations INT             NOT NULL DEFAULT 0,
+  processed_slides       INT             NOT NULL DEFAULT 0,
   created_at             TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
   updated_at             TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
   accessed_at            TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS slides (
   id                   UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   lecture_id           UUID        NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
   slide_number         INT         NOT NULL,
-  pending_chunks_count INT         NOT NULL DEFAULT 0,
+  total_chunks         INT         NOT NULL DEFAULT 0,
+  processed_chunks     INT         NOT NULL DEFAULT 0,
   created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(lecture_id, slide_number)
@@ -86,46 +87,43 @@ CREATE INDEX IF NOT EXISTS idx_slides_lecture_slide ON slides(lecture_id, slide_
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chunks (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  lecture_id   UUID        NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+  slide_id     UUID        NOT NULL
+    REFERENCES slides(id) ON DELETE CASCADE,
+  lecture_id   UUID        NOT NULL,
   slide_number INT         NOT NULL,
   chunk_index  INT         NOT NULL,
   text         TEXT        NOT NULL,
   token_count  INT,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(lecture_id, slide_number, chunk_index)
+  UNIQUE(slide_id, chunk_index),
+  FOREIGN KEY (lecture_id, slide_number)
+    REFERENCES slides(lecture_id, slide_number)
+    ON DELETE CASCADE
 );
-
-ALTER TABLE chunks
-  ADD CONSTRAINT fk_chunks_slide
-    FOREIGN KEY (lecture_id, slide_number)
-      REFERENCES slides (lecture_id, slide_number)
-      ON DELETE CASCADE;
-
-CREATE INDEX IF NOT EXISTS idx_chunks_lecture_slide ON chunks(lecture_id, slide_number);
-CREATE INDEX IF NOT EXISTS idx_chunks_lecture       ON chunks(lecture_id);
+CREATE INDEX idx_chunks_lecture_slide ON chunks(lecture_id, slide_number);
 
 -------------------------------------------------------------------------------
 -- 6. Embedding Table (pgvector)
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS embeddings (
-  chunk_id     UUID         PRIMARY KEY,
-  lecture_id   UUID         NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+  chunk_id     UUID         PRIMARY KEY
+    REFERENCES chunks(id) ON DELETE CASCADE,
+  slide_id     UUID         NOT NULL
+    REFERENCES slides(id) ON DELETE CASCADE,
+  lecture_id   UUID         NOT NULL,
   slide_number INT          NOT NULL,
   vector       VECTOR(1536) NOT NULL,
   metadata     JSONB        NOT NULL DEFAULT '{}'::JSONB,
   created_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
-  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
+  updated_at   TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+  FOREIGN KEY (lecture_id, slide_number)
+    REFERENCES slides(lecture_id, slide_number)
+    ON DELETE CASCADE
 );
-
-ALTER TABLE embeddings
-  ADD CONSTRAINT fk_embeddings_chunk
-    FOREIGN KEY (chunk_id)
-      REFERENCES chunks (id)
-      ON DELETE CASCADE;
-
-CREATE INDEX IF NOT EXISTS idx_embeddings_vector       ON embeddings USING ivfflat (vector) WITH (lists = 100);
-CREATE INDEX IF NOT EXISTS idx_embeddings_lecture_snap ON embeddings(lecture_id, slide_number);
+-- Use ivfflat for vector lookups
+CREATE INDEX idx_embeddings_vector ON embeddings USING ivfflat(vector) WITH (lists = 100);
+CREATE INDEX idx_embeddings_lecture_slide ON embeddings(lecture_id, slide_number);
 
 -------------------------------------------------------------------------------
 -- 7. Summary Table
@@ -144,51 +142,49 @@ CREATE INDEX IF NOT EXISTS idx_summaries_by_lecture ON summaries(lecture_id);
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS explanations (
   id           UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  lecture_id   UUID        NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+  slide_id     UUID        NOT NULL
+    REFERENCES slides(id) ON DELETE CASCADE,
+  lecture_id   UUID        NOT NULL,
   slide_number INT         NOT NULL,
   content      TEXT        NOT NULL,
   one_liner    TEXT        NOT NULL DEFAULT '',
   metadata     JSONB       NOT NULL DEFAULT '{}'::JSONB,
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(lecture_id, slide_number)
+  UNIQUE(slide_id),
+  FOREIGN KEY (lecture_id, slide_number)
+    REFERENCES slides(lecture_id, slide_number)
+    ON DELETE CASCADE
 );
-
-ALTER TABLE explanations
-  ADD CONSTRAINT fk_explanations_slide
-    FOREIGN KEY (lecture_id, slide_number)
-      REFERENCES slides (lecture_id, slide_number)
-      ON DELETE CASCADE;
-
-CREATE INDEX IF NOT EXISTS idx_explanations_lecture_slide ON explanations(lecture_id, slide_number);
+CREATE INDEX idx_explanations_lecture_slide ON explanations(lecture_id, slide_number);
 
 -------------------------------------------------------------------------------
 -- 9. Slide Images Table
 -------------------------------------------------------------------------------
+CREATE TYPE slide_image_type AS ENUM ('decorative', 'content');
+
 CREATE TABLE IF NOT EXISTS slide_images (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  lecture_id     UUID        NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
+  slide_id       UUID        NOT NULL
+    REFERENCES slides(id) ON DELETE CASCADE,
+  lecture_id     UUID        NOT NULL,
   slide_number   INT         NOT NULL,
   image_index    INT         NOT NULL,
   storage_path   TEXT        NOT NULL,
   image_hash     TEXT        NOT NULL,
-  is_decorative  BOOLEAN     NOT NULL DEFAULT FALSE,
+  type           slide_image_type NOT NULL DEFAULT 'content',
   ocr_text       TEXT,
   alt_text       TEXT,
   width          INT         NOT NULL,
   height         INT         NOT NULL,
   created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE(lecture_id, slide_number, image_index)
+  UNIQUE(slide_id, image_index),
+  FOREIGN KEY (lecture_id, slide_number)
+    REFERENCES slides(lecture_id, slide_number)
+    ON DELETE CASCADE
 );
-
-ALTER TABLE slide_images
-  ADD CONSTRAINT fk_slide_images_slide
-    FOREIGN KEY (lecture_id, slide_number)
-      REFERENCES slides (lecture_id, slide_number)
-      ON DELETE CASCADE;
-
-CREATE INDEX IF NOT EXISTS idx_slide_images_lecture_slide ON slide_images(lecture_id, slide_number);
+CREATE INDEX idx_slide_images_lecture_slide ON slide_images(lecture_id, slide_number);
 
 -------------------------------------------------------------------------------
 -- 10. Note Table
@@ -204,3 +200,16 @@ CREATE TABLE IF NOT EXISTS notes (
 
 CREATE INDEX IF NOT EXISTS idx_notes_user_id    ON notes(user_id);
 CREATE INDEX IF NOT EXISTS idx_notes_lecture_id ON notes(lecture_id);
+
+
+-------------------------------------------------------------------------------
+-- 11. Global Decorative Images Registry
+-------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS decorative_images_global (
+  image_hash    TEXT        PRIMARY KEY,      -- perceptual hash string
+  storage_path  TEXT        NOT NULL,         -- S3/Storage URL of the uploaded image
+  first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_decorative_images_hash
+  ON decorative_images_global(image_hash);
