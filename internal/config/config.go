@@ -19,10 +19,11 @@ type Config struct {
 	S3SecretKey string `envconfig:"SUPABASE_LOCAL_S3_SECRET_KEY" required:"true"`
 
 	// Ingestion orchestrator settings
+	PythonServiceBaseURL       string `envconfig:"PYTHON_SERVICE_BASE_URL" required:"true"`
+
 	IngestionQueueName         string `envconfig:"INGESTION_QUEUE_NAME" default:"ingestion_queue"`
 	IngestionPollTimeoutSec    int    `envconfig:"INGESTION_POLL_TIMEOUT_SEC" default:"30"`
 	IngestionPollMaxMsg        int    `envconfig:"INGESTION_POLL_MAX_MSG" default:"1"`
-	PythonServiceBaseURL       string `envconfig:"PYTHON_SERVICE_BASE_URL" required:"true"`
 	IngestionMaxRetries        int    `envconfig:"INGESTION_MAX_RETRIES" default:"5"`
 	IngestionBackoffInitialSec int    `envconfig:"INGESTION_BACKOFF_INITIAL_SEC" default:"1"`
 	IngestionBackoffMaxSec     int    `envconfig:"INGESTION_BACKOFF_MAX_SEC" default:"60"`

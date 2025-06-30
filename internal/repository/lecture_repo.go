@@ -186,7 +186,10 @@ func (r *lectureRepository) EnqueueIngestionJob(ctx context.Context, lectureID s
 
 // DeletePendingJobs deletes any pending jobs related to a lecture across all pgmq queues.
 func (r *lectureRepository) DeletePendingJobs(ctx context.Context, lectureID string) error {
-	queues := []string{"ingestion_queue", "embedding_queue", "explanation_queue", "summary_queue"}
+	queues := []string{
+		"ingestion_queue", "embedding_queue", "explanation_queue", "summary_queue",
+		"ingestion_queue_dlq", "embedding_queue_dlq", "explanation_queue_dlq", "summary_queue_dlq",
+	}
 	for _, q := range queues {
 		// Delete all messages containing this lecture ID via pgmq.delete,
 		// querying the actual queue table q_<queue>_queue in pgmq schema.
