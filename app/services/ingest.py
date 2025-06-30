@@ -20,7 +20,7 @@ def chunk_text_by_tokens(
 ) -> list[tuple[str, int]]:
     import tiktoken
 
-    encoder = tiktoken.encoding_for_model("gpt-4o-mini")
+    encoder = tiktoken.get_encoding("cl100k_base")
     all_tokens = encoder.encode(text)
     chunks: list[tuple[str, int]] = []
     step = chunk_size - overlap
