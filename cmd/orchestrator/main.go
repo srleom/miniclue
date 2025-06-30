@@ -29,7 +29,7 @@ func main() {
 	logger := logger.New()
 
 	// Load environment variables
-	if err := godotenv.Load(); err != nil {
+	if err := godotenv.Overload(); err != nil {
 		logger.Warn().Msg("Warning: no .env file found")
 	}
 

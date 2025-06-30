@@ -12,6 +12,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 // LectureService defines lecture-related operations
@@ -61,15 +62,29 @@ func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) er
 		return fmt.Errorf("lecture not found")
 	}
 
-	// Delete the original PDF from S3 storage
-	if lecture.PDFURL != "" {
-		storagePath := fmt.Sprintf("lectures/%s/original.pdf", lectureID)
-		if _, err := s.s3Client.DeleteObject(ctx, &s3.DeleteObjectInput{
+	// Delete all objects under the lecture's storage folder from S3
+	prefix := fmt.Sprintf("lectures/%s/", lectureID)
+	paginator := s3.NewListObjectsV2Paginator(s.s3Client, &s3.ListObjectsV2Input{
+		Bucket: aws.String(s.bucketName),
+		Prefix: aws.String(prefix),
+	})
+	var toDelete []types.ObjectIdentifier
+	for paginator.HasMorePages() {
+		page, err := paginator.NextPage(ctx)
+		if err != nil {
+			fmt.Printf("failed to list objects for deletion: %v\n", err)
+			break
+		}
+		for _, obj := range page.Contents {
+			toDelete = append(toDelete, types.ObjectIdentifier{Key: obj.Key})
+		}
+	}
+	if len(toDelete) > 0 {
+		if _, err := s.s3Client.DeleteObjects(ctx, &s3.DeleteObjectsInput{
 			Bucket: aws.String(s.bucketName),
-			Key:    aws.String(storagePath),
+			Delete: &types.Delete{Objects: toDelete, Quiet: aws.Bool(true)},
 		}); err != nil {
-			// Best-effort: log and continue
-			fmt.Printf("failed to delete PDF from storage: %v\n", err)
+			fmt.Printf("failed to delete objects from storage: %v\n", err)
 		}
 	}
 

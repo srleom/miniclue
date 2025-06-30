@@ -66,7 +66,8 @@ func Run(ctx context.Context, logger zerolog.Logger, client *pgmq.Client) error 
 		backoff := time.Duration(cfg.EmbeddingBackoffInitialSec) * time.Second
 		var httpErr error
 		for attempt := 1; attempt <= cfg.EmbeddingMaxRetries; attempt++ {
-			ctxReq, cancel := context.WithTimeout(ctx, 10*time.Second)
+			requestTimeout := time.Duration(cfg.EmbeddingRequestTimeoutSec) * time.Second
+			ctxReq, cancel := context.WithTimeout(ctx, requestTimeout)
 			reqBody, _ := json.Marshal(payload)
 			req, _ := http.NewRequestWithContext(ctxReq, http.MethodPost, embedEndpoint, bytes.NewReader(reqBody))
 			req.Header.Set("Content-Type", "application/json")

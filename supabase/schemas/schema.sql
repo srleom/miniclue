@@ -161,7 +161,7 @@ CREATE INDEX idx_explanations_lecture_slide ON explanations(lecture_id, slide_nu
 -------------------------------------------------------------------------------
 -- 9. Slide Images Table
 -------------------------------------------------------------------------------
-CREATE TYPE slide_image_type AS ENUM ('decorative', 'content');
+CREATE TYPE slide_image_type AS ENUM ('decorative', 'content', 'slide_image');
 
 CREATE TABLE IF NOT EXISTS slide_images (
   id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

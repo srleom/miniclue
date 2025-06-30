@@ -28,6 +28,7 @@ type Config struct {
 	IngestionMaxRetries        int    `envconfig:"INGESTION_MAX_RETRIES" default:"5"`
 	IngestionBackoffInitialSec int    `envconfig:"INGESTION_BACKOFF_INITIAL_SEC" default:"1"`
 	IngestionBackoffMaxSec     int    `envconfig:"INGESTION_BACKOFF_MAX_SEC" default:"60"`
+	IngestionRequestTimeoutSec int    `envconfig:"INGESTION_REQUEST_TIMEOUT_SEC" default:"300"`
 
 	// Dead-letter queue for ingestion failures
 	IngestionDeadLetterQueueName string `envconfig:"INGESTION_DEAD_LETTER_QUEUE_NAME" default:"ingestion_queue_dlq"`
@@ -39,6 +40,7 @@ type Config struct {
 	EmbeddingMaxRetries        int    `envconfig:"EMBEDDING_MAX_RETRIES" default:"5"`
 	EmbeddingBackoffInitialSec int    `envconfig:"EMBEDDING_BACKOFF_INITIAL_SEC" default:"1"`
 	EmbeddingBackoffMaxSec     int    `envconfig:"EMBEDDING_BACKOFF_MAX_SEC" default:"60"`
+	EmbeddingRequestTimeoutSec int    `envconfig:"EMBEDDING_REQUEST_TIMEOUT_SEC" default:"120"`
 
 	// Dead-letter queue for embedding failures
 	EmbeddingDeadLetterQueueName string `envconfig:"EMBEDDING_DEAD_LETTER_QUEUE_NAME" default:"embedding_queue_dlq"`

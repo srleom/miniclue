@@ -72,7 +72,8 @@ func Run(ctx context.Context, logger zerolog.Logger, client *pgmq.Client) error 
 		backoff := time.Duration(cfg.IngestionBackoffInitialSec) * time.Second
 		var httpErr error
 		for attempt := 1; attempt <= cfg.IngestionMaxRetries; attempt++ {
-			ctxReq, cancel := context.WithTimeout(ctx, 10*time.Second)
+			requestTimeout := time.Duration(cfg.IngestionRequestTimeoutSec) * time.Second
+			ctxReq, cancel := context.WithTimeout(ctx, requestTimeout)
 			reqBody, _ := json.Marshal(payload)
 			// Exponential backoff retry against Python ingestion service
 			req, _ := http.NewRequestWithContext(ctxReq, http.MethodPost, ingestEndpoint, bytes.NewReader(reqBody))
