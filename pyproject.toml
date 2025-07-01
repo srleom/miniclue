@@ -45,6 +45,6 @@ pythonpath = [
   "."
 ]
 
-[tool.poetry.scripts]
+[project.scripts]
 start = "app.run:start"
 
