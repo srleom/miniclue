@@ -71,6 +71,12 @@ async def ingest(lecture_id: UUID, storage_path: str):
                 slide_id = await get_or_create_slide(conn, lecture_id, slide_number)
 
                 raw_text = page.get_text()
+                # Persist raw slide text
+                await conn.execute(
+                    "UPDATE slides SET raw_text=$1 WHERE id=$2",
+                    raw_text,
+                    slide_id,
+                )
                 chunks = chunk_text_by_tokens(raw_text)
                 total_chunks = len(chunks)
                 logging.info(f"Slide {slide_number}: Created {total_chunks} chunks")
