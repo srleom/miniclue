@@ -13,10 +13,10 @@
 | • pgvector (vector embeddings)             |                                                 |
 | • pgmq (Supabase Queues)                   |                                                 |
 | **Message Queue**                          | Supabase Queues (pgmq)                          |
-| **AI Microservices**                       | Python (FastAPI) on Vercel/Fly.io               |
-| **PDF Parsing**                            | PyMuPDF or PDFMiner                             |
-| **Embeddings**                             | OpenAI / Claude / Gemini Embedding APIs         |
-| **LLM Inference**                          | OpenAI GPT-4o / Claude / Gemini                 |
+| **AI Microservices**                       | Python (FastAPI)                                |
+| **PDF Parsing**                            | PyMuPDF                                         |
+| **Embeddings**                             | OpenAI / Groq                                   |
+| **LLM Inference**                          | OpenAI / Groq                                   |
 | **Containerization**                       | Docker (for Python services) on Vercel / Fly.io |
 | **CI/CD**                                  | GitHub Actions                                  |
 | **Monitoring & Logging**                   | Supabase Logs → Grafana / DataDog               |
@@ -144,108 +144,27 @@ Then run a specific mode:
 
 ### 3.2.1 Python Ingestion Service
 
-1. **Initialize Dependencies & Configuration**
+**Input**
 
-   - Dynamic imports for heavy dependencies: `boto3`, `asyncpg`, `pymupdf`, `pytesseract`, `PIL`, `imagehash`
-   - Optional BLIP model loading for image captioning (Salesforce/blip-image-captioning-base)
-   - Initialize S3 client with Supabase Storage credentials
-   - Connect to Postgres using asyncpg
+- `lecture_id` (UUID): The unique identifier for the lecture.
+- `storage_path` (string): The path to the PDF file in object storage.
 
-2. **Download & Open PDF**
+This service is triggered by a message on the `ingestion_queue`.
 
-   - Fetch PDF bytes from Supabase Storage using S3 client
-   - Open PDF in memory with PyMuPDF: `pymupdf.open(stream=pdf_bytes, filetype="pdf")`
-   - Update `lectures.total_slides = doc.page_count`
+1.  **Initialization**: The service initializes clients for Supabase Storage (S3) and Postgres, and optionally loads the Salesforce BLIP model for image captioning if its dependencies are installed.
 
-3. **Initialize Content Registry**
+2.  **Download & Parse PDF**: It downloads the PDF from storage and opens it in memory using PyMuPDF. It then updates the lecture record in the database with the total number of slides.
 
-   - Create in-memory registry: `content_registry: dict[str, str] = {}` for deduplication
+3.  **Process Each Slide**: The service iterates through each slide of the PDF within a database transaction to ensure atomicity.
 
-4. **Process Each Slide (Page)**
+    - **Text Processing**: It extracts all raw text from the slide. This text is then broken down into smaller, overlapping chunks using the `tiktoken` library. Each chunk is saved to the database, and a corresponding job is sent to the `embedding_queue` to be processed later.
+    - **Image Processing**: It extracts all embedded images from the slide. For each image, it performs several steps:
+      - **Analysis**: It runs Optical Character Recognition (OCR) using Tesseract and, if enabled, generates a descriptive caption (alt-text) using the BLIP model.
+      - **Classification**: Based on keywords in the caption and the amount of text from OCR, it classifies the image as either "content" (e.g., diagrams, charts) or "decorative" (e.g., logos, backgrounds).
+      - **Deduplication & Storage**: It computes a perceptual hash of each image to avoid storing duplicates. Decorative images are checked against a global table and stored in a shared `global/` folder if new. Content images are checked against a lecture-specific registry and stored in a folder for that lecture.
+    - **Full Slide Rendering**: Finally, it renders a high-resolution image of the entire slide. This rendered image is also processed with OCR and BLIP, and the result is saved to storage. All image metadata (paths, hashes, OCR/alt-text) is stored in the database.
 
-   For each `page_index` in range(`total_slides`):
-
-   **4.1. Slide Setup**
-
-   - `slide_number = page_index + 1`
-   - Insert slide record with transaction:
-     ```sql
-     INSERT INTO slides (lecture_id, slide_number, total_chunks, processed_chunks)
-     VALUES ($1, $2, 0, 0)
-     ON CONFLICT DO NOTHING
-     ```
-
-   **4.2. Text Processing**
-
-   - Extract text: `raw_text = page.get_text()`
-   - Chunk text using tiktoken (cl100k_base encoding):
-     - Chunk size: 1000 tokens
-     - Overlap: 200 tokens
-     - Step: 800 tokens
-   - Update `slides.total_chunks` with actual chunk count
-   - Insert chunks and enqueue embedding jobs:
-     ```sql
-     INSERT INTO chunks (slide_id, lecture_id, slide_number, chunk_index, text, token_count)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT DO NOTHING
-     ```
-   - Enqueue embedding job via pgmq:
-     ```sql
-     SELECT pgmq.send($1::text, $2::jsonb)
-     ```
-
-   **4.3. Image Processing**
-
-   **4.3.1. Extract Embedded Images**
-
-   - Get images: `page.get_images(full=True)`
-   - For each image reference:
-     - Extract image data: `doc.extract_image(xref)`
-     - Convert to PIL Image for processing
-
-   **4.3.2. Image Classification & Processing**
-
-   - **OCR**: Run Tesseract: `pytesseract.image_to_string(img)`
-   - **Alt-text**: Run BLIP (if enabled): Generate caption using transformers
-   - **Hash**: Compute perceptual hash: `imagehash.phash(img)`
-   - **Classification Logic**:
-     - Content keywords: diagram, chart, graph, table, screenshot, code, equation, map, plot
-     - Decorative keywords: logo, icon, banner, background, illustration, photo, picture, drawing, artwork, decoration
-     - If OCR ≥30 chars OR (alt-text ≥4 words AND ≥30 chars) → content
-     - If decorative keywords present → decorative
-     - Default: decorative
-
-   **4.3.3. Image Storage & Deduplication**
-
-   - **Content Images**:
-     - Check `content_registry[phash]` for existing path
-     - If new: upload to `lectures/{lecture_id}/slides/{slide_number}/raw_images/{img_index}.{ext}`
-     - Store path in registry
-   - **Decorative Images**:
-     - Query `decorative_images_global` for existing hash
-     - If new: upload to `global/images/{phash}.png`
-     - Insert into global registry
-   - **Metadata Storage**:
-     ```sql
-     INSERT INTO slide_images (slide_id, lecture_id, slide_number, image_index,
-                              storage_path, image_hash, type, ocr_text, alt_text, width, height)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-     ON CONFLICT DO NOTHING
-     ```
-
-   **4.4. Full Slide Rendering**
-
-   - Render complete slide at 2x zoom: `page.get_pixmap(matrix=pymupdf.Matrix(2, 2))`
-   - Process rendered slide with OCR and BLIP
-   - Upload to `lectures/{lecture_id}/slides/{slide_number}/slide_image.png`
-   - Store metadata with `image_index = -1` and `type = 'slide_image'`
-
-5. **Error Handling & Reliability**
-   - Each slide processed in database transaction
-   - Comprehensive logging throughout process
-   - Graceful handling of BLIP failures
-   - Idempotent operations with `ON CONFLICT DO NOTHING`
-   - Proper connection cleanup in finally block
+4.  **Completion**: Once all slides are processed, the service logs the completion of the ingestion task.
 
 ---
 
@@ -286,65 +205,22 @@ Then run a specific mode:
 
 ### **3.3.1 Python Embedding Service**
 
-1. **Parse Payload**
+**Input**
 
-   Extract `chunk_id`, `lecture_id`, and `slide_number` from the request body.
+- `chunk_id` (UUID): The unique identifier for the text chunk.
+- `slide_id` (UUID): The unique identifier for the slide.
+- `lecture_id` (UUID): The unique identifier for the lecture.
+- `slide_number` (integer): The number of the slide within the lecture.
 
-2. **Fetch Chunk & Embed**
+This service is triggered by a message on the `embedding_queue` for each text chunk created during ingestion.
 
-   - `SELECT text FROM chunks WHERE id = :chunk_id`
-   - Call your embedding API (OpenAI) to get a vector.
-   - **UPSERT** into the `embeddings` table:
+1.  **Fetch & Embed**: It fetches the text of a specific chunk from the database. It then calls an embedding API (like OpenAI's) to convert the text into a numerical vector.
 
-     ```sql
-     INSERT INTO embeddings
-       (chunk_id, slide_id, lecture_id, slide_number, vector, metadata)
-     VALUES
-       (:chunk_id, :slide_id, :lecture_id, :slide_number, :vector, :meta)
-     ON CONFLICT (chunk_id) DO UPDATE
-       SET vector = EXCLUDED.vector,
-           updated_at = NOW();
+2.  **Store Embedding**: The generated vector is saved into the `embeddings` table in the database, linked to its corresponding chunk and slide.
 
-     ```
-
-3. **Update Slide Progress and check if all chunks are embedded for that slide**
-
-   ```sql
-   -- Atomically update and get the new values
-   WITH updated AS (
-     UPDATE slides
-        SET processed_chunks = processed_chunks + 1
-      WHERE id = :slide_id
-     RETURNING processed_chunks, total_chunks
-   )
-   SELECT processed_chunks, total_chunks FROM updated;
-   ```
-
-4. If `processed_chunks = total_chunks`, send a new job:
-
-   ```
-   pgmq.send("explanation_queue", {
-     "slide_id": "...",
-     "lecture_id":   "...",
-     "slide_number": 3
-   })
-   ```
-
-5. **Update lecture status if all slides are embedded for that lecture**
-
-   1. Check if processed_chunks = total_chunks for all slides
-   2. If yes, update lecture `status` to `explaining`
-
-   ```jsx
-   SELECT COUNT(*)
-     FROM slides
-    WHERE lecture_id = :lecture_id
-      AND processed_chunks < total_chunks;
-   ```
-
-6. **Emit Metrics & Ack**
-
-   Record token usage and timing, then respond HTTP 200.
+3.  **Update Progress & Enqueue Next Job**: The service atomically increments a counter (`processed_chunks`) for the parent slide.
+    - **Explanation Job**: Once all chunks for a slide have been embedded (i.e., `processed_chunks` equals `total_chunks`), it enqueues a new job on the `explanation_queue` for that slide.
+    - **Lecture Status**: It also checks if all slides for the lecture are fully embedded. If so, it updates the main lecture's status to `explaining`.
 
 ---
 
@@ -399,159 +275,25 @@ Payload:
 
 ### 3.4.1 Python Explanation Service
 
-1. **Parse Payload**
+**Input**
 
-   Read `slide_id`, `lecture_id` and `slide_number`.
+- `slide_id` (UUID): The unique identifier for the slide.
+- `lecture_id` (UUID): The unique identifier for the lecture.
+- `slide_number` (integer): The number of the slide within the lecture.
 
-2. **Fetch previous slides' one-liners**
+This service is triggered by a message on the `explanation_queue` after all text chunks for a single slide have been successfully embedded. Its goal is to generate a detailed, context-aware explanation for that slide using a Retrieval-Augmented Generation (RAG) approach.
 
-   ```sql
-   SELECT slide_number, one_liner
-     FROM explanations
-    WHERE lecture_id   = :lecture_id
-      AND slide_number < :slide_number
-    ORDER BY slide_number DESC
-    LIMIT 3;
+1.  **Gather Context**:
 
-   ```
+    - **Recent History**: It fetches the short, one-liner summaries from the last 1-3 slides to understand the immediate context.
+    - **Current Slide Data**: It retrieves the full text and any OCR/alt-text from images on the current slide.
+    - **Related Concepts (RAG)**: It creates an embedding from the current slide's full text and uses it to perform a vector similarity search across the entire lecture. This retrieves the most relevant text chunks from other slides, providing broad, lecture-wide context.
 
-   ```python
-   rows = db.fetch_all(...)
-   if rows:
-       previousOneLiner = rows[0].one_liner
-   contextRecap = [r.one_liner for r in rows]  # up to 3
+2.  **Prompt Assembly & LLM Call**: All the gathered information—recent history, current slide data, and related concepts—is assembled into a detailed prompt. It instructs the LLM to act as an AI professor and generate a clear, in-depth explanation. The LLM is asked to classify the slide's purpose (e.g., "cover", "header", "content") and return the output as a structured JSON object containing a `one_liner` summary and the full `content` in Markdown.
 
-   ```
+3.  **Persist Explanation & Update Progress**: The generated explanation and one-liner are saved to the `explanations` table. The service then atomically increments the `processed_slides` counter for the lecture.
 
-3. **Fetch Current Slide Data**
-
-   - **Chunks**:
-
-     ```sql
-     SELECT text
-       FROM chunks
-      WHERE lecture_id   = :lecture_id
-        AND slide_number = :slide_number
-      ORDER BY chunk_index;
-
-     ```
-
-   - **Images**: non-decorative `ocr_text`/`alt_text` from `slide_images`.
-
-4. **Fetch Related Concepts (Partial Context)**
-
-   ```sql
-   -- build query vector from combined current-chunk text
-   SELECT text
-     FROM embeddings
-    WHERE lecture_id = :lecture_id
-   ORDER BY vector <-> :query_vector
-   LIMIT K;
-
-   ```
-
-5. **Prompt Assembly & API Call**
-
-   ```python
-   import openai
-
-   # 1. System message defines roles and instructions
-   system_msg = """
-   You are an AI teaching assistant specialized in university lectures.
-   For each slide, you will:
-   1. Judge whether it is:
-      • an **Introduction** (lecture cover),
-      • a **Transition** (section header), or
-      • a **Content** slide.
-   2. Based on that classification:
-      - For **Introduction**: output a one-liner overview of the lecture and a brief paragraph on its importance.
-      - For **Transition**: output a one-liner preview of the upcoming topic and a single-sentence transition.
-      - For **Content**: output a one-liner key takeaway and a detailed explanation using the Minto Pyramid structure (point → supporting details).
-   3. Always explain jargon, write in plain English, and include emojis and rhetorical questions sparingly.
-   4. Do **NOT** preview future slides.
-   5. Return **valid JSON** exactly with two fields:
-      `{ "one_liner": "...", "content": "..." }`
-   """
-
-   # 2. Build the user prompt with slide data
-   user_prompt = f"""
-   Slide #{slide_number}
-   Previous takeaway: "{previous_one_liner}"
-   Context recap (last up to 3): {', '.join(context_recap)}
-
-   Text chunks:
-   {chr(10).join(current_chunks)}
-
-   Image OCR texts:
-   {', '.join(ocr_texts)}
-
-   Image alt texts:
-   {', '.join(alt_texts)}
-
-   Now follow the system instructions above.
-   """
-
-   # 3. Call OpenAI
-   response = openai.responses.create(
-       model="gpt-4o",
-       messages=[
-           {"role": "system", "content": system_msg},
-           {"role": "user",   "content": user_prompt}
-       ],
-       temperature=0.7,
-   )
-
-   # 4. Parse JSON from the assistant
-   data = response.choices[0].message["content"]
-   one_liner = data["one_liner"]
-   content    = data["content"]
-
-   ```
-
-6. **Persist Explanation**
-
-   ```sql
-   INSERT INTO explanations
-     (slide_id, lecture_id, slide_number, content, one_liner, metadata)
-   VALUES
-     (
-       (SELECT id FROM slides
-         WHERE lecture_id = :lecture_id
-           AND slide_number = :slide_number),
-       :lecture_id, :slide_number,
-       :content, :one_liner, '{}'::JSONB
-     );
-
-   ```
-
-7. **Update Lecture Progress**
-
-   ```sql
-   UPDATE lectures
-      SET processed_slides = processed_slides + 1
-    WHERE id   = :lecture_id
-
-   ```
-
-8. **Check for Completion & Enqueue summary**
-
-   ```sql
-   SELECT processed_slides, total_slides
-     FROM lectures
-    WHERE id   = :lecture_id
-
-   ```
-
-   If `processed_slides = total_slides` , update lecture `status` to `summarising` and enqueue summary queue
-
-   ```python
-   pgmq.send("summary_queue", {"lecture_id": lecture_id})
-
-   ```
-
-9. **Logging & Metrics**
-
-   Emit timing, token usage, and errors. Return HTTP 200 only after all steps complete successfully.
+4.  **Enqueue Summary Job**: If all slides for the lecture have been explained (`processed_slides` equals `total_slides`), it updates the lecture's status to `summarising` and enqueues a final job on the `summary_queue`.
 
 ---
 
@@ -574,58 +316,16 @@ Payload:
 
 ### **3.5.1. Python Summary Service**
 
-1. **Gather Explanations**
+**Input**
 
-   ```sql
-   SELECT content FROM explanations
-    WHERE lecture_id = :lectureId
-    ORDER BY slide_number;
-   ```
+- `lecture_id` (UUID): The unique identifier for the lecture.
 
-2. **Build Prompt**
+This service is triggered by a message on the `summary_queue` once all slides in a lecture have been explained.
 
-   ```python
-   import openai
+1.  **Gather All Explanations**: It retrieves all the detailed, slide-by-slide explanations from the database for the entire lecture.
 
-   # 1. System prompt
-   system_msg = """
-   You are an expert AI teaching assistant for technical engineering lectures.
-   Given a sequence of slide-by-slide explanations, produce a cohesive lecture summary that:
-   1. Synthesizes the main learning objectives.
-   2. Highlights how the slide-level insights connect into a unified narrative.
-   3. Uses advanced engineering terminology appropriately.
-   """
+2.  **Build Prompt & Call LLM**: It combines all the explanations into a single, comprehensive prompt. It instructs the LLM to act as an AI professor and synthesize the information into a student-friendly "cheatsheet." The cheatsheet should start with a list of key takeaways and then provide a well-structured summary of the lecture's main topics.
 
-   # 2. Build user content
-   slide_explanations = [
-       "Slide 1 explanation …",
-       "Slide 2 explanation …",
-       # …etc…
-   ]
+3.  **Persist Summary & Finalize Lecture**: The generated Markdown summary is saved to the `summaries` table. The service then updates the main lecture's status to `complete` and records a `completed_at` timestamp, marking the successful end of the entire processing pipeline.
 
-   user_content = f"Below are per-slide explanations for the lecture "{lecture_title}":\n\n"
-   for i, expl in enumerate(slide_explanations, start=1):
-       user_content += f"[Slide {i}] {expl}\n\n"
-   user_content += "Please follow the instructions above and return only the final summary paragraph."
-
-   # 3. Call the Responses API
-   response = openai.responses.create(
-       model="gpt-4o",
-       messages=[
-           {"role": "system", "content": system_msg},
-           {"role": "user",   "content": user_content}
-       ],
-       temperature=0.3,
-       max_tokens=400,
-   )
-
-   # 4. Extract the summary
-   summary = response.choices[0].message["content"].strip()
-   print("Lecture Summary:\n", summary)
-
-   ```
-
-3. **Call LLM** → get summary.
-4. **Insert** into `summaries(lecture_id, content…)`.
-5. Update lecture `status` to `complete` and set `completed_at = NOW()`
-6. **Metrics & Errors**: log token usage, cost, and fallback on over-length.
+4.  **Metrics & Errors**: log token usage, cost, and fallback on over-length.
