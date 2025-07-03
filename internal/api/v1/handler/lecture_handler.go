@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -22,6 +23,8 @@ type LectureHandler struct {
 	explanationService service.ExplanationService
 	noteService        service.NoteService
 	validate           *validator.Validate
+	s3BaseURL          string
+	s3Bucket           string
 }
 
 // NewLectureHandler creates a new LectureHandler
@@ -32,6 +35,8 @@ func NewLectureHandler(
 	explanationService service.ExplanationService,
 	noteService service.NoteService,
 	validate *validator.Validate,
+	s3BaseURL string,
+	s3Bucket string,
 ) *LectureHandler {
 	return &LectureHandler{
 		lectureService:     lectureService,
@@ -40,6 +45,8 @@ func NewLectureHandler(
 		explanationService: explanationService,
 		noteService:        noteService,
 		validate:           validate,
+		s3BaseURL:          s3BaseURL,
+		s3Bucket:           s3Bucket,
 	}
 }
 
@@ -126,7 +133,7 @@ func (h *LectureHandler) getLecture(w http.ResponseWriter, r *http.Request) {
 		LectureID:  lecture.ID,
 		CourseID:   lecture.CourseID,
 		Title:      lecture.Title,
-		PdfURL:     lecture.PDFURL,
+		PdfURL:     fmt.Sprintf("%s/storage/v1/object/public/%s/%s", h.s3BaseURL, h.s3Bucket, lecture.StoragePath),
 		Status:     lecture.Status,
 		CreatedAt:  lecture.CreatedAt,
 		UpdatedAt:  lecture.UpdatedAt,
@@ -190,7 +197,7 @@ func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
 		LectureID:  lecture.ID,
 		CourseID:   lecture.CourseID,
 		Title:      lecture.Title,
-		PdfURL:     lecture.PDFURL,
+		PdfURL:     fmt.Sprintf("%s/storage/v1/object/public/%s/%s", h.s3BaseURL, h.s3Bucket, lecture.StoragePath),
 		Status:     lecture.Status,
 		CreatedAt:  lecture.CreatedAt,
 		UpdatedAt:  lecture.UpdatedAt,
@@ -309,7 +316,7 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 			LectureID:  lec.ID,
 			CourseID:   lec.CourseID,
 			Title:      lec.Title,
-			PdfURL:     lec.PDFURL,
+			PdfURL:     fmt.Sprintf("%s/storage/v1/object/public/%s/%s", h.s3BaseURL, h.s3Bucket, lec.StoragePath),
 			Status:     lec.Status,
 			CreatedAt:  lec.CreatedAt,
 			UpdatedAt:  lec.UpdatedAt,

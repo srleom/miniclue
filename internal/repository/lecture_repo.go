@@ -29,7 +29,7 @@ func NewLectureRepository(db *sql.DB) LectureRepository {
 
 func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID string, limit, offset int) ([]model.Lecture, error) {
 	query := `
-		SELECT id, user_id, course_id, title, pdf_url, status, created_at, updated_at, accessed_at
+		SELECT id, user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 		FROM lectures
 		WHERE user_id = $1
 		ORDER BY accessed_at DESC
@@ -50,7 +50,7 @@ func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID stri
 			&lecture.UserID,
 			&lecture.CourseID,
 			&lecture.Title,
-			&lecture.PDFURL,
+			&lecture.StoragePath,
 			&lecture.Status,
 			&lecture.CreatedAt,
 			&lecture.UpdatedAt,
@@ -70,7 +70,7 @@ func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID stri
 
 func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error) {
 	query := `
-		SELECT id, user_id, course_id, title, pdf_url, status, created_at, updated_at, accessed_at
+		SELECT id, user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 		FROM lectures
 		WHERE course_id = $1
 		ORDER BY accessed_at DESC
@@ -91,7 +91,7 @@ func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID 
 			&lecture.UserID,
 			&lecture.CourseID,
 			&lecture.Title,
-			&lecture.PDFURL,
+			&lecture.StoragePath,
 			&lecture.Status,
 			&lecture.CreatedAt,
 			&lecture.UpdatedAt,
@@ -111,7 +111,7 @@ func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID 
 
 func (r *lectureRepository) GetLectureByID(ctx context.Context, lectureID string) (*model.Lecture, error) {
 	query := `
-		SELECT id, user_id, course_id, title, pdf_url, status, created_at, updated_at, accessed_at
+		SELECT id, user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 		FROM lectures
 		WHERE id = $1
 	`
@@ -122,7 +122,7 @@ func (r *lectureRepository) GetLectureByID(ctx context.Context, lectureID string
 		&lecture.UserID,
 		&lecture.CourseID,
 		&lecture.Title,
-		&lecture.PDFURL,
+		&lecture.StoragePath,
 		&lecture.Status,
 		&lecture.CreatedAt,
 		&lecture.UpdatedAt,
@@ -147,17 +147,17 @@ func (r *lectureRepository) DeleteLecture(ctx context.Context, lectureID string)
 func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture) error {
 	query := `
 		UPDATE lectures
-		SET title = $1, accessed_at = $2, pdf_url = $3, status = $4, updated_at = NOW()
+		SET title = $1, accessed_at = $2, storage_path = $3, status = $4, updated_at = NOW()
 		WHERE id = $5
-		RETURNING user_id, course_id, title, pdf_url, status, created_at, updated_at, accessed_at
+		RETURNING user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 	`
 	return r.db.QueryRowContext(ctx, query,
-		l.Title, l.AccessedAt, l.PDFURL, l.Status, l.ID,
+		l.Title, l.AccessedAt, l.StoragePath, l.Status, l.ID,
 	).Scan(
 		&l.UserID,
 		&l.CourseID,
 		&l.Title,
-		&l.PDFURL,
+		&l.StoragePath,
 		&l.Status,
 		&l.CreatedAt,
 		&l.UpdatedAt,
@@ -166,8 +166,8 @@ func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture)
 }
 
 func (r *lectureRepository) CreateLecture(ctx context.Context, lecture *model.Lecture) (*model.Lecture, error) {
-	query := `INSERT INTO lectures (course_id, user_id, title, status, pdf_url) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at, accessed_at`
-	err := r.db.QueryRowContext(ctx, query, lecture.CourseID, lecture.UserID, lecture.Title, lecture.Status, lecture.PDFURL).Scan(&lecture.ID, &lecture.CreatedAt, &lecture.UpdatedAt, &lecture.AccessedAt)
+	query := `INSERT INTO lectures (course_id, user_id, title, status, storage_path) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at, accessed_at`
+	err := r.db.QueryRowContext(ctx, query, lecture.CourseID, lecture.UserID, lecture.Title, lecture.Status, lecture.StoragePath).Scan(&lecture.ID, &lecture.CreatedAt, &lecture.UpdatedAt, &lecture.AccessedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create lecture: %w", err)
 	}

@@ -136,9 +136,8 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 		return nil, fmt.Errorf("failed to upload pdf to s3: %w", err)
 	}
 
-	// 3. Update lecture with PDF URL and status
-	pdfURL := fmt.Sprintf("%s/%s/%s", aws.ToString(s.s3Client.Options().BaseEndpoint), s.bucketName, storagePath)
-	createdLecture.PDFURL = pdfURL
+	// 3. Store storage path instead of full URL
+	createdLecture.StoragePath = storagePath
 	// After upload, mark as pending further processing
 	createdLecture.Status = "pending_processing"
 	if err := s.repo.UpdateLecture(ctx, createdLecture); err != nil {

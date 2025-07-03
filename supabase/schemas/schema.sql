@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS lectures (
   user_id                UUID            NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   course_id              UUID            NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
   title                  TEXT            NOT NULL,
-  pdf_url                TEXT            NOT NULL DEFAULT '',
+  storage_path           TEXT            NOT NULL DEFAULT '',
   status                 lecture_status  NOT NULL DEFAULT 'uploading',
   error_details          JSONB,
   total_slides           INT             NOT NULL DEFAULT 0,
