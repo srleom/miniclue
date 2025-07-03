@@ -22,11 +22,13 @@ export function ExplainerCarousel({
   onPageChange,
   totalPageCount,
   scrollSource,
+  explanations,
 }: {
   pageNumber: number;
   onPageChange: (page: number) => void;
   totalPageCount: number;
   scrollSource: "pdf" | "carousel" | null;
+  explanations: Record<number, string>;
 }) {
   const [api, setApi] = React.useState<CarouselApi>();
 
@@ -89,26 +91,30 @@ export function ExplainerCarousel({
   const memoizedCarouselContent = React.useMemo(() => {
     return (
       <CarouselContent className="-mt-0 h-full basis-full">
-        {Array.from({ length: totalPageCount || 1 }).map((_, index) => (
-          <CarouselItem
-            key={index}
-            className="h-full basis-full overflow-y-auto pt-0"
-          >
-            <Card className="markdown-content h-full w-full overflow-y-auto rounded-lg py-8">
-              <CardContent className="px-10">
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath, remarkGfm]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {placeholderMarkdown}
-                </ReactMarkdown>
-              </CardContent>
-            </Card>
-          </CarouselItem>
-        ))}
+        {Array.from({ length: totalPageCount || 1 }).map((_, index) => {
+          const slideNum = index + 1;
+          const markdown = explanations[slideNum] ?? placeholderMarkdown;
+          return (
+            <CarouselItem
+              key={index}
+              className="h-full basis-full overflow-y-auto pt-0"
+            >
+              <Card className="markdown-content h-full w-full overflow-y-auto rounded-lg py-8">
+                <CardContent className="px-10">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath, remarkGfm]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {markdown}
+                  </ReactMarkdown>
+                </CardContent>
+              </Card>
+            </CarouselItem>
+          );
+        })}
       </CarouselContent>
     );
-  }, [totalPageCount]);
+  }, [totalPageCount, explanations]);
 
   return (
     <Carousel
@@ -116,6 +122,7 @@ export function ExplainerCarousel({
         align: "start",
         axis: "y",
         duration: 20,
+        watchDrag: false,
       }}
       orientation="vertical"
       className="h-full w-full"

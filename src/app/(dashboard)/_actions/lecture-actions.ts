@@ -95,6 +95,34 @@ export async function getLecture(
   return { data: data ?? undefined, error: undefined };
 }
 
+export async function getExplanations(
+  lectureId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: fetchError } = await api.GET(
+    "/lectures/{lectureId}/explanations",
+    {
+      params: { path: { lectureId } },
+      next: { tags: [`explanations:${lectureId}`] },
+    },
+  );
+
+  if (fetchError) {
+    console.error("Get explanations error:", fetchError);
+    return { data: undefined, error: fetchError };
+  }
+
+  return { data: data ?? undefined, error: undefined };
+}
+
 export async function deleteLecture(
   lectureId: string,
 ): Promise<ActionResponse<void>> {

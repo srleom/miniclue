@@ -207,7 +207,7 @@ export interface paths {
     post?: never;
     /**
      * Delete a course
-     * @description Deletes an existing course by its ID and cascades deletion of related data.
+     * @description Deletes a course and all its lectures, removes associated PDFs from storage, clears any pending jobs in ingestion, embedding, explanation, and summary queues, and deletes related database records.
      */
     delete: {
       parameters: {
@@ -227,7 +227,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "*/*": string;
+            "application/json": string;
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -236,7 +236,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "*/*": string;
+            "application/json": string;
           };
         };
         /** @description Course not found */
@@ -245,7 +245,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "*/*": string;
+            "application/json": string;
           };
         };
         /** @description Failed to delete course */
@@ -254,7 +254,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "*/*": string;
+            "application/json": string;
           };
         };
       };
@@ -663,74 +663,7 @@ export interface paths {
       };
     };
     put?: never;
-    /**
-     * Create a lecture explanation
-     * @description Creates a new explanation for a lecture.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Explanation create data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationCreateDTO"];
-        };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to create explanation */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1007,83 +940,7 @@ export interface paths {
       };
     };
     put?: never;
-    /**
-     * Create a lecture summary
-     * @description Creates or updates summary for a lecture.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Summary create data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryCreateDTO"];
-        };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Summary already exists for this lecture */
-        409: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to create summary */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -1353,10 +1210,6 @@ export interface components {
       is_default?: boolean;
       title?: string;
     };
-    "app_internal_api_v1_dto.LectureExplanationCreateDTO": {
-      content: string;
-      slide_number: number;
-    };
     "app_internal_api_v1_dto.LectureExplanationResponseDTO": {
       content?: string;
       created_at?: string;
@@ -1383,13 +1236,10 @@ export interface components {
       course_id?: string;
       created_at?: string;
       lecture_id?: string;
-      pdf_url?: string;
       status?: string;
+      storage_path?: string;
       title?: string;
       updated_at?: string;
-    };
-    "app_internal_api_v1_dto.LectureSummaryCreateDTO": {
-      content: string;
     };
     "app_internal_api_v1_dto.LectureSummaryResponseDTO": {
       content?: string;
@@ -1400,9 +1250,7 @@ export interface components {
       title?: string;
     };
     "app_internal_api_v1_dto.LectureUploadResponseDTO": {
-      /** @description The ID of the newly created lecture */
       lecture_id?: string;
-      /** @description The status of the lecture */
       status?: string;
     };
     "app_internal_api_v1_dto.UserCourseResponseDTO": {
