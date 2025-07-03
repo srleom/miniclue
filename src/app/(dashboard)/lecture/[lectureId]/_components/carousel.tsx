@@ -11,7 +11,6 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { placeholderMarkdown } from "../constants";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
@@ -93,7 +92,7 @@ export function ExplainerCarousel({
       <CarouselContent className="-mt-0 h-full basis-full">
         {Array.from({ length: totalPageCount || 1 }).map((_, index) => {
           const slideNum = index + 1;
-          const markdown = explanations[slideNum] ?? placeholderMarkdown;
+          const markdown = explanations[slideNum] ?? "Loading...";
           return (
             <CarouselItem
               key={index}

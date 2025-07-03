@@ -947,6 +947,75 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/lectures/{lectureId}/url": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get signed URL for lecture PDF
+     * @description Generates a signed URL for downloading the lecture PDF.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to generate signed URL */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/users/me": {
     parameters: {
       query?: never;
@@ -1252,6 +1321,9 @@ export interface components {
     "app_internal_api_v1_dto.LectureUploadResponseDTO": {
       lecture_id?: string;
       status?: string;
+    };
+    "app_internal_api_v1_dto.SignedURLResponseDTO": {
+      url?: string;
     };
     "app_internal_api_v1_dto.UserCourseResponseDTO": {
       course_id?: string;

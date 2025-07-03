@@ -156,3 +156,28 @@ export async function deleteLecture(
   revalidateTag("recents");
   redirect(`/course/${lecture.course_id}`);
 }
+
+export async function getSignedPdfUrl(
+  lectureId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+  const { data, error: fetchError } = await api.GET(
+    "/lectures/{lectureId}/url",
+    {
+      params: { path: { lectureId } },
+      next: { tags: [`url:${lectureId}`] },
+    },
+  );
+  if (fetchError) {
+    console.error("Get signed PDF URL error:", fetchError);
+    return { data: undefined, error: fetchError };
+  }
+  return { data: data ?? undefined, error: undefined };
+}

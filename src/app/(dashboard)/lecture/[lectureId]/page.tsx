@@ -17,8 +17,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import {
-  getLecture,
   getExplanations,
+  getSignedPdfUrl,
 } from "@/app/(dashboard)/_actions/lecture-actions";
 
 import { ExplainerCarousel } from "./_components/carousel";
@@ -39,25 +39,14 @@ export default function LecturePage() {
   >(null);
 
   React.useEffect(() => {
-    // fetch lecture record and generate a signed URL for storage_path
-    getLecture(lectureId).then(async ({ data, error }) => {
-      if (data?.storage_path) {
-        const storagePath = data.storage_path!;
-        console.log("storagePath", storagePath);
-        const { data: signedData, error: urlError } = await supabase.storage
-          .from(process.env.SUPABASE_LOCAL_S3_BUCKET!)
-          .createSignedUrl(storagePath, 60 * 60);
-        if (urlError) {
-          console.error("Error creating signed PDF URL:", urlError);
-        } else if (signedData?.signedUrl) {
-          console.log("signedData", signedData.signedUrl);
-          setPdfUrl(signedData.signedUrl);
-        }
+    getSignedPdfUrl(lectureId).then(({ data, error }) => {
+      if (data?.url) {
+        setPdfUrl(data.url);
       } else if (error) {
-        console.error("Failed to fetch lecture:", error);
+        console.error("Failed to fetch signed PDF URL:", error);
       }
     });
-  }, [lectureId, supabase]);
+  }, [lectureId]);
 
   React.useEffect(() => {
     // initial load of existing explanations via server action
