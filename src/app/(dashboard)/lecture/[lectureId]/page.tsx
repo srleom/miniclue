@@ -39,9 +39,14 @@ export default function LecturePage() {
   const [scrollSource, setScrollSource] = React.useState<
     "pdf" | "carousel" | null
   >(null);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    getSignedPdfUrl(lectureId).then(({ data, error }) => {
+    setLoading(true);
+    const pdfPromise = getSignedPdfUrl(lectureId);
+    const explanationsPromise = getExplanations(lectureId);
+
+    pdfPromise.then(({ data, error }) => {
       if (data?.url) {
         setPdfUrl(data.url);
       } else if (error) {
@@ -49,7 +54,7 @@ export default function LecturePage() {
       }
     });
 
-    getExplanations(lectureId).then(({ data, error }) => {
+    explanationsPromise.then(({ data, error }) => {
       if (data) {
         const map: Record<number, string> = {};
         data.forEach((ex) => {
@@ -62,58 +67,76 @@ export default function LecturePage() {
         console.error("Failed to fetch explanations:", error);
       }
     });
+
+    Promise.allSettled([pdfPromise, explanationsPromise]).finally(() => {
+      setLoading(false);
+    });
   }, [lectureId]);
 
+  // Effect 1: Subscribe to the channel when the component is ready.
+  // We disable the lint rule because we intentionally want this effect to run only
+  // once when loading is finished, not every time `explanations` changes.
   React.useEffect(() => {
-    const explanationsCount = Object.keys(explanations).length;
+    // Don't run if we're still loading initial data or don't know the page count.
+    if (loading || totalPageCount === 0) {
+      return;
+    }
 
-    // Condition to subscribe: we need the total count and must have fewer explanations than pages.
-    if (totalPageCount > 0 && explanationsCount < totalPageCount) {
-      if (!channelRef.current) {
-        // If we don't have a channel, create and store one.
-        channelRef.current = supabase
-          .channel(`realtime:explanations:${lectureId}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "INSERT",
-              schema: "public",
-              table: "explanations",
-              filter: `lecture_id=eq.${lectureId}`,
-            },
-            ({ new: row }) => {
-              console.log("New explanation:", row);
-              setExplanations((prev) => ({
-                ...prev,
-                [row.slide_number]: row.content,
-              }));
-            },
-          )
-          .subscribe((status, err) => {
-            if (status === "SUBSCRIBED") {
-              console.log("Subscribed to explanations channel");
-            }
-            if (err) {
-              console.error("Subscription error:", err);
-            }
-          });
-      }
-    } else if (explanationsCount >= totalPageCount && totalPageCount > 0) {
-      // Condition to unsubscribe: we have all explanations.
+    // Don't subscribe if we already have all explanations or an active channel.
+    const explanationsCount = Object.keys(explanations).length;
+    if (explanationsCount >= totalPageCount || channelRef.current) {
+      return;
+    }
+
+    console.log("Subscribing to explanations channel");
+    channelRef.current = supabase
+      .channel(`realtime:explanations:${lectureId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "explanations",
+          filter: `lecture_id=eq.${lectureId}`,
+        },
+        ({ new: row }) => {
+          console.log("New explanation:", row);
+          setExplanations((prev) => ({
+            ...prev,
+            [row.slide_number]: row.content,
+          }));
+        },
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error("Subscription error:", err);
+        }
+      });
+
+    // On unmount, we clean up the channel.
+    return () => {
       if (channelRef.current) {
+        console.log("Unsubscribing from explanations channel on unmount");
         supabase.removeChannel(channelRef.current);
         channelRef.current = undefined;
       }
-    }
-
-    // Cleanup on unmount
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalPageCount, lectureId, supabase]);
+  }, [loading, totalPageCount, lectureId, supabase]);
+
+  // Effect 2: Unsubscribe when all explanations have been received.
+  React.useEffect(() => {
+    const explanationsCount = Object.keys(explanations).length;
+    if (
+      totalPageCount > 0 &&
+      explanationsCount >= totalPageCount &&
+      channelRef.current
+    ) {
+      console.log("All explanations received, unsubscribing.");
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = undefined;
+    }
+  }, [explanations, totalPageCount, supabase]);
 
   const handlePdfPageChange = (newPage: number) => {
     setScrollSource("pdf");
