@@ -205,8 +205,8 @@ export default function LecturePage() {
               <TabsTrigger value="summary" className="hover:cursor-pointer">
                 Summary
               </TabsTrigger>
-              <TabsTrigger value="notes" className="hover:cursor-pointer">
-                Notes
+              <TabsTrigger value="chat" className="hover:cursor-pointer">
+                Chat
               </TabsTrigger>
             </TabsList>
             <TabsContent
@@ -242,8 +242,10 @@ export default function LecturePage() {
                 </Card>
               )}
             </TabsContent>
-            <TabsContent value="notes" className="mt-3 flex-1">
-              Change your notes here.
+            <TabsContent value="chat" className="mt-3 flex-1">
+              <div className="text-muted-foreground flex h-[calc(100vh-9.5rem)] flex-col items-center justify-center rounded-lg border">
+                <LottieAnimation />
+              </div>
             </TabsContent>
           </Tabs>
         </ResizablePanel>
