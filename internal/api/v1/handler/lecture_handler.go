@@ -469,8 +469,8 @@ func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Reques
 // @Tags lectures
 // @Produce json
 // @Param lectureId path string true "Lecture ID"
-// @Param limit query int false "Limit number of results"
-// @Param offset query int false "Pagination offset"
+// @Param limit query int false "Limit number of results (if omitted, returns all explanations)"
+// @Param offset query int false "Pagination offset (default 0)"
 // @Success 200 {array} dto.LectureExplanationResponseDTO
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
 // @Failure 404 {string} string "Lecture not found"
@@ -502,7 +502,8 @@ func (h *LectureHandler) listLectureExplanations(w http.ResponseWriter, r *http.
 	}
 	// parse query params
 	q := r.URL.Query()
-	limit := 10
+	// default to no limit (return all explanations)
+	limit := 0
 	if l := q.Get("limit"); l != "" {
 		if v, err := strconv.Atoi(l); err == nil && v > 0 {
 			limit = v
