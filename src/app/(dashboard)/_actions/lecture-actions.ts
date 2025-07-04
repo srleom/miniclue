@@ -181,3 +181,31 @@ export async function getSignedPdfUrl(
   }
   return { data: data ?? undefined, error: undefined };
 }
+
+export async function getSummary(
+  lectureId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: fetchError } = await api.GET(
+    "/lectures/{lectureId}/summary",
+    {
+      params: { path: { lectureId } },
+      next: { tags: [`summary:${lectureId}`] },
+    },
+  );
+
+  if (fetchError) {
+    console.error("Get summary error:", fetchError);
+    return { data: undefined, error: fetchError };
+  }
+
+  return { data: data ?? undefined, error: undefined };
+}

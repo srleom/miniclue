@@ -19,10 +19,10 @@ import { createClient } from "@/lib/supabase/client";
 import {
   getExplanations,
   getSignedPdfUrl,
+  getSummary,
 } from "@/app/(dashboard)/_actions/lecture-actions";
 
 import { ExplainerCarousel } from "./_components/carousel";
-import { placeholderMarkdown } from "./constants";
 import LottieAnimation from "./_components/lottie-animation";
 
 export default function LecturePage() {
@@ -41,6 +41,9 @@ export default function LecturePage() {
     "pdf" | "carousel" | null
   >(null);
   const [loading, setLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = React.useState<string>("explanation");
+  const [summary, setSummary] = React.useState<string | undefined>(undefined);
+  const [summaryLoading, setSummaryLoading] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     setLoading(true);
@@ -139,6 +142,27 @@ export default function LecturePage() {
     }
   }, [explanations, totalPageCount, supabase]);
 
+  React.useEffect(() => {
+    if (activeTab !== "summary" || summary !== undefined) {
+      return;
+    }
+    setSummaryLoading(true);
+    getSummary(lectureId)
+      .then(({ data, error }) => {
+        if (data?.content) {
+          setSummary(data.content);
+        } else if (error) {
+          console.error("Failed to fetch summary:", error);
+          setSummary("");
+        } else {
+          setSummary("");
+        }
+      })
+      .finally(() => {
+        setSummaryLoading(false);
+      });
+  }, [activeTab, summary, lectureId]);
+
   const handlePdfPageChange = (newPage: number) => {
     setScrollSource("pdf");
     setPageNumber(newPage);
@@ -169,7 +193,11 @@ export default function LecturePage() {
         </ResizablePanel>
         <ResizableHandle withHandle />
         <ResizablePanel className="flex flex-col pl-6">
-          <Tabs defaultValue="explanation" className="flex min-h-0 flex-col">
+          <Tabs
+            defaultValue="explanation"
+            onValueChange={(value) => setActiveTab(value)}
+            className="flex min-h-0 flex-col"
+          >
             <TabsList className="w-full flex-shrink-0">
               <TabsTrigger value="explanation" className="hover:cursor-pointer">
                 Explanation
@@ -197,16 +225,22 @@ export default function LecturePage() {
               value="summary"
               className="mt-3 flex min-h-0 flex-1 flex-col"
             >
-              <Card className="markdown-content h-full w-full overflow-y-auto rounded-lg py-8 shadow-none">
-                <CardContent className="px-10">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath, remarkGfm]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {placeholderMarkdown}
-                  </ReactMarkdown>
-                </CardContent>
-              </Card>
+              {summary === undefined || summaryLoading ? (
+                <div className="text-muted-foreground flex h-[calc(100vh-9.5rem)] flex-col items-center justify-center rounded-lg border">
+                  <LottieAnimation />
+                </div>
+              ) : (
+                <Card className="markdown-content h-[calc(100vh-9.5rem)] w-full overflow-y-auto rounded-lg py-8 shadow-none">
+                  <CardContent className="px-10">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath, remarkGfm]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {summary}
+                    </ReactMarkdown>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
             <TabsContent value="notes" className="mt-3 flex-1">
               Change your notes here.
