@@ -23,6 +23,7 @@ import {
 
 import { ExplainerCarousel } from "./_components/carousel";
 import { placeholderMarkdown } from "./constants";
+import LottieAnimation from "./_components/lottie-animation";
 
 export default function LecturePage() {
   const { lectureId } = useParams() as { lectureId: string };
@@ -161,8 +162,8 @@ export default function LecturePage() {
               scrollSource={scrollSource}
             />
           ) : (
-            <div className="text-muted-foreground flex h-full items-center justify-center">
-              Loading PDF…
+            <div className="text-muted-foreground flex h-full flex-col items-center justify-center rounded-lg border">
+              <LottieAnimation />
             </div>
           )}
         </ResizablePanel>

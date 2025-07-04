@@ -15,6 +15,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import LottieAnimation from "./lottie-animation";
 
 export function ExplainerCarousel({
   pageNumber,
@@ -92,24 +93,37 @@ export function ExplainerCarousel({
       <CarouselContent className="-mt-0 h-[calc(100vh-9.5rem)] basis-full">
         {Array.from({ length: totalPageCount || 1 }).map((_, index) => {
           const slideNum = index + 1;
-          const markdown = explanations[slideNum] ?? "Loading...";
-          return (
-            <CarouselItem
-              key={index}
-              className="h-full basis-full overflow-y-auto pt-0"
-            >
-              <Card className="markdown-content flex h-full w-full flex-col overflow-y-auto rounded-lg py-8 shadow-none">
-                <CardContent className="flex-1 px-10">
-                  <ReactMarkdown
-                    remarkPlugins={[remarkMath, remarkGfm]}
-                    rehypePlugins={[rehypeKatex]}
-                  >
-                    {markdown}
-                  </ReactMarkdown>
-                </CardContent>
-              </Card>
-            </CarouselItem>
-          );
+          const markdown = explanations[slideNum] ?? "";
+
+          if (markdown) {
+            return (
+              <CarouselItem
+                key={index}
+                className="h-full basis-full overflow-y-auto pt-0"
+              >
+                <Card className="markdown-content flex h-full w-full flex-col overflow-y-auto rounded-lg py-8 shadow-none">
+                  <CardContent className="flex-1 px-10">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkMath, remarkGfm]}
+                      rehypePlugins={[rehypeKatex]}
+                    >
+                      {markdown}
+                    </ReactMarkdown>
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            );
+          } else {
+            return (
+              <CarouselItem key={index} className="h-full basis-full">
+                <Card className="markdown-content flex h-full w-full flex-col overflow-y-auto rounded-lg py-8 shadow-none">
+                  <CardContent className="flex flex-1 items-center justify-center px-10">
+                    <LottieAnimation />
+                  </CardContent>
+                </Card>
+              </CarouselItem>
+            );
+          }
         })}
       </CarouselContent>
     );
