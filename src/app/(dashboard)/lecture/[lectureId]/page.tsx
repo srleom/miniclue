@@ -22,12 +22,14 @@ import {
 } from "@/app/(dashboard)/_actions/lecture-actions";
 
 import { ExplainerCarousel } from "./_components/carousel";
-
 import { placeholderMarkdown } from "./constants";
 
 export default function LecturePage() {
   const { lectureId } = useParams() as { lectureId: string };
-  const supabase = createClient();
+  const [supabase] = React.useState(() => createClient());
+  const channelRef = React.useRef<
+    ReturnType<typeof supabase.channel> | undefined
+  >(undefined);
   const [pdfUrl, setPdfUrl] = React.useState<string>("");
   const [explanations, setExplanations] = React.useState<
     Record<number, string>
@@ -46,10 +48,7 @@ export default function LecturePage() {
         console.error("Failed to fetch signed PDF URL:", error);
       }
     });
-  }, [lectureId]);
 
-  React.useEffect(() => {
-    // initial load of existing explanations via server action
     getExplanations(lectureId).then(({ data, error }) => {
       if (data) {
         const map: Record<number, string> = {};
@@ -63,29 +62,58 @@ export default function LecturePage() {
         console.error("Failed to fetch explanations:", error);
       }
     });
-    // subscribe to new explanations
-    const channel = supabase
-      .channel(`realtime:explanations:${lectureId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "explanations",
-          filter: `lecture_id=eq.${lectureId}`,
-        },
-        ({ new: row }) => {
-          setExplanations((prev) => ({
-            ...prev,
-            [row.slide_number]: row.content,
-          }));
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [lectureId]);
+
+  React.useEffect(() => {
+    const explanationsCount = Object.keys(explanations).length;
+
+    // Condition to subscribe: we need the total count and must have fewer explanations than pages.
+    if (totalPageCount > 0 && explanationsCount < totalPageCount) {
+      if (!channelRef.current) {
+        // If we don't have a channel, create and store one.
+        channelRef.current = supabase
+          .channel(`realtime:explanations:${lectureId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "explanations",
+              filter: `lecture_id=eq.${lectureId}`,
+            },
+            ({ new: row }) => {
+              console.log("New explanation:", row);
+              setExplanations((prev) => ({
+                ...prev,
+                [row.slide_number]: row.content,
+              }));
+            },
+          )
+          .subscribe((status, err) => {
+            if (status === "SUBSCRIBED") {
+              console.log("Subscribed to explanations channel");
+            }
+            if (err) {
+              console.error("Subscription error:", err);
+            }
+          });
+      }
+    } else if (explanationsCount >= totalPageCount && totalPageCount > 0) {
+      // Condition to unsubscribe: we have all explanations.
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = undefined;
+      }
+    }
+
+    // Cleanup on unmount
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalPageCount, lectureId, supabase]);
 
   const handlePdfPageChange = (newPage: number) => {
     setScrollSource("pdf");
