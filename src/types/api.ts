@@ -4,1357 +4,1357 @@
  */
 
 export interface paths {
-  "/courses": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a new course
+         * @description Creates a new course associated with the authenticated user.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description Course creation request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.CourseCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload or validation failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to create course */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    get?: never;
-    put?: never;
-    /**
-     * Create a new course
-     * @description Creates a new course associated with the authenticated user.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      /** @description Course creation request */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.CourseCreateDTO"];
+    "/courses/{courseId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
-          };
+        /**
+         * Get a course
+         * @description Retrieves a course by its ID.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course ID */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Course not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve course */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a course
+         * @description Deletes a course and all its lectures, removes associated PDFs from storage, clears any pending jobs in ingestion, embedding, explanation, and summary queues, and deletes related database records.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course ID */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Course not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to delete course */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        options?: never;
+        head?: never;
+        /**
+         * Update a course
+         * @description Updates an existing course by its ID.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Course ID */
+                    courseId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Course update request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.CourseUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload, validation failed, or title cannot be empty */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Course not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to update course */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Failed to create course */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        trace?: never;
     };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/courses/{courseId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/lectures": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List lectures
+         * @description Retrieves lectures filtered by course_id with pagination
+         */
+        get: {
+            parameters: {
+                query: {
+                    /** @description Course ID */
+                    course_id: string;
+                    /** @description Limit number of lectures */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][];
+                    };
+                };
+                /** @description Missing or invalid course_id */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve lectures */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Upload lecture PDFs
+         * @description Uploads one or more PDF files to create new lectures under the specified course.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "multipart/form-data": {
+                        /** @description Course ID */
+                        course_id: string;
+                        /** @description Lecture title (used as default for all files) */
+                        title?: string;
+                        /** @description PDF files */
+                        files: Record<string, never>[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadResponseDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Course not found or access denied */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to upload lecture PDFs */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get a course
-     * @description Retrieves a course by its ID.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Course ID */
-          courseId: string;
+    "/lectures/{lectureId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
-          };
+        /**
+         * Get a lecture
+         * @description Retrieves a lecture by its ID.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve lecture */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        put?: never;
+        post?: never;
+        /**
+         * Delete a lecture
+         * @description Deletes a lecture and all its derived database records, removes its PDF from storage, and clears related pending jobs from ingestion, embedding, explanation, and summary queues.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to delete lecture */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Course not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        options?: never;
+        head?: never;
+        /**
+         * Update a lecture
+         * @description Updates lecture metadata.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Lecture update data */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload, or title cannot be empty */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to update lecture */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Failed to retrieve course */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        trace?: never;
     };
-    put?: never;
-    post?: never;
-    /**
-     * Delete a course
-     * @description Deletes a course and all its lectures, removes associated PDFs from storage, clears any pending jobs in ingestion, embedding, explanation, and summary queues, and deletes related database records.
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Course ID */
-          courseId: string;
+    "/lectures/{lectureId}/explanations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description No Content */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        /**
+         * List lecture explanations
+         * @description Retrieves explanations for a lecture with pagination
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Limit number of results (if omitted, returns all explanations) */
+                    limit?: number;
+                    /** @description Pagination offset (default 0) */
+                    offset?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve explanations */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Course not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to delete course */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    options?: never;
-    head?: never;
-    /**
-     * Update a course
-     * @description Updates an existing course by its ID.
-     */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Course ID */
-          courseId: string;
+    "/lectures/{lectureId}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        cookie?: never;
-      };
-      /** @description Course update request */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.CourseUpdateDTO"];
+        /**
+         * List lecture notes
+         * @description Retrieves notes for a lecture with pagination
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Limit number of results */
+                    limit?: number;
+                    /** @description Pagination offset */
+                    offset?: number;
+                };
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"][];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve notes */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
-          };
+        put?: never;
+        /**
+         * Create a lecture note
+         * @description Creates a new note for a lecture.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Note create data */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload or validation failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to create note */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update a lecture note
+         * @description Updates the content of a note for a lecture.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            /** @description Note update data */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload or validation failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to update note */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Course not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to update course */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        trace?: never;
     };
-    trace?: never;
-  };
-  "/lectures": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/lectures/{lectureId}/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get lecture summary
+         * @description Retrieves a lecture's summary by its ID.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve summary */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * List lectures
-     * @description Retrieves lectures filtered by course_id with pagination
-     */
-    get: {
-      parameters: {
-        query: {
-          /** @description Course ID */
-          course_id: string;
-          /** @description Limit number of lectures */
-          limit?: number;
-          /** @description Pagination offset */
-          offset?: number;
+    "/lectures/{lectureId}/url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][];
-          };
+        /**
+         * Get signed URL for lecture PDF
+         * @description Generates a signed URL for downloading the lecture PDF.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description Lecture ID */
+                    lectureId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Lecture not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to generate signed URL */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Missing or invalid course_id */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve lectures */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    put?: never;
-    /**
-     * Upload lecture PDFs
-     * @description Uploads one or more PDF files to create new lectures under the specified course.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          "multipart/form-data": {
-            /** @description Course ID */
-            course_id: string;
-            /** @description Lecture title (used as default for all files) */
-            title?: string;
-            /** @description PDF files */
-            files: Record<string, never>[];
-          };
+    "/users/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadResponseDTO"][];
-          };
+        /**
+         * Get user profile
+         * @description Retrieves the profile of the authenticated user.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description User not found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Bad Request */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
+        put?: never;
+        /**
+         * Create or update a user profile
+         * @description Creates a new user profile or updates an existing one associated with the authenticated user ID.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            /** @description User creation request */
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["app_internal_api_v1_dto.UserCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
+                    };
+                };
+                /** @description Invalid JSON payload or validation failed */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Unauthorized: User ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to create user */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Course not found or access denied */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to upload lecture PDFs */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/lectures/{lectureId}": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
+    "/users/me/courses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get user's courses
+         * @description Retrieves the list of courses associated with the authenticated user, sorted by most recent update.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.UserCourseResponseDTO"][];
+                    };
+                };
+                /** @description Unauthorized: user ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve user courses */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Get a lecture
-     * @description Retrieves a lecture by its ID.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
+    "/users/me/recents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
-          };
+        /**
+         * Get recent lectures
+         * @description Retrieves a list of recently viewed lectures for the authenticated user.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Number of lectures to return (default 10) */
+                    limit?: number;
+                    /** @description Offset for pagination (default 0) */
+                    offset?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"][];
+                    };
+                };
+                /** @description Unauthorized: user ID not found in context */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+                /** @description Failed to retrieve recent lectures */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": string;
+                    };
+                };
+            };
         };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve lecture */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    /**
-     * Update a lecture
-     * @description Updates lecture metadata.
-     */
-    put: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Lecture update data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUpdateDTO"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to update lecture */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    post?: never;
-    /**
-     * Delete a lecture
-     * @description Deletes a lecture and all its derived database records, removes its PDF from storage, and clears related pending jobs from ingestion, embedding, explanation, and summary queues.
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description No Content */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to delete lecture */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/lectures/{lectureId}/explanations": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List lecture explanations
-     * @description Retrieves explanations for a lecture with pagination
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Limit number of results (if omitted, returns all explanations) */
-          limit?: number;
-          /** @description Pagination offset (default 0) */
-          offset?: number;
-        };
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][];
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve explanations */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/lectures/{lectureId}/notes": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * List lecture notes
-     * @description Retrieves notes for a lecture with pagination
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Limit number of results */
-          limit?: number;
-          /** @description Pagination offset */
-          offset?: number;
-        };
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"][];
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve notes */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    /**
-     * Create a lecture note
-     * @description Creates a new note for a lecture.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Note create data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteCreateDTO"];
-        };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to create note */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    /**
-     * Update a lecture note
-     * @description Updates the content of a note for a lecture.
-     */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      /** @description Note update data */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
-        };
-      };
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to update note */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    trace?: never;
-  };
-  "/lectures/{lectureId}/summary": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get lecture summary
-     * @description Retrieves a lecture's summary by its ID.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve summary */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/lectures/{lectureId}/url": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get signed URL for lecture PDF
-     * @description Generates a signed URL for downloading the lecture PDF.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"];
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to generate signed URL */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/users/me": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get user profile
-     * @description Retrieves the profile of the authenticated user.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description User not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Internal server error */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    /**
-     * Create or update a user profile
-     * @description Creates a new user profile or updates an existing one associated with the authenticated user ID.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      /** @description User creation request */
-      requestBody: {
-        content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.UserCreateDTO"];
-        };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
-          };
-        };
-        /** @description Invalid JSON payload or validation failed */
-        400: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to create user */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/users/me/courses": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get user's courses
-     * @description Retrieves the list of courses associated with the authenticated user, sorted by most recent update.
-     */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserCourseResponseDTO"][];
-          };
-        };
-        /** @description Unauthorized: user ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve user courses */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  "/users/me/recents": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Get recent lectures
-     * @description Retrieves a list of recently viewed lectures for the authenticated user.
-     */
-    get: {
-      parameters: {
-        query?: {
-          /** @description Number of lectures to return (default 10) */
-          limit?: number;
-          /** @description Offset for pagination (default 0) */
-          offset?: number;
-        };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description OK */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"][];
-          };
-        };
-        /** @description Unauthorized: user ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to retrieve recent lectures */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    "app_internal_api_v1_dto.CourseCreateDTO": {
-      description?: string;
-      is_default?: boolean;
-      title: string;
+    schemas: {
+        "app_internal_api_v1_dto.CourseCreateDTO": {
+            description?: string;
+            is_default?: boolean;
+            title: string;
+        };
+        "app_internal_api_v1_dto.CourseResponseDTO": {
+            course_id?: string;
+            created_at?: string;
+            description?: string;
+            is_default?: boolean;
+            title?: string;
+            updated_at?: string;
+            user_id?: string;
+        };
+        "app_internal_api_v1_dto.CourseUpdateDTO": {
+            description?: string;
+            is_default?: boolean;
+            title?: string;
+        };
+        "app_internal_api_v1_dto.LectureExplanationResponseDTO": {
+            content?: string;
+            created_at?: string;
+            id?: string;
+            lecture_id?: string;
+            slide_number?: number;
+            updated_at?: string;
+        };
+        "app_internal_api_v1_dto.LectureNoteCreateDTO": {
+            content: string;
+        };
+        "app_internal_api_v1_dto.LectureNoteResponseDTO": {
+            content?: string;
+            created_at?: string;
+            id?: string;
+            lecture_id?: string;
+            updated_at?: string;
+        };
+        "app_internal_api_v1_dto.LectureNoteUpdateDTO": {
+            content: string;
+        };
+        "app_internal_api_v1_dto.LectureResponseDTO": {
+            accessed_at?: string;
+            course_id?: string;
+            created_at?: string;
+            lecture_id?: string;
+            status?: string;
+            storage_path?: string;
+            title?: string;
+            updated_at?: string;
+        };
+        "app_internal_api_v1_dto.LectureSummaryResponseDTO": {
+            content?: string;
+            lecture_id?: string;
+        };
+        "app_internal_api_v1_dto.LectureUpdateDTO": {
+            accessed_at?: string;
+            title?: string;
+        };
+        "app_internal_api_v1_dto.LectureUploadResponseDTO": {
+            lecture_id?: string;
+            status?: string;
+        };
+        "app_internal_api_v1_dto.SignedURLResponseDTO": {
+            url?: string;
+        };
+        "app_internal_api_v1_dto.UserCourseResponseDTO": {
+            course_id?: string;
+            description?: string;
+            is_default?: boolean;
+            title?: string;
+            updated_at?: string;
+        };
+        "app_internal_api_v1_dto.UserCreateDTO": {
+            avatar_url?: string;
+            email?: string;
+            name?: string;
+        };
+        "app_internal_api_v1_dto.UserRecentLectureResponseDTO": {
+            lecture_id?: string;
+            title?: string;
+        };
+        "app_internal_api_v1_dto.UserResponseDTO": {
+            avatar_url?: string;
+            created_at?: string;
+            email?: string;
+            name?: string;
+            updated_at?: string;
+            user_id?: string;
+        };
     };
-    "app_internal_api_v1_dto.CourseResponseDTO": {
-      course_id?: string;
-      created_at?: string;
-      description?: string;
-      is_default?: boolean;
-      title?: string;
-      updated_at?: string;
-      user_id?: string;
-    };
-    "app_internal_api_v1_dto.CourseUpdateDTO": {
-      description?: string;
-      is_default?: boolean;
-      title?: string;
-    };
-    "app_internal_api_v1_dto.LectureExplanationResponseDTO": {
-      content?: string;
-      created_at?: string;
-      id?: string;
-      lecture_id?: string;
-      slide_number?: number;
-      updated_at?: string;
-    };
-    "app_internal_api_v1_dto.LectureNoteCreateDTO": {
-      content: string;
-    };
-    "app_internal_api_v1_dto.LectureNoteResponseDTO": {
-      content?: string;
-      created_at?: string;
-      id?: string;
-      lecture_id?: string;
-      updated_at?: string;
-    };
-    "app_internal_api_v1_dto.LectureNoteUpdateDTO": {
-      content: string;
-    };
-    "app_internal_api_v1_dto.LectureResponseDTO": {
-      accessed_at?: string;
-      course_id?: string;
-      created_at?: string;
-      lecture_id?: string;
-      status?: string;
-      storage_path?: string;
-      title?: string;
-      updated_at?: string;
-    };
-    "app_internal_api_v1_dto.LectureSummaryResponseDTO": {
-      content?: string;
-      lecture_id?: string;
-    };
-    "app_internal_api_v1_dto.LectureUpdateDTO": {
-      accessed_at?: string;
-      title?: string;
-    };
-    "app_internal_api_v1_dto.LectureUploadResponseDTO": {
-      lecture_id?: string;
-      status?: string;
-    };
-    "app_internal_api_v1_dto.SignedURLResponseDTO": {
-      url?: string;
-    };
-    "app_internal_api_v1_dto.UserCourseResponseDTO": {
-      course_id?: string;
-      description?: string;
-      is_default?: boolean;
-      title?: string;
-      updated_at?: string;
-    };
-    "app_internal_api_v1_dto.UserCreateDTO": {
-      avatar_url?: string;
-      email?: string;
-      name?: string;
-    };
-    "app_internal_api_v1_dto.UserRecentLectureResponseDTO": {
-      lecture_id?: string;
-      title?: string;
-    };
-    "app_internal_api_v1_dto.UserResponseDTO": {
-      avatar_url?: string;
-      created_at?: string;
-      email?: string;
-      name?: string;
-      updated_at?: string;
-      user_id?: string;
-    };
-  };
-  responses: never;
-  parameters: never;
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

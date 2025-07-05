@@ -1,21 +1,23 @@
+"use client";
+
+// types
+import { ActionResponse } from "@/lib/api/authenticated-api";
+
+// components
 import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarMenuAction,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import Link from "next/link";
-import { Presentation, MoreHorizontal, Share, Trash2 } from "lucide-react";
-import { ActionResponse } from "@/lib/api/authenticated-api";
+import { ItemActions } from "../item-actions";
+
+//icons
+import { Presentation, MoreHorizontal } from "lucide-react";
+
+// code
 import { usePathname } from "next/navigation";
-import { toast } from "sonner";
-import DeleteDialog from "../delete-dialog";
+import Link from "next/link";
+import { updateLecture } from "@/app/(dashboard)/_actions/lecture-actions";
 
 export default function NavLecture({
   lecture,
@@ -50,64 +52,22 @@ export default function NavLecture({
           <span>{lecture.title}</span>
         </Link>
       </SidebarMenuButton>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100">
-            <MoreHorizontal />
-            <span className="sr-only">More</span>
-          </SidebarMenuAction>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="w-48"
-          side={isMobile ? "bottom" : "right"}
-          align={isMobile ? "end" : "start"}
-        >
-          <DropdownMenuItem
-            className="hover:cursor-pointer"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Presentation className="text-muted-foreground" />
-            <span>View Lecture</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="hover:cursor-pointer"
-            onPointerDown={(e) => e.stopPropagation()}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Share className="text-muted-foreground" />
-            <span>Share Lecture</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DeleteDialog
-            title="Are you sure you want to delete this lecture?"
-            description="This will permanently delete the lecture and all associated data. This action cannot be undone."
-            onConfirm={async () => {
-              const toastId = toast.loading(`Deleting lecture...`);
-              let result;
-              try {
-                result = await deleteLecture(lecture.lecture_id);
-              } finally {
-                toast.dismiss(toastId);
-              }
-              if (result?.error) {
-                toast.error(result.error);
-              }
-            }}
-          >
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
-              onSelect={(e) => e.preventDefault()}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Trash2 className="text-destructive" />
-              <span>Delete lecture</span>
-            </DropdownMenuItem>
-          </DeleteDialog>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <ItemActions
+        item={{ id: lecture.lecture_id, title: lecture.title }}
+        itemType="lecture"
+        renameAction={updateLecture}
+        deleteAction={deleteLecture}
+        dropdownMenuContentProps={{
+          className: "w-48",
+          side: isMobile ? "bottom" : "right",
+          align: isMobile ? "end" : "start",
+        }}
+      >
+        <SidebarMenuAction className="opacity-0 group-hover/lecture:opacity-100">
+          <MoreHorizontal />
+          <span className="sr-only">More</span>
+        </SidebarMenuAction>
+      </ItemActions>
     </SidebarMenuItem>
   );
 }
