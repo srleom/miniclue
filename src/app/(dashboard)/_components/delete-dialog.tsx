@@ -15,14 +15,16 @@ export default function DeleteDialog({
   title,
   description,
   onConfirm,
+  onOpenChange,
 }: {
   children: React.ReactNode;
   title: string;
   description: string;
   onConfirm: () => void;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <AlertDialog>
+    <AlertDialog onOpenChange={onOpenChange}>
       <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
       <AlertDialogContent onCloseAutoFocus={(event) => event.preventDefault()}>
         <AlertDialogHeader>

@@ -9,6 +9,7 @@ import {
   createUntitledCourse,
   deleteCourse,
   getCourseLectures,
+  updateCourse,
 } from "@/app/(dashboard)/_actions/course-actions";
 import {
   handleUpdateLectureAccessedAt,
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
           navRecents={navRecents}
           createUntitledCourse={createUntitledCourse}
           deleteCourse={deleteCourse}
+          renameCourse={updateCourse}
           handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
           deleteLecture={deleteLecture}
         />

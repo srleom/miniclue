@@ -4,14 +4,13 @@ import {
   getCourseDetails,
 } from "@/app/(dashboard)/_actions/course-actions";
 import { DropzoneComponent } from "@/app/(dashboard)/_components/dropzone";
-import { Folder } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { DataTable } from "@/app/(dashboard)/course/[courseId]/_components/data-table";
 import {
   columns,
   LectureResponseDTO,
 } from "@/app/(dashboard)/course/[courseId]/_components/columns";
 import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
+import CourseHeader from "./_components/course-header";
 
 interface CoursePageProps {
   params: { courseId: string };
@@ -52,11 +51,11 @@ export default async function CoursePage({ params }: CoursePageProps) {
 
   return (
     <div className="mx-auto mt-16 flex w-full flex-col items-center lg:w-3xl">
-      <div className="mb-7 flex items-center gap-2">
-        <Folder />
-        <h1 className="text-center text-4xl font-semibold">{courseTitle}</h1>
-        {isDefault && <Badge variant="outline">Default</Badge>}
-      </div>
+      <CourseHeader
+        courseId={courseId}
+        courseTitle={courseTitle!}
+        isDefault={!!isDefault}
+      />
 
       <div className="mb-12 w-full">
         <DropzoneComponent

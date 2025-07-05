@@ -106,3 +106,32 @@ export async function getCourseDetails(
 
   return { data: data ?? undefined, error: undefined };
 }
+
+export async function updateCourse(
+  courseId: string,
+  title: string,
+  description?: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: updateError } = await api.PATCH("/courses/{courseId}", {
+    params: { path: { courseId } },
+    body: { title, description },
+  });
+
+  if (updateError) {
+    console.error("Update course error:", updateError);
+    return { error: updateError };
+  }
+
+  revalidateTag("courses");
+  revalidateTag(`course:${courseId}`);
+  return { data, error: undefined };
+}

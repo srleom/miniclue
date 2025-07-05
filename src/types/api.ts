@@ -136,11 +136,69 @@ export interface paths {
         };
       };
     };
+    put?: never;
+    post?: never;
+    /**
+     * Delete a course
+     * @description Deletes a course and all its lectures, removes associated PDFs from storage, clears any pending jobs in ingestion, embedding, explanation, and summary queues, and deletes related database records.
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Course ID */
+          courseId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Course not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to delete course */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
     /**
      * Update a course
      * @description Updates an existing course by its ID.
      */
-    put: {
+    patch: {
       parameters: {
         query?: never;
         header?: never;
@@ -204,64 +262,6 @@ export interface paths {
         };
       };
     };
-    post?: never;
-    /**
-     * Delete a course
-     * @description Deletes a course and all its lectures, removes associated PDFs from storage, clears any pending jobs in ingestion, embedding, explanation, and summary queues, and deletes related database records.
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Course ID */
-          courseId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description No Content */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Course not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to delete course */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
     trace?: never;
   };
   "/lectures": {
@@ -610,9 +610,9 @@ export interface paths {
     get: {
       parameters: {
         query?: {
-          /** @description Limit number of results */
+          /** @description Limit number of results (if omitted, returns all explanations) */
           limit?: number;
-          /** @description Pagination offset */
+          /** @description Pagination offset (default 0) */
           offset?: number;
         };
         header?: never;

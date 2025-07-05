@@ -25,6 +25,7 @@ export function AppSidebar({
   navRecents,
   createUntitledCourse,
   deleteCourse,
+  renameCourse,
   handleUpdateLectureAccessedAt,
   deleteLecture,
   ...props
@@ -37,6 +38,14 @@ export function AppSidebar({
     >
   >;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
+  renameCourse: (
+    courseId: string,
+    title: string,
+  ) => Promise<
+    ActionResponse<
+      components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
+    >
+  >;
   handleUpdateLectureAccessedAt: (
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
@@ -69,6 +78,7 @@ export function AppSidebar({
           items={navCourses}
           createUntitledCourse={createUntitledCourse}
           deleteCourse={deleteCourse}
+          renameCourse={renameCourse}
           handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
           deleteLecture={deleteLecture}
         />
