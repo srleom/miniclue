@@ -75,7 +75,7 @@ Then run a specific mode:
 ├── POST / → create lecture
 ├── GET / → list lectures (query by course_id) (`?limit=&offset=`)
 ├── GET /:lectureId → fetch lecture
-├── PUT /:lectureId → update lecture metadata
+├── PATCH /:lectureId → update lecture metadata
 └── DELETE /:lectureId → delete lecture
 
 /api/v1/lectures/:lectureId

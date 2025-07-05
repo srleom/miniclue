@@ -85,7 +85,6 @@ func (h *LectureHandler) handleLecture(w http.ResponseWriter, r *http.Request) {
 			h.updateLectureNote(w, r)
 			return
 		}
-	case http.MethodPut:
 		h.updateLecture(w, r)
 	case http.MethodPost:
 		if strings.HasSuffix(path, "/notes") {
@@ -159,7 +158,7 @@ func (h *LectureHandler) getLecture(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
 // @Failure 404 {string} string "Lecture not found"
 // @Failure 500 {string} string "Failed to update lecture"
-// @Router /lectures/{lectureId} [put]
+// @Router /lectures/{lectureId} [patch]
 func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
