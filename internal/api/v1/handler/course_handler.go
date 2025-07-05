@@ -112,7 +112,7 @@ func (h *CourseHandler) handleCourse(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
 		h.getCourse(w, r)
-	case http.MethodPut:
+	case http.MethodPatch:
 		h.updateCourse(w, r)
 	case http.MethodDelete:
 		h.deleteCourse(w, r)
@@ -174,7 +174,7 @@ func (h *CourseHandler) getCourse(w http.ResponseWriter, r *http.Request) {
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
 // @Failure 404 {string} string "Course not found"
 // @Failure 500 {string} string "Failed to update course"
-// @Router /courses/{courseId} [put]
+// @Router /courses/{courseId} [patch]
 func (h *CourseHandler) updateCourse(w http.ResponseWriter, r *http.Request) {
 	courseID := strings.TrimPrefix(r.URL.Path, "/courses/")
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)

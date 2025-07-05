@@ -68,7 +68,7 @@ Then run a specific mode:
 /api/v1/courses
 ├── POST / → create course
 ├── GET /:courseId → fetch course
-├── PUT /:courseId → update course
+├── PATCH /:courseId → update course
 └── DELETE /:courseId → delete course
 
 /api/v1/lectures
