@@ -16,7 +16,7 @@ export async function handleUpdateLectureAccessedAt(
     return { error };
   }
 
-  const { error: lectureError } = await api.PUT("/lectures/{lectureId}", {
+  const { error: lectureError } = await api.PATCH("/lectures/{lectureId}", {
     params: { path: { lectureId } },
     body: {
       accessed_at: new Date().toISOString(),
@@ -208,4 +208,39 @@ export async function getSummary(
   }
 
   return { data: data ?? undefined, error: undefined };
+}
+
+export async function updateLecture(
+  lectureId: string,
+  title: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"]
+  >
+> {
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    return { error };
+  }
+
+  const { data, error: updateError } = await api.PATCH(
+    "/lectures/{lectureId}",
+    {
+      params: { path: { lectureId } },
+      body: { title },
+    },
+  );
+
+  if (updateError) {
+    console.error("Update lecture error:", updateError);
+    return { error: updateError };
+  }
+
+  // Revalidate lecture list and detail
+  if (data?.course_id) {
+    revalidateTag(`lectures:${data.course_id}`);
+  }
+  revalidateTag(`lecture:${lectureId}`);
+  revalidateTag("recents");
+  return { data, error: undefined };
 }

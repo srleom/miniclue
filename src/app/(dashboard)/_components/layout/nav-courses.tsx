@@ -2,7 +2,6 @@
 
 // react
 import * as React from "react";
-import { useState } from "react";
 
 // types
 import { CourseWithLectures } from "../../_types/types";
@@ -10,10 +9,6 @@ import { components } from "@/types/api";
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
 // components
-import { RenameDialog } from "../rename-dialog";
-import { Input } from "@/components/ui/input";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import {
   Collapsible,
   CollapsibleContent,
@@ -30,30 +25,16 @@ import {
   SidebarMenuSub,
   useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import NavLecture from "./nav-lecture";
-import DeleteDialog from "../delete-dialog";
 import { toast } from "sonner";
 
 //icons
-import {
-  ChevronRight,
-  Folder,
-  Pencil,
-  MoreHorizontal,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronRight, Folder, MoreHorizontal, Plus } from "lucide-react";
 
 //code
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ItemActions } from "../item-actions";
 
 export function NavCourses({
   items,
@@ -85,8 +66,6 @@ export function NavCourses({
 }) {
   const { isMobile } = useSidebar();
   const pathname = usePathname();
-  // control dropdown menu open state per course
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
   const defaultCourse = items.find((item) => item.isDefault);
   const otherCourses = items.filter((item) => !item.isDefault);
@@ -137,115 +116,23 @@ export function NavCourses({
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   {!item.isDefault && (
-                    <DropdownMenu
-                      open={openMenuId === item.courseId}
-                      onOpenChange={(isOpen) =>
-                        setOpenMenuId(isOpen ? item.courseId! : null)
-                      }
+                    <ItemActions
+                      item={{ id: item.courseId, title: item.title }}
+                      itemType="course"
+                      renameAction={renameCourse}
+                      deleteAction={deleteCourse}
+                      isDefault={item.isDefault}
+                      dropdownMenuContentProps={{
+                        className: "w-48 rounded-lg",
+                        side: isMobile ? "bottom" : "right",
+                        align: isMobile ? "end" : "start",
+                      }}
                     >
-                      <DropdownMenuTrigger asChild>
-                        <SidebarMenuAction className="opacity-0 group-hover/collapsible:opacity-100">
-                          <MoreHorizontal />
-                          <span className="sr-only">More</span>
-                        </SidebarMenuAction>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-48 rounded-lg"
-                        side={isMobile ? "bottom" : "right"}
-                        align={isMobile ? "end" : "start"}
-                      >
-                        <RenameDialog
-                          onOpenChange={(open) => {
-                            if (!open) setOpenMenuId(null);
-                          }}
-                          trigger={
-                            <DropdownMenuItem
-                              className="hover:cursor-pointer"
-                              onSelect={(e) => e.preventDefault()}
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Pencil className="text-muted-foreground" />
-                              <span>Rename course</span>
-                            </DropdownMenuItem>
-                          }
-                          title="Rename course"
-                          form={
-                            <form
-                              action={async (formData: FormData) => {
-                                const name = formData.get("name") as string;
-                                const result = await renameCourse(
-                                  item.courseId!,
-                                  name,
-                                );
-                                if (result.error) {
-                                  toast.error(result.error);
-                                } else {
-                                  toast.success("Course renamed");
-                                }
-                              }}
-                              className="grid gap-4"
-                            >
-                              <div className="grid gap-3">
-                                <Input
-                                  id={`course-name-${item.courseId}`}
-                                  name="name"
-                                  defaultValue={item.title}
-                                />
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                  <Button
-                                    variant="outline"
-                                    className="cursor-pointer"
-                                  >
-                                    Cancel
-                                  </Button>
-                                </DialogClose>
-                                <DialogClose asChild>
-                                  <Button
-                                    type="submit"
-                                    className="cursor-pointer"
-                                  >
-                                    Save
-                                  </Button>
-                                </DialogClose>
-                              </DialogFooter>
-                            </form>
-                          }
-                        />
-                        <DropdownMenuSeparator />
-                        <DeleteDialog
-                          onOpenChange={(open) => {
-                            if (!open) setOpenMenuId(null);
-                          }}
-                          title="Are you sure you want to delete this course?"
-                          description="This will permanently delete all lectures and all associated data. This action cannot be undone."
-                          onConfirm={async () => {
-                            const toastId = toast.loading(`Deleting course...`);
-                            let result;
-                            try {
-                              result = await deleteCourse(item.courseId!);
-                            } finally {
-                              toast.dismiss(toastId);
-                            }
-                            if (result?.error) {
-                              toast.error(result.error);
-                            }
-                            // also close the menu after confirm
-                            setOpenMenuId(null);
-                          }}
-                        >
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive focus:bg-destructive/10 hover:cursor-pointer"
-                            onSelect={(e) => e.preventDefault()}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Trash2 className="text-destructive" />
-                            <span>Delete course</span>
-                          </DropdownMenuItem>
-                        </DeleteDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      <SidebarMenuAction className="opacity-0 group-hover/collapsible:opacity-100">
+                        <MoreHorizontal />
+                        <span className="sr-only">More</span>
+                      </SidebarMenuAction>
+                    </ItemActions>
                   )}
                 </div>
                 <CollapsibleContent>

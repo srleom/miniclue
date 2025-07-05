@@ -7,12 +7,12 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { getLecture } from "@/app/(dashboard)/_actions/lecture-actions";
 import { getCourseDetails } from "@/app/(dashboard)/_actions/course-actions";
 import { Separator } from "@/components/ui/separator";
+import LectureHeader from "./_components/lecture-header";
 
 export default async function LectureLayout({
   children,
@@ -58,7 +58,10 @@ export default async function LectureLayout({
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>{lectureTitle}</BreadcrumbPage>
+                <LectureHeader
+                  lectureId={lectureId}
+                  lectureTitle={lectureTitle!}
+                />
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>

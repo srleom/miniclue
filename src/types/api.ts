@@ -468,11 +468,69 @@ export interface paths {
         };
       };
     };
+    put?: never;
+    post?: never;
+    /**
+     * Delete a lecture
+     * @description Deletes a lecture and all its derived database records, removes its PDF from storage, and clears related pending jobs from ingestion, embedding, explanation, and summary queues.
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to delete lecture */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
     /**
      * Update a lecture
      * @description Updates lecture metadata.
      */
-    put: {
+    patch: {
       parameters: {
         query?: never;
         header?: never;
@@ -536,64 +594,6 @@ export interface paths {
         };
       };
     };
-    post?: never;
-    /**
-     * Delete a lecture
-     * @description Deletes a lecture and all its derived database records, removes its PDF from storage, and clears related pending jobs from ingestion, embedding, explanation, and summary queues.
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          /** @description Lecture ID */
-          lectureId: string;
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description No Content */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Unauthorized: User ID not found in context */
-        401: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Lecture not found */
-        404: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-        /** @description Failed to delete lecture */
-        500: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            "application/json": string;
-          };
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
     trace?: never;
   };
   "/lectures/{lectureId}/explanations": {
