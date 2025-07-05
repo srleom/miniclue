@@ -1,14 +1,23 @@
 "use client";
 
+// react
 import * as React from "react";
-import { Folder, Pencil } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { RenameDialog } from "@/app/(dashboard)/_components/rename-dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { updateCourse } from "@/app/(dashboard)/_actions/course-actions";
+
+// third-party
 import { toast } from "sonner";
+
+// icons
+import { Folder, Pencil } from "lucide-react";
+
+// components
+import { RenameDialog } from "@/app/(dashboard)/_components/rename-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
+// code
+import { updateCourse } from "@/app/(dashboard)/_actions/course-actions";
 
 export interface CourseHeaderProps {
   courseId: string;

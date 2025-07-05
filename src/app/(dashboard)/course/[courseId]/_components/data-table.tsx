@@ -1,5 +1,6 @@
 "use client";
 
+// third-party
 import {
   ColumnDef,
   flexRender,
@@ -7,6 +8,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+// components
 import {
   Table,
   TableBody,

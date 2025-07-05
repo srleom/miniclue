@@ -1,9 +1,15 @@
 "use client";
 
+// react
 import * as React from "react";
+
+// third-party
 import * as SheetPrimitive from "@radix-ui/react-dialog";
+
+// icons
 import { XIcon } from "lucide-react";
 
+// lib
 import { cn } from "@/lib/utils";
 
 function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {

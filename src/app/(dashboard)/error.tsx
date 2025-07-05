@@ -1,9 +1,16 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
-import { GalleryVerticalEnd } from "lucide-react";
+// react
 import { useEffect } from "react";
+
+// next
+import Link from "next/link";
+
+// icons
+import { GalleryVerticalEnd } from "lucide-react";
+
+// components
+import { Button } from "@/components/ui/button";
 
 export default function DashboardErrorPage({
   error,

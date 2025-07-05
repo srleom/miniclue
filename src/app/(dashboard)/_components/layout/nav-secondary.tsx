@@ -1,6 +1,10 @@
+// react
 import * as React from "react";
+
+// icons
 import { type LucideIcon } from "lucide-react";
 
+// components
 import {
   SidebarGroup,
   SidebarGroupContent,

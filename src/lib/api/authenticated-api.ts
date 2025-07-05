@@ -1,7 +1,10 @@
 "use server";
 
-import createApi from ".";
+// lib
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
+
+// code
+import createApi from ".";
 
 export type ActionResponse<T> = {
   data?: T;

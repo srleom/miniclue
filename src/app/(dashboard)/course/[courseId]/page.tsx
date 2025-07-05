@@ -1,16 +1,21 @@
+// next
 import { Metadata } from "next";
-import {
-  getCourseLectures,
-  getCourseDetails,
-} from "@/app/(dashboard)/_actions/course-actions";
-import { DropzoneComponent } from "@/app/(dashboard)/_components/dropzone";
-import { DataTable } from "@/app/(dashboard)/course/[courseId]/_components/data-table";
+
+// components
 import {
   columns,
   LectureResponseDTO,
 } from "@/app/(dashboard)/course/[courseId]/_components/columns";
-import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
+import { DataTable } from "@/app/(dashboard)/course/[courseId]/_components/data-table";
+import { DropzoneComponent } from "@/app/(dashboard)/_components/dropzone";
 import CourseHeader from "./_components/course-header";
+
+// code
+import {
+  getCourseDetails,
+  getCourseLectures,
+} from "@/app/(dashboard)/_actions/course-actions";
+import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
 
 interface CoursePageProps {
   params: { courseId: string };

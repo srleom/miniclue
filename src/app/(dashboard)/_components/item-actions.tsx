@@ -1,7 +1,21 @@
 "use client";
 
+// react
 import * as React from "react";
 import { useState } from "react";
+
+// third-party
+import { toast } from "sonner";
+
+// icons
+import { Pencil, Trash2 } from "lucide-react";
+
+// types
+import { ActionResponse } from "@/lib/api/authenticated-api";
+
+// components
+import { Button } from "@/components/ui/button";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,14 +23,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RenameDialog } from "./rename-dialog";
-import DeleteDialog from "./delete-dialog";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { DialogClose, DialogFooter } from "@/components/ui/dialog";
-import { Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { ActionResponse } from "@/lib/api/authenticated-api";
+import DeleteDialog from "./delete-dialog";
+import { RenameDialog } from "./rename-dialog";
 
 type Item = {
   id: string;

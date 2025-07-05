@@ -1,12 +1,17 @@
 "use server";
 
-import { components } from "@/types/api";
-import {
-  createAuthenticatedApi,
-  ActionResponse,
-} from "@/lib/api/authenticated-api";
+// next
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
+
+// types
+import { components } from "@/types/api";
+
+// lib
+import {
+  ActionResponse,
+  createAuthenticatedApi,
+} from "@/lib/api/authenticated-api";
 
 export async function handleUpdateLectureAccessedAt(
   lectureId: string,

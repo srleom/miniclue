@@ -1,6 +1,22 @@
 "use client";
 
+// styles
+import "katex/dist/katex.min.css";
+
+// react
 import * as React from "react";
+
+// next
+import { useParams } from "next/navigation";
+
+// third-party
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+
+// components
+import { Card, CardContent } from "@/components/ui/card";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -8,22 +24,18 @@ import {
 } from "@/components/ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PdfViewer from "@/app/(dashboard)/lecture/[lectureId]/_components/pdf-viewer";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
-import rehypeKatex from "rehype-katex";
-import "katex/dist/katex.min.css";
-import { Card, CardContent } from "@/components/ui/card";
-import { useParams } from "next/navigation";
+import { ExplainerCarousel } from "./_components/carousel";
+import LottieAnimation from "./_components/lottie-animation";
+
+// lib
 import { createClient } from "@/lib/supabase/client";
+
+// code
 import {
   getExplanations,
   getSignedPdfUrl,
   getSummary,
 } from "@/app/(dashboard)/_actions/lecture-actions";
-
-import { ExplainerCarousel } from "./_components/carousel";
-import LottieAnimation from "./_components/lottie-animation";
 
 export default function LecturePage() {
   const { lectureId } = useParams() as { lectureId: string };

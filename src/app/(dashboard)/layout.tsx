@@ -1,10 +1,14 @@
+// next
+import { cookies } from "next/headers";
+
+// types
+import { CourseWithLectures, NavRecentsItem } from "./_types/types";
+
+// components
 import { AppSidebar } from "@/app/(dashboard)/_components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { cookies } from "next/headers";
-import {
-  getUserRecents,
-  getUserCourses,
-} from "@/app/(dashboard)/_actions/sidebar-actions";
+
+// code
 import {
   createUntitledCourse,
   deleteCourse,
@@ -12,10 +16,13 @@ import {
   updateCourse,
 } from "@/app/(dashboard)/_actions/course-actions";
 import {
-  handleUpdateLectureAccessedAt,
   deleteLecture,
+  handleUpdateLectureAccessedAt,
 } from "@/app/(dashboard)/_actions/lecture-actions";
-import { CourseWithLectures, NavRecentsItem } from "./_types/types";
+import {
+  getUserCourses,
+  getUserRecents,
+} from "@/app/(dashboard)/_actions/sidebar-actions";
 
 export default async function DashboardLayout({
   children,

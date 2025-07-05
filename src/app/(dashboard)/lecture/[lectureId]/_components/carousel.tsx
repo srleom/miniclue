@@ -1,7 +1,15 @@
 "use client";
 
+// react
 import * as React from "react";
 
+// third-party
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+
+// components
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Carousel,
@@ -11,10 +19,6 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import ReactMarkdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
 import LottieAnimation from "./lottie-animation";
 
 export function ExplainerCarousel({

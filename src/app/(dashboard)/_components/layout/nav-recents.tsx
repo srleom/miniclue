@@ -1,20 +1,26 @@
 "use client";
 
-import { Plus, MoreHorizontal } from "lucide-react";
+// next
+import Link from "next/link";
 
+// icons
+import { MoreHorizontal, Plus } from "lucide-react";
+
+// types
+import { NavRecentsItem } from "../../_types/types";
+import { ActionResponse } from "@/lib/api/authenticated-api";
+
+// components
 import {
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-  SidebarGroupAction,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
 import NavLecture from "./nav-lecture";
-import { ActionResponse } from "@/lib/api/authenticated-api";
-import { NavRecentsItem } from "../../_types/types";
 
 export function NavRecents({
   items,

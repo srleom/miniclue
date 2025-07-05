@@ -1,22 +1,24 @@
 "use client";
 
+// next
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+// components
+import { ItemActions } from "../item-actions";
+import {
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
+
+// icons
+import { MoreHorizontal, Presentation } from "lucide-react";
+
 // types
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
-// components
-import {
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarMenuAction,
-} from "@/components/ui/sidebar";
-import { ItemActions } from "../item-actions";
-
-//icons
-import { Presentation, MoreHorizontal } from "lucide-react";
-
 // code
-import { usePathname } from "next/navigation";
-import Link from "next/link";
 import { updateLecture } from "@/app/(dashboard)/_actions/lecture-actions";
 
 export default function NavLecture({

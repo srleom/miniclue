@@ -1,8 +1,12 @@
 "use client";
 
+// react
 import * as React from "react";
+
+// third-party
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
+// lib
 import { cn } from "@/lib/utils";
 
 function Tabs({

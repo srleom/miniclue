@@ -1,8 +1,12 @@
 "use client";
 
+// react
 import * as React from "react";
+
+// third-party
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 
+// lib
 import { cn } from "@/lib/utils";
 
 function TooltipProvider({

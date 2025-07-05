@@ -1,4 +1,7 @@
+// third-party
 import createClient from "openapi-fetch";
+
+// types
 import type { paths } from "@/types/api";
 
 export default function createApi(access_token: string) {

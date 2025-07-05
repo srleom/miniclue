@@ -1,14 +1,23 @@
 "use client";
 
+// react
 import * as React from "react";
-import { BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { RenameDialog } from "@/app/(dashboard)/_components/rename-dialog";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { DialogFooter, DialogClose } from "@/components/ui/dialog";
-import { Pencil } from "lucide-react";
-import { updateLecture } from "@/app/(dashboard)/_actions/lecture-actions";
+
+// third-party
 import { toast } from "sonner";
+
+// components
+import { BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { RenameDialog } from "@/app/(dashboard)/_components/rename-dialog";
+
+// icons
+import { Pencil } from "lucide-react";
+
+// code
+import { updateLecture } from "@/app/(dashboard)/_actions/lecture-actions";
 
 export interface LectureHeaderProps {
   lectureId: string;

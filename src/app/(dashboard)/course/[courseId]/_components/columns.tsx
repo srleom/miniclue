@@ -1,16 +1,27 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal } from "lucide-react";
+// next
 import Link from "next/link";
 
-import {
-  updateLecture,
-  deleteLecture,
-} from "@/app/(dashboard)/_actions/lecture-actions";
-import { ItemActions } from "@/app/(dashboard)/_components/item-actions";
+// third-party
+import { ColumnDef } from "@tanstack/react-table";
+
+// icons
+import { MoreHorizontal } from "lucide-react";
+
+// types
 import { components } from "@/types/api";
+
+// components
+import { ItemActions } from "@/app/(dashboard)/_components/item-actions";
+import { Button } from "@/components/ui/button";
+
+// code
+import {
+  deleteLecture,
+  updateLecture,
+} from "@/app/(dashboard)/_actions/lecture-actions";
+
 export type LectureResponseDTO =
   components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
 

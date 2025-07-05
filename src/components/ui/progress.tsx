@@ -1,8 +1,12 @@
 "use client";
 
+// react
 import * as React from "react";
+
+// third-party
 import * as ProgressPrimitive from "@radix-ui/react-progress";
 
+// lib
 import { cn } from "@/lib/utils";
 
 function Progress({

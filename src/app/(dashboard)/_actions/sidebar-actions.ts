@@ -1,10 +1,13 @@
 "use server";
 
-import {
-  createAuthenticatedApi,
-  ActionResponse,
-} from "@/lib/api/authenticated-api";
+// types
 import type { components } from "@/types/api";
+
+// lib
+import {
+  ActionResponse,
+  createAuthenticatedApi,
+} from "@/lib/api/authenticated-api";
 
 /**
  * Gets the authenticated user's profile info.

@@ -1,11 +1,16 @@
 "use client";
 
+// react
 import * as React from "react";
+
+// third-party
 import { toast } from "sonner";
 
+// types
 import { ActionResponse } from "@/lib/api/authenticated-api";
 import { components } from "@/types/api";
 
+// components
 import { Button } from "@/components/ui/button";
 import {
   Dropzone,

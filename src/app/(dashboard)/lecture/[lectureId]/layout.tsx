@@ -1,7 +1,4 @@
-import { getUserData } from "@/app/(dashboard)/_actions/sidebar-actions";
-import { handleLogout } from "@/app/auth/actions";
-import { NavUser } from "@/app/(dashboard)/_components/layout/nav-user";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+// components
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,10 +6,16 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { getLecture } from "@/app/(dashboard)/_actions/lecture-actions";
-import { getCourseDetails } from "@/app/(dashboard)/_actions/course-actions";
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { NavUser } from "@/app/(dashboard)/_components/layout/nav-user";
 import LectureHeader from "./_components/lecture-header";
+
+// code
+import { getCourseDetails } from "@/app/(dashboard)/_actions/course-actions";
+import { getLecture } from "@/app/(dashboard)/_actions/lecture-actions";
+import { getUserData } from "@/app/(dashboard)/_actions/sidebar-actions";
+import { handleLogout } from "@/app/auth/actions";
 
 export default async function LectureLayout({
   children,

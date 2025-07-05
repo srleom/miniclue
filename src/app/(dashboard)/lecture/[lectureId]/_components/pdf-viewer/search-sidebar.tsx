@@ -1,4 +1,7 @@
+// react
 import * as React from "react";
+
+// third-party
 import { MinimalButton, Spinner, TextBox } from "@react-pdf-viewer/core";
 import {
   Match,

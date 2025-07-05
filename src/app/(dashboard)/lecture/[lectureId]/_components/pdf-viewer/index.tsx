@@ -1,16 +1,32 @@
 "use client";
 
+// styles
+import "./core-styles.css";
+import "./default-layout-styles.css";
+import "./search-styles.css";
+
+// react
 import * as React from "react";
+
+// third-party
 import {
-  Worker,
-  Viewer,
-  SpecialZoomLevel,
   ScrollMode,
+  SpecialZoomLevel,
+  Viewer,
+  Worker,
 } from "@react-pdf-viewer/core";
 import { defaultLayoutPlugin } from "@react-pdf-viewer/default-layout";
+import { getFilePlugin } from "@react-pdf-viewer/get-file";
+import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
+import { searchPlugin } from "@react-pdf-viewer/search";
 import { ToolbarProps, ToolbarSlot } from "@react-pdf-viewer/toolbar";
 import { zoomPlugin } from "@react-pdf-viewer/zoom";
-import { getFilePlugin } from "@react-pdf-viewer/get-file";
+
+// components
+import { Button } from "@/components/ui/button";
+import SearchSidebar from "./search-sidebar";
+
+// icons
 import {
   DownloadIcon,
   MaximizeIcon,
@@ -18,14 +34,6 @@ import {
   ZoomInIcon,
   ZoomOutIcon,
 } from "lucide-react";
-import { searchPlugin } from "@react-pdf-viewer/search";
-import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
-import SearchSidebar from "./search-sidebar";
-import { Button } from "@/components/ui/button";
-
-import "./core-styles.css";
-import "./default-layout-styles.css";
-import "./search-styles.css";
 
 export default function PdfViewer({
   fileUrl,

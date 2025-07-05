@@ -1,3 +1,7 @@
+// react
+import * as React from "react";
+
+// lib
 import { cn } from "@/lib/utils";
 
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {

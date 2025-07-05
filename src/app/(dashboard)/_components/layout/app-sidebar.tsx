@@ -1,11 +1,20 @@
-import * as React from "react";
+// next
+import Link from "next/link";
+
+// icons
 import { GalleryVerticalEnd, LifeBuoy, Send } from "lucide-react";
+
+// types
+import { components } from "@/types/api";
+import {
+  CourseWithLectures,
+  NavRecentsItem,
+} from "@/app/(dashboard)/_types/types";
+
+// lib
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
-import { NavPrimary } from "./nav-primary";
-import { NavCourses } from "./nav-courses";
-import { NavRecents } from "./nav-recents";
-import { NavSecondary } from "./nav-secondary";
+// components
 import {
   Sidebar,
   SidebarContent,
@@ -15,10 +24,10 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-
-import Link from "next/link";
-import { components } from "@/types/api";
-import { CourseWithLectures, NavRecentsItem } from "../../_types/types";
+import { NavCourses } from "@/app/(dashboard)/_components/layout/nav-courses";
+import { NavPrimary } from "@/app/(dashboard)/_components/layout/nav-primary";
+import { NavRecents } from "@/app/(dashboard)/_components/layout/nav-recents";
+import { NavSecondary } from "@/app/(dashboard)/_components/layout/nav-secondary";
 
 export function AppSidebar({
   navCourses,

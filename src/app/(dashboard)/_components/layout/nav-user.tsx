@@ -1,7 +1,9 @@
 "use client";
 
+// icons
 import { BadgeCheck, Bell, CreditCard, LogOut, Sparkles } from "lucide-react";
 
+// components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,

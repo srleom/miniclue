@@ -1,7 +1,10 @@
+// components
 import { DropzoneComponent } from "@/app/(dashboard)/_components/dropzone";
-import { getUserCourses } from "@/app/(dashboard)/_actions/sidebar-actions";
-import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
 import { Button } from "@/components/ui/button";
+
+// code
+import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
+import { getUserCourses } from "@/app/(dashboard)/_actions/sidebar-actions";
 
 export default async function Page() {
   const { data: courses, error } = await getUserCourses();

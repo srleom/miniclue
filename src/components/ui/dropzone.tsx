@@ -1,10 +1,18 @@
 "use client";
 
-import { Primitive } from "@radix-ui/react-primitive";
-import { Ban, CheckCircle2, Upload } from "lucide-react";
+// react
 import * as React from "react";
 
+// third-party
+import { Primitive } from "@radix-ui/react-primitive";
+
+// icons
+import { Ban, CheckCircle2, Upload } from "lucide-react";
+
+// lib
 import { cn } from "@/lib/utils";
+
+// components
 import * as DropzonePrimitive from "@/components/ui/dropzone-primitive";
 
 function Dropzone(props: React.ComponentProps<typeof DropzonePrimitive.Root>) {

@@ -1,4 +1,7 @@
+// third-party
 import Lottie from "lottie-react";
+
+// assets
 import loadingAnimation from "./loading.json";
 
 export default function LottieAnimation() {

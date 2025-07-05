@@ -1,12 +1,20 @@
 "use client";
 
-import { FileText } from "lucide-react";
-import prettyBytes from "pretty-bytes";
+// react
 import * as React from "react";
 
+// third-party
+import prettyBytes from "pretty-bytes";
+
+// icons
+import { FileText } from "lucide-react";
+
+// lib
+import { cn } from "@/lib/utils";
+
+// components
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 
 function FileList({ className, ...props }: React.ComponentProps<"div">) {
   return (

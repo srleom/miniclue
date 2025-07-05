@@ -1,14 +1,18 @@
 "use client";
 
+// next
+import Link from "next/link";
+
+// icons
 import { Edit } from "lucide-react";
 
+// components
 import {
   SidebarGroup,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
 
 export function NavPrimary() {
   return (

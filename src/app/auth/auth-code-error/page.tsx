@@ -1,5 +1,10 @@
-import { Button } from "@/components/ui/button";
+// next
 import Link from "next/link";
+
+// components
+import { Button } from "@/components/ui/button";
+
+// icons
 import { GalleryVerticalEnd } from "lucide-react";
 
 export default function AuthCodeErrorPage() {
