@@ -6,7 +6,11 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "50mb",
     },
   },
-  serverExternalPackages: ["import-in-the-middle", "require-in-the-middle"],
+  serverExternalPackages: [
+    "import-in-the-middle",
+    "require-in-the-middle",
+    "canvas",
+  ],
   webpack: (config) => {
     config.module.rules.push({
       test: /\.node$/,
