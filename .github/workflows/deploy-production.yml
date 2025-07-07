@@ -10,6 +10,7 @@ jobs:
   deploy-production:
     name: Manual Approval Production Deploy
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

@@ -6,7 +6,10 @@ import type { paths } from "@/types/api";
 
 export default function createApi(access_token: string) {
   return createClient<paths>({
-    baseUrl: process.env.DEV_API_BASE_URL,
+    baseUrl:
+      process.env.NODE_ENV === "production"
+        ? process.env.PROD_API_BASE_URL
+        : process.env.DEV_API_BASE_URL,
     headers: {
       origin: process.env.NEXT_PUBLIC_FE_BASE_URL,
       Authorization: `Bearer ${access_token}`,
