@@ -11,13 +11,22 @@ build:
 run: build
 	./bin/app
 
-# Build the setup-pubsub command
-build-setup-pubsub:
-	go build -o bin/setup-pubsub ./cmd/setup-pubsub
+# Build the setup-pubsub command for the local environment
+build-setup-pubsub-local:
+	go build -o bin/setup-pubsub-local ./cmd/setup-pubsub-local
 
-# Run the setup-pubsub command
-setup-pubsub: build-setup-pubsub
-	./bin/setup-pubsub
+# Run the setup for the local Pub/Sub emulator.
+# This will delete all existing topics and subscriptions and create new ones.
+.PHONY: setup-pubsub-local
+setup-pubsub-local: build-setup-pubsub-local
+	./bin/setup-pubsub-local
+
+# Deploy Pub/Sub resources to staging or production.
+# Usage: make deploy-pubsub env=staging
+#        make deploy-pubsub env=production
+.PHONY: deploy-pubsub
+deploy-pubsub:
+	./scripts/setup_pubsub.sh $(env)
 
 # Format the code
 fmt:
@@ -34,5 +43,5 @@ swagger:
 # Clean generated files
 clean: 
 	rm -f bin/app
-	rm -f bin/setup-pubsub
+	rm -f bin/setup-pubsub-local
 	rm -rf docs/swagger

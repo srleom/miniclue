@@ -64,31 +64,11 @@ go mod download
 ### Configuration
 
 1.  Set up your Supabase project locally or in the cloud.
-2.  Export the required environment variables. You can create a `.env` file and source it.
-
-```bash
-# Supabase Local Development
-DB_HOST=localhost
-DB_PORT=54322
-DB_USER=postgres
-DB_PASSWORD=postgres
-DB_NAME=postgres
-SUPABASE_LOCAL_JWT_SECRET=super-secret-jwt-token-with-at-least-32-characters-long
-SUPABASE_LOCAL_S3_URL=http://localhost:54324
-SUPABASE_LOCAL_S3_BUCKET=storage
-SUPABASE_LOCAL_S3_REGION=us-east-1
-SUPABASE_LOCAL_S3_ACCESS_KEY=owner
-SUPABASE_LOCAL_S3_SECRET_KEY=owner
-
-# Google Cloud Pub/Sub Emulator
-GCP_PROJECT_ID=miniclue-dev
-PUBSUB_INGESTION_TOPIC=ingestion
-PUBSUB_EMULATOR_HOST=localhost:8085
-```
+2.  Export the required environment variables. See `.env.example` for reference.
 
 ## Running the Application
 
-### 1. Start Local Services
+### 1. Start Local Services (Local Development Only)
 
 This project uses Docker Compose to run the Google Cloud Pub/Sub emulator.
 
@@ -96,12 +76,29 @@ This project uses Docker Compose to run the Google Cloud Pub/Sub emulator.
 docker-compose up -d
 ```
 
-### 2. Set Up Local Pub/Sub Environment
+### 2. Set Up Pub/Sub Environment
 
-After starting the emulator for the first time (or to reset it), you must create the necessary topics and subscriptions. A helper command is provided for this.
+This step uses a Go program to configure Pub/Sub topics and subscriptions. It can target your local emulator, staging, or production.
+
+**Important**: Before running for `staging` or `production`, you must authenticate with Google Cloud:
 
 ```bash
-make setup-pubsub
+gcloud auth application-default login
+```
+
+The account you use must have the `Pub/Sub Editor` role on the target GCP project.
+
+To run the setup:
+
+```bash
+# For local development (resets all topics/subscriptions)
+make setup-pubsub env=local
+
+# For staging (creates or updates resources, does not delete)
+make setup-pubsub env=staging
+
+# For production (creates or updates resources, does not delete)
+make setup-pubsub env=production
 ```
 
 ### 3. Run the API Server
