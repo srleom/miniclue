@@ -33,7 +33,19 @@ jobs:
       - name: Configure Docker
         run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
+      - name: Check if image exists
+        id: check_image
+        run: |
+          if gcloud artifacts docker images describe "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }}" --quiet &>/dev/null; then
+            echo "Image already exists, skipping build and push."
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "Image does not exist, building and pushing."
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build and Push Docker Image
+        if: steps.check_image.outputs.exists == 'false'
         env:
           IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }}
         run: |
