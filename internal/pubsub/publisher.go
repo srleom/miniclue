@@ -31,9 +31,9 @@ func NewPublisher(ctx context.Context, cfg *config.Config) (*PubSubPublisher, er
 		if cfg.PubSubEmulatorHost != "" {
 			opts = append(opts, option.WithEndpoint(cfg.PubSubEmulatorHost), option.WithoutAuthentication())
 		}
-	case "stg":
+	case "staging":
 		projectID = cfg.GCPProjectIDStaging
-	case "prod":
+	case "production":
 		projectID = cfg.GCPProjectIDProd
 	default:
 		return nil, fmt.Errorf("invalid APP_ENV specified: '%s'", cfg.AppEnv)
