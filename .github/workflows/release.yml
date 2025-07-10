@@ -1,0 +1,51 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: Production
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and Push Docker Image
+        env:
+          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }}
+        run: |
+          docker build -t $IMAGE_URL .
+          docker push $IMAGE_URL
+
+      - name: Deploy to Cloud Run (Production)
+        id: deploy
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: miniclue-be-production
+          image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }}
+          region: ${{ secrets.GCP_REGION }}
+          flags: "--allow-unauthenticated"
+
+      - name: Show Cloud Run URL
+        run: echo "Deployed to ${{ steps.deploy.outputs.url }}"
