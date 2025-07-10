@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "git": {
+    "deploymentEnabled": false
+  },
+  "builds": [{ "src": "next.config.ts", "use": "@vercel/next" }]
+}

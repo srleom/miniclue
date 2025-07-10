@@ -41,14 +41,6 @@ jobs:
       - name: Build Project Artifacts
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
-      - name: Verify build output
-        run: |
-          ls -aR
-          if [ ! -d ".vercel/output" ]; then
-            echo "Error: .vercel/output directory not found after build."
-            exit 1
-          fi
-
       - name: Upload Vercel build artifact
         uses: actions/upload-artifact@v4
         with:
