@@ -159,7 +159,13 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 // See: https://github.com/supabase/storage/issues/577
 func removeDisableGzip() func(*awsmiddleware.Stack) error {
 	return func(stack *awsmiddleware.Stack) error {
-		_, err := stack.Finalize.Remove("DisableAcceptEncodingGzip")
-		return err
+		// Only remove the middleware if it exists.
+		// This makes the client more robust, especially for operations like presigned URLs
+		// that might inspect the middleware stack.
+		if _, ok := stack.Finalize.Get("DisableAcceptEncodingGzip"); ok {
+			_, err := stack.Finalize.Remove("DisableAcceptEncodingGzip")
+			return err
+		}
+		return nil
 	}
 }
