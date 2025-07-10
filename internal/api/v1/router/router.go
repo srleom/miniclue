@@ -18,6 +18,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	awsmiddleware "github.com/aws/smithy-go/middleware"
 	"github.com/go-playground/validator/v10"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
@@ -66,6 +67,7 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 	s3Config, err := awsconfig.LoadDefaultConfig(context.TODO(),
 		awsconfig.WithRegion(cfg.S3Region),
 		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.S3AccessKey, cfg.S3SecretKey, "")),
+		awsconfig.WithAPIOptions([]func(*awsmiddleware.Stack) error{removeDisableGzip()}),
 	)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to load S3 config: %v", err)
@@ -151,4 +153,13 @@ func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
 	})
 
 	return middleware.LoggerMiddleware(c.Handler(mux)), db, nil
+}
+
+// removeDisableGzip is a workaround for S3 signature errors with some S3-compatible services.
+// See: https://github.com/supabase/storage/issues/577
+func removeDisableGzip() func(*awsmiddleware.Stack) error {
+	return func(stack *awsmiddleware.Stack) error {
+		_, err := stack.Finalize.Remove("DisableAcceptEncodingGzip")
+		return err
+	}
 }
