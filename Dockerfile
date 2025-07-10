@@ -7,8 +7,10 @@ COPY . .
 # Build the application for the app entrypoint
 RUN CGO_ENABLED=0 GOOS=linux go build -o /server ./cmd/app
 
-# Stage 2: Create the final, minimal image
-FROM scratch
+# Stage 2: Create the final image with alpine
+FROM alpine:latest
+# Install ca-certificates for TLS support
+RUN apk --no-cache add ca-certificates
 COPY --from=builder /server /server
 # Set the entrypoint for the container
 CMD ["/server"] 
