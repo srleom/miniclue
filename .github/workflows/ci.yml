@@ -26,7 +26,7 @@ jobs:
           key: golangci-lint-v2.2.1
 
       - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.57.2
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.2.1
         if: steps.cache_golangci_lint.outputs.cache-hit != 'true'
 
       - name: Run golangci-lint
