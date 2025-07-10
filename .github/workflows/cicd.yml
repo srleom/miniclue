@@ -45,7 +45,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: vercel-build-output
-          path: .vercel/output
+          path: .vercel
 
   deploy-preview:
     name: Deploy Preview
@@ -63,7 +63,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vercel-build-output
-          path: .vercel/output
+          path: .
 
       - name: Deploy Preview (PR)
         id: deploy
@@ -97,7 +97,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: vercel-build-output
-          path: .vercel/output
+          path: .
 
       - name: Deploy to Staging (main branch)
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
