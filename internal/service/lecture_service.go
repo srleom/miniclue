@@ -96,11 +96,6 @@ func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) er
 		}
 	}
 
-	// Clear any pending jobs from all related queues
-	if err := s.repo.DeletePendingJobs(ctx, lectureID); err != nil {
-		fmt.Printf("failed to delete pending jobs: %v\n", err)
-	}
-
 	// Delete lecture and cascade database cleanup
 	return s.repo.DeleteLecture(ctx, lectureID)
 }

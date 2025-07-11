@@ -38,12 +38,13 @@ We use Google Cloud Pub/Sub with push subscriptions to Python API endpoints:
 - **Retry & Dead-Letter**: Each subscription has an exponential backoff policy (min:10s, max:10m). After exceeding max delivery attempts, failed messages are forwarded to a dead-letter topic, which pushes via HTTP POST to the `/dlq` endpoint on your API gateway. There, payloads are persisted in the database for logging and manual inspection.
 - **Ack Deadline**: Configure each subscription's `ackDeadlineSeconds` to match your expected processing time (e.g., 60s), and use the client library's ack-deadline lease-extension API in long-running handlers to renew the deadline before it expires, preventing premature redelivery.
 
-# Push Handlers (Cloud Run)
+# Push Handlers (FastAPI Cloud Run)
 
-/ingest → Python ingestion endpoint (FastAPI)
-/embedding → Python embedding endpoint (FastAPI)
-/explanation → Python explanation endpoint (FastAPI)
-/summary → Python summary endpoint (FastAPI)
+/ingestion → Python ingestion endpoint
+/embedding → Python embedding endpoint
+/image-analysis → Python image analysis endpoint
+/explanation → Python explanation endpoint
+/summary → Python summary endpoint
 
 Pub/Sub pushes directly to your Python services, which handle the entire async pipeline including status updates and publishes for downstream jobs.
 
@@ -86,167 +87,143 @@ Pub/Sub pushes directly to your Python services, which handle the entire async p
    - Every request to `/api/v1/*` carries the Supabase JWT.
    - Go middleware verifies token, enforces row-level security on `user_id`.
 
-# Data Flow
+# AI Processing Design: Two Parallel Tracks
 
-## 3.1. Client Upload → Go API
+The new system is designed around two parallel processing tracks that start after the initial upload. This makes the system faster and more robust.
 
-1. **Request**
-   ```
-   POST /api/v1/lectures
-   Content-Type: multipart/form-data
-   Body: { file: <PDF>, metadata… }
-   ```
-2. **Go API Handler**
-   - Create lecture record with status `uploading`
-   - Store PDF in Supabase Storage at `lectures/{lectureId}/original.pdf`
-   - Persist the storage path to the database
-   - Update lecture status to `pending_processing`
-   - **Publish** a message to Pub/Sub topic `ingestion` with payload:
-     ```json
-     { "lecture_id": "<uuid>", "storage_path": "<path>" }
-     ```
-   - On error: roll back DB changes and/or emit cleanup job, return 500 to client
+1.  **The Explanation Track (Fast Lane):** This track's only goal is to generate high-quality, slide-by-slide explanations for the user as quickly as possible. It uses slide images and a powerful AI to create the core value of the app.
+2.  **The Search-Enrichment Track (Background Lane):** This track runs in the background. Its job is to meticulously extract all text, generate embeddings, and prepare the data for the future RAG-based chat feature. It's important, but it doesn't block the user from seeing results.
 
-## 3.2. Ingestion Workflow (FastAPI)
+# Format of messages in topics
 
-**Trigger:** Pub/Sub pushes HTTP POST to `/ingest` with a JSON body like:
+1.  ingestion
 
-```json
+```
+  {
+  "lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  }
+```
+
+2. image-analysis
+
+```
 {
-  "message": {
-    "messageId": "...",
-    "publishTime": "...",
-    "attributes": {
-      /* custom attributes */
-    },
-    "data": "<Base64-encoded JSON payload>"
-  },
-  "subscription": "<subscriptionName>"
+"slide_image_id": "f1e2d3c4-b5a6-7890-fedc-ba0987654321",
+"lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+"image_hash": "b432a1098fedcba"
 }
 ```
 
-1. **Decode envelope with OIDC authentication**
+3. embedding
 
-   - Configure your push subscription with `pushConfig.oidcToken.serviceAccountEmail` set to your Cloud Run service account and `pushConfig.oidcToken.audience` set to your service URL.
-   - Verify the OIDC JWT provided by Pub/Sub (issuer `https://pubsub.googleapis.com/`, audience matching your service URL) and validate expiry.
-   - Base64-decode the `message.data` field and parse the resulting JSON into `{ lecture_id, storage_path }`, ensuring the payload does not exceed Pub/Sub's 10 MiB message size limit.
+```
+{
+  "lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
 
-2. **Update lecture status**
+4. explanation
 
-   - Update lecture status to `parsing`
+```
+{
+"lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+"slide_id": "c1b2a398-d4e5-f678-90ab-cdef12345678",
+"slide_number": 5,
+"total_slides": 30,
+"slide_image_path": "lectures/a1b2.../slides/5.png"
+}
+```
 
-3. **Check for existing processing**: Before proceeding, check the lecture status in the database. If the status is already `embedding` (indicating ingestion is complete), skip all processing and return success immediately. If the status is `pending_processing` or `parsing`, proceed with processing.
+5. summmary
 
-4. **Resume from last successful point**: Query the database to find which slides have already been fully processed (have both text chunks and image records). Skip these slides and resume processing from the first unprocessed slide.
+```
+{
+  "lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+}
+```
 
-5. **Initialization**: The service initializes clients for Supabase Storage (S3) and Postgres, and optionally loads the Salesforce BLIP model for image captioning if its dependencies are installed.
+# The Full Data Flow, Step-by-Step
 
-6. **Download & Parse PDF**: It downloads the PDF from storage and opens it in memory using PyMuPDF. It then updates the lecture record in the database with the total number of slides.
+## Step 1: User Uploads a Lecture
 
-7. **Process Each Slide**: The service iterates through each slide of the PDF.
+- **Trigger:** The user selects a PDF file and clicks "Upload" in the Next.js application.
+- **Action:**
+  1.  The request, containing the PDF file, is sent to your Go API Gateway.
+  2.  The Go API immediately creates a new record in the `lectures` table with a status of `uploading`.
+  3.  It then uploads the PDF file directly to Supabase Storage in a dedicated folder for that lecture.
+  4.  Once the upload is successful, it updates the `lectures` record with the file's storage path and changes the status to `pending_processing`.
+  5.  Finally, it publishes a single message to the Google Cloud Pub/Sub topic named `ingestion`. This message contains the unique ID of the lecture, kicking off the entire automated pipeline.
 
-   - **Text processing**:
-     - **Check text processing**: Before processing each slide, check if it has already been fully processed (text chunks exist). If so, move on to the next step.
-     - **Text Processing**: It extracts all raw text from the slide. This text is then broken down into smaller, overlapping chunks using the `tiktoken` library. Each chunk is saved to the database, and its ID is collected into a list for batch processing.
-   - **Image processing**:
-     - **Check image processing**: Before processing each slide, check if image records already exist. If so, move on to the next step.
-     - **Image Processing**: It extracts all embedded images from the slide. For each image, it performs several steps:
-     - **Analysis**: It runs Optical Character Recognition (OCR) using Tesseract and, if enabled, generates a descriptive caption (alt-text) using the BLIP model.
-     - **Classification**: Based on keywords in the caption and the amount of text from OCR, it classifies the image as either "content" (e.g., diagrams, charts) or "decorative" (e.g., logos, backgrounds).
-     - **Deduplication & Storage**: It computes a perceptual hash of each image to avoid storing duplicates. Decorative images are checked against a global table and stored in a shared `global/` folder if new. Content images are checked against a lecture-specific registry and stored in a folder for that lecture.
-   - **Full Slide Rendering**: Finally, it renders a high-resolution image of the entire slide. This rendered image is also processed with OCR and BLIP, and the result is saved to storage. All image metadata (paths, hashes, OCR/alt-text) is stored in the database.
-     - This image is then sent to Llama for captioning.
+## Step 2: Ingestion and Dispatch Workflow
 
-8. **Publish Embedding Job**: After processing all slides, the service publishes a single message to the `embedding` topic containing a list of all collected `chunk_id`s.
+- **Trigger:** A message arrives from the `ingestion` topic, pushed to your Python API (`/ingest`).
+- **Action:** This service is now a fast, mechanical dispatcher. It makes no external AI calls.
 
-9. **Completion**: Once the embedding job is published, the service logs the completion of the ingestion task.
+  1.  It receives the lecture ID and updates the lecture's status to `parsing`.
+  2.  It downloads the PDF and creates an in-memory dictionary called `processed_images_map`.
+      - `processed_images_map = { image_hash -> storage_path }`
+  3.  It processes the PDF **page by page**:
 
-- On success:
-  - Update lecture status to `embedding`
-  - Return 200 (Pub/Sub acks)
-- On failure:
-  - Update lecture status to `failed` with error details
-  - Return 500 (Pub/Sub retries then DLQ)
+      - **Create Slide & Chunks**: Extracts raw_text, breaks it into chunks using tiktoken, and saves records to the slides and chunks tables.
+      - It renders the high-resolution, full-page image for the main slide explanation and saves its record.
+      - It finds all sub-images within the slide. For each sub-image:
+        - **a. Compute Hash:** It computes the perceptual hash of the image.
+        - **b. Check if Hash is New:** It checks if the hash exists as a key in the `processed_images_map`.
+        - **c. If the Hash is NEW:**
+          - Upload the image to storage to get a `new_storage_path`.
+          - Add the entry to the map: `processed_images_map[hash] = new_storage_path`.
+          - Create a new record in the `slide_images` table for the current slide, using the `hash` and the `new_storage_path`.
+          - **Publish one `image-analysis` job** for this new record's ID.
+        - **d. If the Hash is a DUPLICATE:**
+          - Look up the existing path from the map: `existing_path = processed_images_map[hash]`.
+          - Create a new record in the `slide_images` table for the current slide, using the `hash` and the `existing_path`.
+          - **Do NOT publish another analysis job.**
 
-## 3.3. Embedding Push Handler (/embedding)
+  4.  **Save Final Counts**: After the loop, it saves the final total_sub_images count (the number of unique images) to the lectures table.
+  5.  **Dispatch Explanation Jobs:** It loops through the slide data it collected and publishes a separate message to the `explanation` topic for **every single slide**.
+  6.  **Handle No-Image Case: Checks if total_sub_images == 0. If so, it publishes the embedding job directly.**
+  7.  **Finalize:** It updates the lecture status to `explaining` and returns a success signal.
 
-**Trigger:** Pub/Sub pushes HTTP POST to `/embedding`
+## Step 3: Image Analysis
 
-1. **Decode envelope with OIDC authentication**
+- **Trigger:** An `image-analysis` message arrives (only for unique images).
+- **Action:** This handler performs the single, comprehensive AI analysis for each unique image.
+  1.  It receives the `slide_images` ID and fetches the corresponding image from storage.
+  2.  **Make One LLM Call:** It sends the image to your low-cost multi-modal LLM, asking for three pieces of information in a single, structured response: the image's `type` (`content` or `decorative`), its `ocr_text`, and its `alt_text`.
+  3.  **Propagate Results:** It runs an update query on the `slide_images` table **where the `lecture_id` and `image_hash` match**. This ensures that the analysis results are written to _every single record_ representing that unique image across all slides in the lecture.
+  4.  **The "Last Job" Logic:** In a single, atomic database transaction, it increments the `processed_sub_images` counter in the main `lectures` table and returns `processed_sub_images` and `total_sub_images`.
+  5.  **Trigger Embedding Job (If Last):** If `processed_sub_images` == `total_sub_images`, it publishes the single embedding message containing the lecture_id.
 
-   - Verify the OIDC JWT provided by Pub/Sub (issuer `https://pubsub.googleapis.com/`, audience matching your service URL).
-   - Base64-decode the `message.data` field and parse the JSON into `{ "chunk_ids": [...], lecture_id: <uuid> }`.
+## Step 4: Creating Searchable Embeddings
 
-2. **Filter Processed Chunks**: For idempotency, the handler queries the database to find which of the received `chunk_id`s already have an embedding. It removes these from the list to avoid reprocessing. If no chunks remain, the handler returns success immediately.
+- **Trigger:** The single, large message arrives from the `embedding` topic.
+- **Action:**
+  1.  It receives the `lecture_id`. It first queries the database to get all the `chunks` for that lecture.
+  2.  **Enrich the Text:** For each chunk, it builds a richer block of text. It looks up all images associated with the chunk's slide and **filters them to only include those where the `type` is `content`**. It then combines:
+      - The original text of the chunk.
+      - The `ocr_text` and `alt_text` from all relevant _content_ images.
+  3.  **Generate Embeddings:** It sends all of these enriched text blocks to the OpenAI Embedding API in an efficient batch request.
+  4.  **Save the Vectors:** The returned vectors are saved into the `embeddings` table, fully preparing the lecture for the future chat feature.
+  5.  **Finalize Search-Enrichment Track**: After saving the vectors, it performs one final atomic transaction:
+      - **SQL Logic**: UPDATE lectures SET embeddings_complete = TRUE WHERE id = :lecture_id RETURNING status;
+      - **Application Logic**: It receives the current_status back. If current_status == 'summarising', it knows the other track has finished, so it runs a final UPDATE to set the lecture status to complete.
 
-3. **Fetch & Embed (Batch)**: It fetches the text for all remaining (unprocessed) chunks from the database. It then calls the OpenAI embedding API with the entire array of texts, receiving all vector embeddings in a single API call.
+## Step 5: Generating Explanations
 
-4. **Store Embeddings (Batch)**: The generated vectors are saved to the `embeddings` table in a single database transaction or bulk insert operation.
+- **Trigger:** A message arrives from the `explanation` topic (one for each slide), running in parallel.
+- **Action:**
+  1.  It checks if an explanation for this slide already exists and stops if it does.
+  2.  **Gather Context:** It downloads the main slide image and queries the database for the raw text of the _previous_ and _next_ slides.
+  3.  **Call the AI Professor:** It sends the slide image and the contextual text to your high-quality multi-modal LLM (like GPT-4o), asking for a detailed explanation, a one-liner summary, and the slide's purpose.
+  4.  It saves the AI's structured response to the `explanations` table.
+  5.  **Update Progress & Trigger Summary:** It safely increments the `processed_slides` counter. If this was the last slide (`processed_slides == total_slides`), it updates the lecture status to `summarising` and publishes the final message to the `summary` topic.
 
-5. **Publish Explanation Jobs & Finalize**: After the batch embedding is complete, the service queries for all unique `slide_id`s associated with the lecture. For each slide, it publishes a separate message to the `explanation` topic. After enqueuing all explanation jobs, it updates the lecture's status to `explaining`.
+## Step 6: Creating the Final Lecture Summary
 
-6. **Completion**: The service logs the completion of the batch embedding task.
-
-- On success:
-  - Return 200 (Pub/Sub acks)
-- On failure:
-  - Update lecture status to `failed` with error details
-  - Return 500 (Pub/Sub retries then DLQ)
-
-## 3.4. Explanation Push Handler (/explanation)
-
-**Trigger:** Pub/Sub pushes HTTP POST to `/explanation`
-
-1. **Decode envelope with OIDC authentication**
-
-   - Verify the OIDC JWT provided by Pub/Sub (issuer `https://pubsub.googleapis.com/`, audience matching your service URL).
-   - Base64-decode the `message.data` field and parse the JSON into `{ slide_id, lecture_id, slide_number }`.
-
-2. **Check for existing explanation**: Before processing, check if an explanation already exists for this specific slide in the database. If an explanation record already exists for this slide_id, skip all processing and return success immediately.
-
-3. **Gather Context**:
-
-   - **Recent History**: It fetches the short, one-liner summaries from the last 1-3 slides to understand the immediate context.
-   - **Current Slide Data**: It retrieves the full text and any OCR/alt-text from images on the current slide.
-   - **Related Concepts (RAG)**: It creates an embedding from the current slide's full text and uses it to perform a vector similarity search across the entire lecture. This retrieves the most relevant text chunks from other slides, providing broad, lecture-wide context.
-
-4. **Prompt Assembly & LLM Call**: All the gathered information—recent history, current slide data, and related concepts—is assembled into a detailed prompt. It instructs the LLM to act as an AI professor and generate a clear, in-depth explanation. The LLM is asked to classify the slide's purpose (e.g., "cover", "header", "content") and return the output as a structured JSON object containing a `one_liner` summary and the full `content` in Markdown.
-
-5. **Persist Explanation & Update Progress**: The generated explanation and one-liner are saved to the `explanations` table. The service then atomically increments the `processed_slides` counter for the lecture within a transaction to avoid lost updates.
-
-6. **Publish Summary Job**: If all slides for the lecture have been explained (`processed_slides` equals `total_slides`), it updates the lecture's status to `summarising` and publishes a final message to the `summary` topic.
-
-7. **Completion**: Once the explanation is complete, the service logs the completion of the explanation task.
-
-- On success:
-  - Return 200 (Pub/Sub acks)
-- On failure:
-  - Update lecture status to `failed` with error details
-  - Return 500 (Pub/Sub retries then DLQ)
-
-## 3.5. Summary Push Handler (/summary)
-
-**Trigger:** Pub/Sub pushes HTTP POST to `/summary`
-
-1. **Decode envelope with OIDC authentication**
-
-   - Verify the OIDC JWT provided by Pub/Sub (issuer `https://pubsub.googleapis.com/`, audience matching your service URL).
-   - Base64-decode the `message.data` field and parse the JSON into `{ lecture_id }`.
-
-2. **Check for existing summary**: Before processing, check if a summary already exists for this specific lecture in the database. If a summary record already exists for this lecture_id, skip all processing and return success immediately.
-
-3. **Gather All Explanations**: It retrieves all the detailed, slide-by-slide explanations from the database for the entire lecture.
-
-4. **Build Prompt & Call LLM**: It combines all the explanations into a single, comprehensive prompt. It instructs the LLM to act as an AI professor and synthesize the information into a student-friendly "cheatsheet." The cheatsheet should start with a list of key takeaways and then provide a well-structured summary of the lecture's main topics.
-
-5. **Persist Summary & Finalize Lecture**: The generated Markdown summary is saved to the `summaries` table. The service then updates the main lecture's status to `complete` and records a `completed_at` timestamp, marking the successful end of the entire processing pipeline.
-
-6. **Metrics & Errors**: log token usage, cost, and fallback on over-length.
-
-7. **Completion**: Once the summary is complete, the service logs the completion of the summary task.
-
-- On success:
-  - Return 200 (Pub/Sub acks)
-- On failure:
-  - Update lecture status to `failed` with error details
-  - Return 500 (Pub/Sub retries then DLQ)
+- **Trigger:** The final message arrives from the `summary` topic.
+- **Action:**
+  1.  It checks if a summary already exists and stops if so.
+  2.  **Gather & Synthesize:** It gathers all the high-quality, slide-by-slide explanations from the database and sends them to the LLM one last time, asking it to synthesize a comprehensive "cheatsheet."
+  3.  Finalize Explanation Track: After saving the summary, it performs one final atomic transaction:
+      - **SQL Logic**: UPDATE lectures SET status = 'summarising' WHERE id = :lecture_id RETURNING embeddings_complete; (This confirms the status in case of retries).
+      - **Application Logic**: It receives the embeddings_complete flag back. If the flag is true, it knows the other track has finished, so it runs a final UPDATE to set the lecture status to complete.

@@ -17,8 +17,6 @@ type LectureRepository interface {
 	DeleteLecture(ctx context.Context, lectureID string) error
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
 	CreateLecture(ctx context.Context, lecture *model.Lecture) (*model.Lecture, error)
-	EnqueueIngestionJob(ctx context.Context, lectureID string, storagePath string) error
-	DeletePendingJobs(ctx context.Context, lectureID string) error
 }
 
 type lectureRepository struct {
@@ -183,42 +181,4 @@ func (r *lectureRepository) CreateLecture(ctx context.Context, lecture *model.Le
 		return nil, fmt.Errorf("failed to create lecture: %w", err)
 	}
 	return lecture, nil
-}
-
-func (r *lectureRepository) EnqueueIngestionJob(ctx context.Context, lectureID string, storagePath string) error {
-	query := `SELECT pgmq.send('ingestion_queue', $1::jsonb, 0)`
-	job := fmt.Sprintf(`{"lecture_id": "%s", "storage_path": "%s"}`, lectureID, storagePath)
-	_, err := r.db.ExecContext(ctx, query, job)
-	if err != nil {
-		return fmt.Errorf("failed to enqueue ingestion job: %w", err)
-	}
-	return nil
-}
-
-// DeletePendingJobs deletes any pending jobs related to a lecture across all pgmq queues.
-func (r *lectureRepository) DeletePendingJobs(ctx context.Context, lectureID string) error {
-	queues := []string{
-		"ingestion_queue", "embedding_queue", "explanation_queue", "summary_queue",
-		"ingestion_queue_dlq", "embedding_queue_dlq", "explanation_queue_dlq", "summary_queue_dlq",
-	}
-	for _, q := range queues {
-		// Delete all messages containing this lecture ID via pgmq.delete,
-		// querying the actual queue table q_<queue>_queue in pgmq schema.
-		sqlStmt := fmt.Sprintf(
-			`SELECT pgmq.delete('%s', ARRAY(
-				SELECT msg_id FROM pgmq.q_%s WHERE message->>'lecture_id' = $1
-			))`,
-			q, q,
-		)
-		// Use QueryContext since SELECT returns rows
-		rows, err := r.db.QueryContext(ctx, sqlStmt, lectureID)
-		if err != nil {
-			fmt.Printf("failed to delete pending jobs from %s: %v\n", q, err)
-			continue
-		}
-		if err := rows.Close(); err != nil {
-			r.logger.Error().Err(err).Msgf("failed to close rows for queue %s", q)
-		}
-	}
-	return nil
 }
