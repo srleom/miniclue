@@ -37,6 +37,7 @@ We use Google Cloud Pub/Sub with push subscriptions to Python API endpoints:
 - **Subscriptions**: configured as push to `/{topic}` on your API server
 - **Retry & Dead-Letter**: Each subscription has an exponential backoff policy (min:10s, max:10m). After exceeding max delivery attempts, failed messages are forwarded to a dead-letter topic, which pushes via HTTP POST to the `/dlq` endpoint on your API gateway. There, payloads are persisted in the database for logging and manual inspection.
 - **Ack Deadline**: Configure each subscription's `ackDeadlineSeconds` to match your expected processing time (e.g., 60s), and use the client library's ack-deadline lease-extension API in long-running handlers to renew the deadline before it expires, preventing premature redelivery.
+- **Handling Deleted Data (Defensive Subscribers)**: Pub/Sub does not support directly deleting specific in-flight messages. Instead, subscribers must be "defensive." Before processing a message, a subscriber should always query the database to confirm the associated lecture or entity still exists. If it has been deleted, the subscriber should simply acknowledge the message to prevent redelivery and take no further action. This approach is resilient to race conditions and simplifies the deletion logic in the main API.
 
 # Push Handlers (FastAPI Cloud Run)
 
@@ -159,7 +160,7 @@ The new system is designed around two parallel processing tracks that start afte
 - **Trigger:** A message arrives from the `ingestion` topic, pushed to your Python API (`/ingest`).
 - **Action:** This service is now a fast, mechanical dispatcher. It makes no external AI calls.
 
-  1.  It receives the lecture ID and updates the lecture's status to `parsing`.
+  1.  It receives the lecture ID, **verifies the lecture exists in the database**, and updates its status to `parsing`.
   2.  It downloads the PDF and creates an in-memory dictionary called `processed_images_map`.
       - `processed_images_map = { image_hash -> storage_path }`
   3.  It processes the PDF **page by page**:
@@ -188,7 +189,7 @@ The new system is designed around two parallel processing tracks that start afte
 
 - **Trigger:** An `image-analysis` message arrives (only for unique images).
 - **Action:** This handler performs the single, comprehensive AI analysis for each unique image.
-  1.  It receives the `slide_images` ID and fetches the corresponding image from storage.
+  1.  It receives the `slide_images` ID, **first verifies the associated lecture exists**, then fetches the corresponding image from storage.
   2.  **Make One LLM Call:** It sends the image to your low-cost multi-modal LLM, asking for three pieces of information in a single, structured response: the image's `type` (`content` or `decorative`), its `ocr_text`, and its `alt_text`.
   3.  **Propagate Results:** It runs an update query on the `slide_images` table **where the `lecture_id` and `image_hash` match**. This ensures that the analysis results are written to _every single record_ representing that unique image across all slides in the lecture.
   4.  **The "Last Job" Logic:** In a single, atomic database transaction, it increments the `processed_sub_images` counter in the main `lectures` table and returns `processed_sub_images` and `total_sub_images`.
@@ -198,7 +199,7 @@ The new system is designed around two parallel processing tracks that start afte
 
 - **Trigger:** The single, large message arrives from the `embedding` topic.
 - **Action:**
-  1.  It receives the `lecture_id`. It first queries the database to get all the `chunks` for that lecture.
+  1.  It receives the `lecture_id`, **first verifies the lecture still exists**, and then queries the database to get all the `chunks` for that lecture.
   2.  **Enrich the Text:** For each chunk, it builds a richer block of text. It looks up all images associated with the chunk's slide and **filters them to only include those where the `type` is `content`**. It then combines:
       - The original text of the chunk.
       - The `ocr_text` and `alt_text` from all relevant _content_ images.
@@ -212,7 +213,7 @@ The new system is designed around two parallel processing tracks that start afte
 
 - **Trigger:** A message arrives from the `explanation` topic (one for each slide), running in parallel.
 - **Action:**
-  1.  It checks if an explanation for this slide already exists and stops if it does.
+  1.  **It first verifies the lecture exists.** It then checks if an explanation for this slide already exists and stops if it does.
   2.  **Gather Context:** It downloads the main slide image and queries the database for the raw text of the _previous_ and _next_ slides.
   3.  **Call the AI Professor:** It sends the slide image and the contextual text to your high-quality multi-modal LLM (like GPT-4o), asking for a detailed explanation, a one-liner summary, and the slide's purpose.
   4.  It saves the AI's structured response to the `explanations` table.
@@ -222,7 +223,7 @@ The new system is designed around two parallel processing tracks that start afte
 
 - **Trigger:** The final message arrives from the `summary` topic.
 - **Action:**
-  1.  It checks if a summary already exists and stops if so.
+  1.  **It first verifies the lecture exists.** It then checks if a summary for the lecture already exists and stops if so.
   2.  **Gather & Synthesize:** It gathers all the high-quality, slide-by-slide explanations from the database and sends them to the LLM one last time, asking it to synthesize a comprehensive "cheatsheet."
   3.  Finalize Explanation Track: After saving the summary, it performs one final atomic transaction:
       - **SQL Logic**: UPDATE lectures SET status = 'summarising' WHERE id = :lecture_id RETURNING embeddings_complete; (This confirms the status in case of retries).
