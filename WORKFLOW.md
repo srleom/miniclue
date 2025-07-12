@@ -39,7 +39,13 @@ We use Google Cloud Pub/Sub with push subscriptions to Python API endpoints:
 - **Ack Deadline**: Configure each subscription's `ackDeadlineSeconds` to match your expected processing time (e.g., 60s), and use the client library's ack-deadline lease-extension API in long-running handlers to renew the deadline before it expires, preventing premature redelivery.
 - **Handling Deleted Data (Defensive Subscribers)**: Pub/Sub does not support directly deleting specific in-flight messages. Instead, subscribers must be "defensive." Before processing a message, a subscriber should always query the database to confirm the associated lecture or entity still exists. If it has been deleted, the subscriber should simply acknowledge the message to prevent redelivery and take no further action. This approach is resilient to race conditions and simplifies the deletion logic in the main API.
 
-# Push Handlers (FastAPI Cloud Run)
+# FastAPI Push Handlers
+
+Base URL:
+
+- Local: http://127.0.0.1:8000
+- Staging: https://stg.svc.miniclue.com
+- Production: https://svc.miniclue.com
 
 /ingestion → Python ingestion endpoint
 /embedding → Python embedding endpoint
@@ -49,7 +55,13 @@ We use Google Cloud Pub/Sub with push subscriptions to Python API endpoints:
 
 Pub/Sub pushes directly to your Python services, which handle the entire async pipeline including status updates and publishes for downstream jobs.
 
-# Key API Route Groups
+# Go API Routes
+
+Base URL:
+
+- Local: http://127.0.0.1:8080
+- Staging: https://stg.api.miniclue.com/v1
+- Production: https://api.miniclue.com/v1
 
 ```
 /api/v1/courses
@@ -101,7 +113,8 @@ The new system is designed around two parallel processing tracks that start afte
 
 ```
   {
-  "lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  "lecture_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "storage_path": "lectures/55bdef4b-b9ac-4783-b8e4-87b47675333e/original.pdf"
   }
 ```
 
