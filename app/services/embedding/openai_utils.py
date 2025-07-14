@@ -3,7 +3,7 @@ import logging
 import random
 from typing import List, Dict, Any
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from app.utils.config import Settings
 
@@ -14,17 +14,19 @@ logging.basicConfig(
     format="%(levelname)s: %(message)s",
 )
 
-client = OpenAI(api_key=settings.openai_api_key, base_url=settings.openai_api_base_url)
+client = AsyncOpenAI(
+    api_key=settings.openai_api_key, base_url=settings.openai_api_base_url
+)
 
 
-def generate_embeddings(texts: List[str]) -> List[Dict[str, Any]]:
+async def generate_embeddings(texts: List[str]) -> List[Dict[str, Any]]:
     """
     Generate embedding vectors for a batch of text chunks.
     """
     if not texts:
         return []
 
-    response = client.embeddings.create(
+    response = await client.embeddings.create(
         model=settings.embedding_model,
         input=texts,
     )

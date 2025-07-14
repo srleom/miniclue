@@ -1,5 +1,6 @@
 import logging
 from uuid import UUID
+import json
 
 import asyncpg
 
@@ -49,7 +50,16 @@ async def summarize(lecture_id: UUID):
 
         logging.info(f"Finished summarization for lecture_id={lecture_id}")
     except Exception as e:
-        logging.error(f"Summarization failed for lecture_id={lecture_id}: {e}")
+        logging.error(
+            f"Summarization failed for lecture_id={lecture_id}: {e}", exc_info=True
+        )
+        if conn:
+            error_info = {"service": "summary", "error": str(e)}
+            await conn.execute(
+                "UPDATE lectures SET explanation_error_details = $1::jsonb, status = 'failed' WHERE id = $2",
+                json.dumps(error_info),
+                lecture_id,
+            )
         raise
     finally:
         if conn and not conn.is_closed():

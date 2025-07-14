@@ -1,6 +1,7 @@
 import logging
 from uuid import UUID
 from collections import defaultdict
+import json
 
 import asyncpg
 
@@ -33,12 +34,6 @@ async def process_embedding_job(lecture_id: UUID):
                 f"Lecture {lecture_id} not found or in terminal state. Acknowledging message."
             )
             return
-
-        # Clear any previous error details since we're starting fresh
-        await conn.execute(
-            "UPDATE lectures SET error_details = NULL WHERE id = $1",
-            lecture_id,
-        )
 
         # 2. Get all chunks and content-rich images for the lecture
         chunks = await db_utils.get_lecture_chunks(conn, lecture_id)
@@ -78,7 +73,7 @@ async def process_embedding_job(lecture_id: UUID):
         if settings.mock_llm_calls:
             embedding_results = openai_utils.mock_generate_embeddings(enriched_texts)
         else:
-            embedding_results = openai_utils.generate_embeddings(enriched_texts)
+            embedding_results = await openai_utils.generate_embeddings(enriched_texts)
 
         # 5. Prepare data for batch database insertion
         embeddings_to_insert = []
@@ -111,11 +106,13 @@ async def process_embedding_job(lecture_id: UUID):
             f"Error processing embedding for lecture {lecture_id}: {e}", exc_info=True
         )
         # Optionally, update lecture status to 'failed'
-        await conn.execute(
-            "UPDATE lectures SET status = 'failed', error_details = $1 WHERE id = $2",
-            str(e),
-            lecture_id,
-        )
+        if conn:
+            error_info = {"service": "embedding", "error": str(e)}
+            await conn.execute(
+                "UPDATE lectures SET status = 'failed', search_error_details = $1::jsonb WHERE id = $2",
+                json.dumps(error_info),
+                lecture_id,
+            )
         raise
     finally:
         await conn.close()

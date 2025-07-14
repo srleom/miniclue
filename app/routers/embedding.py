@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, status
+
 from app.schemas.common import PubSubRequest
 from app.schemas.embedding import EmbeddingPayload
 from app.services.embedding.orchestrator import process_embedding_job
@@ -10,12 +11,11 @@ router = APIRouter(prefix="/embedding", tags=["embedding"])
 
 
 @router.post("", status_code=status.HTTP_204_NO_CONTENT)
-async def handle_embedding_job(job: PubSubRequest):
+async def handle_embedding_job(request: PubSubRequest):
     """Handles an embedding job request from Pub/Sub."""
     try:
-        # Pydantic model decodes the base64 data automatically.
-        payload = EmbeddingPayload(**job.message.data)
-        logging.info(f"Received embedding job for lecture_id: {payload.lecture_id}")
+        payload = EmbeddingPayload(**request.message.data)
+        logging.info(f"Processing embedding job for lecture_id: {payload.lecture_id}")
         await process_embedding_job(lecture_id=payload.lecture_id)
     except Exception as e:
         logging.error(f"Embedding job failed: {e}", exc_info=True)

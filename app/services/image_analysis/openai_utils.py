@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 
 
-async def analyze_image_with_openai(
+async def analyze_image(
     image_bytes: bytes,
     prompt: str,
 ) -> ImageAnalysisResult:

@@ -1,104 +1,128 @@
 import logging
-from uuid import UUID
-
 import asyncpg
+import boto3
+import json
 
+from app.schemas.explanation import ExplanationPayload
 from app.services.explanation.db_utils import (
-    fetch_context,
-    fetch_image_data,
-    fetch_slide_text,
-    fetch_related_concepts,
-    persist_explanation_and_update_progress,
+    verify_lecture_exists,
+    explanation_exists,
+    get_slide_context,
+    save_explanation,
+    increment_progress_and_check_completion,
 )
 from app.services.explanation.openai_utils import (
     generate_explanation,
     mock_generate_explanation,
 )
-from app.services.embedding.openai_utils import get_embedding, mock_get_embedding
+from app.services.explanation.s3_utils import download_slide_image
+from app.services.explanation.pubsub_utils import publish_summary_job
 from app.utils.config import Settings
+
 
 settings = Settings()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s:     %(message)s",
-)
 
-
-async def explain(slide_id: UUID, lecture_id: UUID, slide_number: int):
+async def process_explanation_job(payload: ExplanationPayload):
     """
-    Consume explanation job: generate explanation for a slide, persist results,
-    update lecture progress, and enqueue summary when complete.
+    Orchestrates the entire process of generating an explanation for a single slide.
     """
     logging.info(
-        f"Starting explanation for slide_id={slide_id}, slide_number={slide_number}"
+        f"Received explanation request for slide {payload.slide_number} of lecture {payload.lecture_id}"
     )
+
+    # Initialize connections
     if not settings.postgres_dsn:
-        logging.error("Postgres DSN not configured")
-        raise RuntimeError("Postgres DSN not configured")
-    if not settings.xai_api_key:
-        logging.error("XAI API key not configured")
-        raise RuntimeError("XAI API key not configured")
-
+        raise ValueError("POSTGRES_DSN is not configured.")
     conn = await asyncpg.connect(settings.postgres_dsn)
+
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id=settings.s3_access_key or None,
+        aws_secret_access_key=settings.s3_secret_key or None,
+        endpoint_url=settings.s3_endpoint_url or None,
+    )
+
     try:
-        context_recap, previous_one_liner = await fetch_context(
-            conn, lecture_id, slide_number
+        # 1. Verify lecture exists
+        if not await verify_lecture_exists(conn, payload.lecture_id):
+            logging.warning(
+                f"Lecture {payload.lecture_id} not found. Acknowledging message."
+            )
+            return
+
+        # 2. Check if explanation already exists to ensure idempotency
+        if await explanation_exists(conn, payload.slide_id):
+            logging.info(
+                f"Explanation for slide {payload.slide_id} already exists. Skipping."
+            )
+            return
+
+        # 3. Download slide image from S3
+        image_bytes = download_slide_image(
+            s3_client, settings.s3_bucket_name, payload.slide_image_path
         )
-        full_text = await fetch_slide_text(conn, slide_id)
 
-        # Fetch related concepts (partial context) via vector similarity
-        if settings.mock_llm_calls:
-            vector_str, _ = mock_get_embedding(full_text)
-        else:
-            vector_str, _ = get_embedding(full_text)
-
-        related_concepts = await fetch_related_concepts(
-            conn,
-            lecture_id,
-            slide_number,
-            vector_str,
-            2,
+        # 4. Gather context (previous and next slide text)
+        prev_text, next_text = await get_slide_context(
+            conn, payload.lecture_id, payload.slide_number
         )
-        ocr_texts, alt_texts = await fetch_image_data(conn, lecture_id, slide_number)
 
+        # 5. Call the AI Professor
         if settings.mock_llm_calls:
-            slide_type, one_liner, content, metadata_str = mock_generate_explanation(
-                slide_number,
-                context_recap,
-                previous_one_liner,
-                full_text,
-                related_concepts,
-                ocr_texts,
-                alt_texts,
+            ai_result = mock_generate_explanation(
+                image_bytes,
+                payload.slide_number,
+                payload.total_slides,
+                prev_text,
+                next_text,
             )
         else:
-            slide_type, one_liner, content, metadata_str = generate_explanation(
-                slide_number,
-                context_recap,
-                previous_one_liner,
-                full_text,
-                related_concepts,
-                ocr_texts,
-                alt_texts,
+            ai_result = await generate_explanation(
+                image_bytes,
+                payload.slide_number,
+                payload.total_slides,
+                prev_text,
+                next_text,
             )
 
-        await persist_explanation_and_update_progress(
+        # 6. Save the structured response
+        await save_explanation(
             conn,
-            slide_id,
-            lecture_id,
-            slide_number,
-            one_liner,
-            content,
-            slide_type,
-            metadata_str,
+            payload.slide_id,
+            payload.lecture_id,
+            payload.slide_number,
+            ai_result,
+        )
+        logging.info(f"Saved explanation for slide {payload.slide_id}")
+
+        # 7. Update progress and trigger summary if it was the last slide
+        is_complete = await increment_progress_and_check_completion(
+            conn, payload.lecture_id
         )
 
-        logging.info(f"Finished explanation for slide_id={slide_id}")
-    except (ValueError, asyncpg.PostgresError) as e:
-        logging.error(f"Explanation failed for slide_id={slide_id}: {e}")
+        if is_complete:
+            logging.info(
+                f"Lecture {payload.lecture_id} processing complete. Publishing summary job."
+            )
+            publish_summary_job(payload.lecture_id)
+
+    except Exception as e:
+        logging.error(
+            f"Error processing explanation for slide {payload.slide_id}: {e}",
+            exc_info=True,
+        )
+        if conn:
+            error_info = {
+                "service": "explanation",
+                "slide_id": str(payload.slide_id),
+                "error": str(e),
+            }
+            await conn.execute(
+                "UPDATE lectures SET explanation_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
+                json.dumps(error_info),
+                payload.lecture_id,
+            )
         raise
     finally:
-        if conn and not conn.is_closed():
-            await conn.close()
-            logging.info("Postgres connection closed for explanation")
+        await conn.close()

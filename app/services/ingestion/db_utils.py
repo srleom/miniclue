@@ -22,14 +22,25 @@ async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> b
 
 
 async def update_lecture_status(
-    conn: asyncpg.Connection, lecture_id: UUID, status: str
+    conn: asyncpg.Connection,
+    lecture_id: UUID,
+    status: str,
+    search_error_details: str | None = None,
 ):
-    """Updates the status of a lecture."""
-    await conn.execute(
-        "UPDATE lectures SET status=$1, updated_at=NOW() WHERE id=$2",
-        status,
-        lecture_id,
-    )
+    """Updates the status and optionally the search_error_details of a lecture."""
+    if search_error_details:
+        await conn.execute(
+            "UPDATE lectures SET status=$1, search_error_details=$2::jsonb, updated_at=NOW() WHERE id=$3",
+            status,
+            search_error_details,
+            lecture_id,
+        )
+    else:
+        await conn.execute(
+            "UPDATE lectures SET status=$1, updated_at=NOW() WHERE id=$2",
+            status,
+            lecture_id,
+        )
 
 
 async def set_lecture_parsing(
