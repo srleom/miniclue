@@ -10,7 +10,7 @@ from app.services.image_analysis.orchestrator import process_image_analysis_job
 router = APIRouter(prefix="/image-analysis", tags=["image-analysis"])
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("", status_code=status.HTTP_204_NO_CONTENT)
 async def handle_image_analysis_job(request: PubSubRequest):
     """Handles an image analysis job request from Pub/Sub."""
     try:

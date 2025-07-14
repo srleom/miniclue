@@ -9,7 +9,7 @@ from app.services.ingestion.orchestrator import ingest
 router = APIRouter(prefix="/ingestion", tags=["ingestion"])
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("", status_code=status.HTTP_204_NO_CONTENT)
 async def handle_ingestion_job(request: PubSubRequest):
     """Handles an ingestion job request from Pub/Sub."""
     try:

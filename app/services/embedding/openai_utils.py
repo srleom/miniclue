@@ -1,6 +1,7 @@
 import json
 import logging
 import random
+from typing import List, Dict, Any
 
 from openai import OpenAI
 
@@ -16,47 +17,50 @@ logging.basicConfig(
 client = OpenAI(api_key=settings.openai_api_key, base_url=settings.openai_api_base_url)
 
 
-def get_embedding(text: str) -> tuple[str, str]:
+def generate_embeddings(texts: List[str]) -> List[Dict[str, Any]]:
     """
-    Generate embedding vector for a text chunk.
+    Generate embedding vectors for a batch of text chunks.
     """
+    if not texts:
+        return []
+
     response = client.embeddings.create(
         model=settings.embedding_model,
-        input=text,
+        input=texts,
     )
-    vector = response.data[0].embedding
-    vector_str = json.dumps(vector)
 
-    metadata = {}
-    if hasattr(response, "model"):
-        metadata["model"] = response.model
-    usage = getattr(response, "usage", None)
-    if usage is not None:
-        metadata["prompt_tokens"] = getattr(usage, "prompt_tokens", None)
-        metadata["total_tokens"] = getattr(usage, "total_tokens", None)
-    metadata_str = json.dumps(metadata)
+    results = []
+    for data in response.data:
+        vector_str = json.dumps(data.embedding)
+        metadata = {
+            "model": response.model,
+            "usage": response.usage.model_dump(),
+        }
+        results.append({"vector": vector_str, "metadata": json.dumps(metadata)})
 
-    return vector_str, metadata_str
+    return results
 
 
-def mock_get_embedding(text: str) -> tuple[str, str]:
+def mock_generate_embeddings(texts: List[str]) -> List[Dict[str, Any]]:
     """
-    Mock embedding function for development purposes.
-    Returns a fake embedding vector and metadata.
+    Mock embedding function for development.
+    Returns a list of fake embedding vectors and metadata.
     """
-    # Generate a fake embedding vector with 1536 dimensions (typical for OpenAI embeddings)
-    fake_vector = [random.uniform(-1, 1) for _ in range(1536)]
-    vector_str = json.dumps(fake_vector)
+    if not texts:
+        return []
 
-    # Generate fake metadata
-    metadata = {
-        "model": "text-embedding-ada-002",
-        "prompt_tokens": len(text.split()),
-        "total_tokens": len(text.split()),
-        "mock": True,
-    }
-    metadata_str = json.dumps(metadata)
+    results = []
+    for text in texts:
+        fake_vector = [random.uniform(-1, 1) for _ in range(1536)]
+        vector_str = json.dumps(fake_vector)
+        metadata = {
+            "model": "mock-embedding-model",
+            "prompt_tokens": len(text.split()),
+            "total_tokens": len(text.split()),
+            "mock": True,
+            "text": text,
+        }
+        results.append({"vector": vector_str, "metadata": json.dumps(metadata)})
 
-    logging.info(f"Mock embedding generated for text of length {len(text)}")
-
-    return vector_str, metadata_str
+    logging.info(f"Mock embeddings generated for {len(texts)} texts.")
+    return results

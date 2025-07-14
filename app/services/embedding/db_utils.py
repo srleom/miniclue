@@ -1,112 +1,120 @@
-import json
 import logging
 from uuid import UUID
+from typing import List, Dict, Any, Optional
 
 import asyncpg
-
-from app.utils.config import Settings
-
-settings = Settings()
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 
-async def get_chunk_text(conn: asyncpg.Connection, chunk_id: UUID) -> str:
-    """Fetch text chunk from the database."""
-    row = await conn.fetchrow("SELECT text FROM chunks WHERE id=$1", str(chunk_id))
-    if not row:
-        logging.error(f"No chunk found with id={chunk_id}")
-        raise ValueError(f"No chunk found with id={chunk_id}")
-    return row["text"]
+async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
+    """Verifies that the lecture exists and is not in a terminal state."""
+    exists = await conn.fetchval(
+        """
+        SELECT EXISTS (
+            SELECT 1
+            FROM lectures
+            WHERE id = $1 AND status NOT IN ('failed', 'complete')
+        );
+        """,
+        lecture_id,
+    )
+    if not exists:
+        logging.warning(f"Lecture {lecture_id} not found or is in a terminal state.")
+    return exists
 
 
-async def upsert_embedding(
-    conn: asyncpg.Connection,
-    chunk_id: UUID,
-    slide_id: UUID,
-    lecture_id: UUID,
-    slide_number: int,
-    vector: str,
-    metadata: str,
+async def get_lecture_chunks(
+    conn: asyncpg.Connection, lecture_id: UUID
+) -> List[asyncpg.Record]:
+    """Fetch all chunk records for a given lecture."""
+    return await conn.fetch(
+        """
+        SELECT id, slide_id, lecture_id, slide_number, text
+        FROM chunks
+        WHERE lecture_id = $1
+        ORDER BY slide_number, chunk_index
+        """,
+        lecture_id,
+    )
+
+
+async def get_content_images_for_lecture(
+    conn: asyncpg.Connection, lecture_id: UUID
+) -> List[asyncpg.Record]:
+    """Fetch all 'content' images and their text for a given lecture."""
+    return await conn.fetch(
+        """
+        SELECT slide_id, ocr_text, alt_text
+        FROM slide_images
+        WHERE lecture_id = $1 AND type = 'content'
+        """,
+        lecture_id,
+    )
+
+
+async def batch_upsert_embeddings(
+    conn: asyncpg.Connection, embeddings: List[Dict[str, Any]]
 ):
-    """Upsert embedding into the database."""
-    await conn.execute(
+    """
+    Batch inserts or updates embeddings in the database.
+    'embeddings' is a list of dicts with keys matching the table columns.
+    """
+    if not embeddings:
+        return
+
+    # Convert UUIDs to strings and vector/metadata to JSON strings for the query
+    insert_data = [
+        (
+            str(e["chunk_id"]),
+            str(e["slide_id"]),
+            str(e["lecture_id"]),
+            e["slide_number"],
+            e["vector"],
+            e["metadata"],
+        )
+        for e in embeddings
+    ]
+
+    await conn.executemany(
         """
         INSERT INTO embeddings (chunk_id, slide_id, lecture_id, slide_number, vector, metadata)
         VALUES ($1, $2, $3, $4, $5::vector, $6::jsonb)
         ON CONFLICT (chunk_id) DO UPDATE
           SET vector = EXCLUDED.vector,
+              metadata = EXCLUDED.metadata,
               updated_at = NOW()
         """,
-        str(chunk_id),
-        str(slide_id),
-        str(lecture_id),
-        slide_number,
-        vector,
-        metadata,
+        insert_data,
     )
+    logging.info(f"Successfully upserted {len(embeddings)} embeddings.")
 
 
-async def update_slide_progress(
-    conn: asyncpg.Connection, slide_id: UUID
-) -> tuple[int, int]:
-    """Update slide progress and return processed and total chunk counts."""
-    updated = await conn.fetchrow(
+async def set_embeddings_complete(
+    conn: asyncpg.Connection, lecture_id: UUID
+) -> Optional[str]:
+    """
+    Set the 'embeddings_complete' flag to TRUE for a lecture and return its status.
+    """
+    return await conn.fetchval(
         """
-        WITH updated AS (
-          UPDATE slides
-             SET processed_chunks = processed_chunks + 1
-           WHERE id = $1
-           RETURNING processed_chunks, total_chunks
-        )
-        SELECT processed_chunks, total_chunks FROM updated
+        UPDATE lectures
+           SET embeddings_complete = TRUE, updated_at = NOW()
+         WHERE id = $1
+        RETURNING status
         """,
-        str(slide_id),
+        lecture_id,
     )
-    processed = updated["processed_chunks"]
-    total = updated["total_chunks"]
-    logging.info(
-        f"Slide {slide_id}: processed_chunks={processed}, total_chunks={total}"
-    )
-    return processed, total
 
 
-async def _check_and_update_lecture_status(conn: asyncpg.Connection, lecture_id: UUID):
-    """Update lecture status to 'explaining' if all slides done."""
-    incomplete = await conn.fetchval(
+async def set_lecture_status_to_complete(conn: asyncpg.Connection, lecture_id: UUID):
+    """Set the lecture's status to 'complete'."""
+    await conn.execute(
         """
-        SELECT COUNT(*) FROM slides
-         WHERE lecture_id = $1
-           AND processed_chunks < total_chunks
+        UPDATE lectures
+           SET status = 'complete', completed_at = NOW(), updated_at = NOW()
+         WHERE id = $1
         """,
-        str(lecture_id),
+        lecture_id,
     )
-    if incomplete == 0:
-        await conn.execute(
-            "UPDATE lectures SET status='explaining' WHERE id = $1",
-            str(lecture_id),
-        )
-        logging.info(f"Lecture {lecture_id} status updated to explaining")
-
-
-async def enqueue_explanation_job_if_complete(
-    conn: asyncpg.Connection,
-    slide_id: UUID,
-    lecture_id: UUID,
-    slide_number: int,
-    processed: int,
-    total: int,
-):
-    """Enqueue explanation job if slide is complete."""
-    if processed == total:
-        payload = {
-            "slide_id": str(slide_id),
-            "lecture_id": str(lecture_id),
-            "slide_number": slide_number,
-        }
-        await conn.execute(
-            "SELECT pgmq.send($1::text, $2::jsonb)",
-            settings.explanation_queue,
-            json.dumps(payload),
-        )
-        await _check_and_update_lecture_status(conn, lecture_id)
+    logging.info(f"Lecture {lecture_id} status set to 'complete'.")

@@ -3,24 +3,24 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 from app.schemas.common import PubSubRequest
 from app.schemas.embedding import EmbeddingPayload
-
-# TODO: Implement the new embedding service orchestrator
-# from app.services.embed.orchestrator import process_embedding_job
+from app.services.embedding.orchestrator import process_embedding_job
 
 
 router = APIRouter(prefix="/embedding", tags=["embedding"])
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
-async def handle_embedding_job(request: PubSubRequest):
+@router.post("", status_code=status.HTTP_204_NO_CONTENT)
+async def handle_embedding_job(job: PubSubRequest):
     """Handles an embedding job request from Pub/Sub."""
     try:
-        payload = EmbeddingPayload(**request.message.data)
+        # Pydantic model decodes the base64 data automatically.
+        payload = EmbeddingPayload(**job.message.data)
         logging.info(f"Received embedding job for lecture_id: {payload.lecture_id}")
-        # await process_embedding_job(lecture_id=payload.lecture_id)
-        logging.warning("Placeholder: process_embedding_job not implemented.")
+        await process_embedding_job(lecture_id=payload.lecture_id)
     except Exception as e:
         logging.error(f"Embedding job failed: {e}", exc_info=True)
+        # Re-raise as an HTTPException to ensure Pub/Sub receives a failure response
+        # and can attempt a retry, which is crucial for resilient systems.
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process embedding job: {e}",

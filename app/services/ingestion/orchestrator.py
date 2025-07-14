@@ -69,6 +69,12 @@ async def ingest(lecture_id: UUID, storage_path: str):
             )
             return
 
+        # Clear any previous error details since we're starting fresh
+        await conn.execute(
+            "UPDATE lectures SET error_details = NULL WHERE id = $1",
+            lecture_id,
+        )
+
         pdf_bytes = download_pdf(s3_client, settings.s3_bucket_name, storage_path)
         doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         total_slides = doc.page_count

@@ -11,7 +11,7 @@ from app.schemas.explanation import ExplanationPayload
 router = APIRouter(prefix="/explanation", tags=["explanation"])
 
 
-@router.post("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("", status_code=status.HTTP_204_NO_CONTENT)
 async def handle_explanation_job(request: PubSubRequest):
     """Handles an explanation job request from Pub/Sub."""
     try:
