@@ -1,13 +1,24 @@
+import logging
 from uuid import UUID
 
 import asyncpg
 
 
 async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
-    """Verifies that a lecture with the given ID exists in the database."""
-    return await conn.fetchval(
-        "SELECT EXISTS(SELECT 1 FROM lectures WHERE id=$1)", lecture_id
+    """Verifies that the lecture exists and is not in a terminal state."""
+    exists = await conn.fetchval(
+        """
+        SELECT EXISTS (
+            SELECT 1
+            FROM lectures
+            WHERE id = $1 AND status NOT IN ('failed', 'complete')
+        );
+        """,
+        lecture_id,
     )
+    if not exists:
+        logging.warning(f"Lecture {lecture_id} not found or is in a terminal state.")
+    return exists
 
 
 async def update_lecture_status(

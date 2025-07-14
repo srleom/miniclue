@@ -1,32 +1,37 @@
 import base64
 import json
 import logging
-from typing import Dict
+from io import BytesIO
+from PIL import Image
 
 from openai import AsyncOpenAI
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
+from app.schemas.image_analysis import ImageAnalysisResult
+from app.utils.config import Settings
 
-class ImageAnalysisResult(BaseModel):
-    image_type: str = Field(
-        ...,
-        alias="type",
-        description="The type of the image, e.g., 'content' or 'decorative'.",
-    )
-    ocr_text: str = Field(..., description="The extracted OCR text from the image.")
-    alt_text: str = Field(..., description="A descriptive alt text for the image.")
+# Initialize settings and client at the module level
+settings = Settings()
+client = AsyncOpenAI(
+    api_key=settings.gemini_api_key, base_url=settings.gemini_api_base_url
+)
 
-    class Config:
-        allow_population_by_field_name = True
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:     %(message)s",
+)
 
 
 async def analyze_image_with_openai(
-    client: AsyncOpenAI, image_bytes: bytes, image_mime_type: str = "image/png"
+    image_bytes: bytes,
+    prompt: str,
 ) -> ImageAnalysisResult:
     """
-    Analyzes an image using Gemini's multi-modal capabilities to extract
-    type, OCR text, and alt text.
+    Analyzes an image using the OpenAI API (configured for Gemini).
     """
+    image = Image.open(BytesIO(image_bytes))
+    image_mime_type = f"image/{image.format.lower() or 'png'}"
+
     base64_image = base64.b64encode(image_bytes).decode("utf-8")
     data_url = f"data:{image_mime_type};base64,{base64_image}"
 
@@ -42,7 +47,7 @@ Return ONLY the raw JSON object, without any markdown formatting or explanations
     try:
         logging.info("Sending image to Gemini for analysis...")
         response = await client.chat.completions.create(
-            model="gemini-2.5-flash-lite-preview-06-17",
+            model=settings.image_analysis_model,
             messages=[
                 {
                     "role": "user",
@@ -86,3 +91,15 @@ Return ONLY the raw JSON object, without any markdown formatting or explanations
             "An unexpected error occurred during Gemini image analysis.", exc_info=True
         )
         raise
+
+
+def mock_analyze_image(image_bytes: bytes) -> ImageAnalysisResult:
+    """
+    Mock function for image analysis for development and testing.
+    """
+    logging.info(f"Mocking image analysis for image of size {len(image_bytes)} bytes.")
+    return ImageAnalysisResult(
+        type="content",
+        ocr_text="This is mock OCR text from the image.",
+        alt_text="This is a mock alt text describing the image.",
+    )

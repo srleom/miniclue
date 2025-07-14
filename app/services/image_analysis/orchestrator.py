@@ -3,23 +3,16 @@ import uuid
 
 import asyncpg
 import boto3
-from openai import AsyncOpenAI
 
-from app.services.image_analysis.db_utils import (
-    get_image_storage_path,
-    increment_processed_images_count,
-    update_image_analysis_results,
-    verify_lecture_exists,
-)
-from app.services.image_analysis.openai_utils import (
-    ImageAnalysisResult,
-    analyze_image_with_openai,
-)
-from app.services.image_analysis.pubsub_utils import publish_embedding_job
-from app.services.image_analysis.s3_utils import download_image
+from app.services.image_analysis import db_utils, openai_utils, s3_utils, pubsub_utils
 from app.utils.config import Settings
 
 settings = Settings()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:     %(message)s",
+)
 
 
 async def process_image_analysis_job(
@@ -49,9 +42,6 @@ async def process_image_analysis_job(
         aws_secret_access_key=settings.s3_secret_key or None,
         endpoint_url=settings.s3_endpoint_url or None,
     )
-    openai_client = AsyncOpenAI(
-        api_key=settings.gemini_api_key, base_url=settings.gemini_api_base_url
-    )
     conn = None
 
     try:
@@ -59,34 +49,40 @@ async def process_image_analysis_job(
         logging.info("Established connections to DB.")
 
         # 1. Verify lecture exists (Defensive Subscriber)
-        if not await verify_lecture_exists(conn, lecture_id):
+        if not await db_utils.verify_lecture_exists(conn, lecture_id):
             logging.warning(f"Lecture {lecture_id} not found. Stopping job.")
             return
 
+        # Clear any previous error details since we're starting fresh
+        await conn.execute(
+            "UPDATE lectures SET error_details = NULL WHERE id = $1",
+            lecture_id,
+        )
+
         # 2. Get image path
-        storage_path = await get_image_storage_path(conn, slide_image_id)
+        storage_path = await db_utils.get_image_storage_path(conn, slide_image_id)
         if not storage_path:
             logging.error(f"Storage path for slide_image {slide_image_id} not found.")
             return  # Acknowledge the message and stop.
 
         # 3. Download image from S3
-        image_bytes = download_image(s3_client, settings.s3_bucket_name, storage_path)
+        image_bytes = s3_utils.download_image(
+            s3_client, settings.s3_bucket_name, storage_path
+        )
 
+        # 4. Analyze image with OpenAI
         if settings.mock_llm_calls:
-            logging.info("Mocking LLM call for image analysis.")
-            analysis_result = ImageAnalysisResult(
-                type="mock", ocr_text="mock", alt_text="mock"
-            )
+            analysis_result = openai_utils.mock_analyze_image(image_bytes)
         else:
-            # 4. Analyze image with OpenAI
-            analysis_result = await analyze_image_with_openai(
-                openai_client, image_bytes
+            analysis_result = await openai_utils.analyze_image_with_openai(
+                image_bytes=image_bytes,
+                prompt="Analyze this image and return its type (content or decorative), any OCR text, and a descriptive alt text as a JSON object.",
             )
 
         # Use a transaction for the final updates to ensure atomicity
         async with conn.transaction():
             # 5. Propagate results to all matching images
-            await update_image_analysis_results(
+            await db_utils.update_image_analysis_results(
                 conn=conn,
                 lecture_id=lecture_id,
                 image_hash=image_hash,
@@ -96,8 +92,8 @@ async def process_image_analysis_job(
             )
 
             # 6. Increment counter and check if last job
-            processed_count, total_count = await increment_processed_images_count(
-                conn, lecture_id
+            processed_count, total_count = (
+                await db_utils.increment_processed_images_count(conn, lecture_id)
             )
 
         # 7. Trigger embedding job if all images are processed
@@ -106,7 +102,7 @@ async def process_image_analysis_job(
                 f"All {total_count} images for lecture {lecture_id} have been processed. "
                 "Triggering embedding job."
             )
-            publish_embedding_job(lecture_id)
+            pubsub_utils.publish_embedding_job(lecture_id)
         else:
             logging.info(
                 f"Processed {processed_count}/{total_count} images for lecture {lecture_id}."
