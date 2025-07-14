@@ -23,7 +23,7 @@ FROM python:3.13-alpine
 WORKDIR /app
 
 # Copy virtual env from builder
-COPY --from=builder /app/.venv /.venv
+COPY --from=builder /app/.venv /app/.venv
 
 # Activate virtual env
 ENV PATH="/app/.venv/bin:$PATH"
