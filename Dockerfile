@@ -18,6 +18,7 @@ RUN poetry install --without dev --no-root --no-interaction --no-ansi
 
 # 2. Final stage
 FROM python:3.13-alpine
+RUN apk add --no-cache libstdc++
 
 # Set working directory
 WORKDIR /app
