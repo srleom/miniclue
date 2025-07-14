@@ -1,5 +1,5 @@
 # 1. Builder stage
-FROM python:3.13-alpine AS builder
+FROM python:3.12-alpine AS builder
 
 # Install poetry
 RUN pip install poetry
@@ -17,7 +17,7 @@ RUN poetry config virtualenvs.in-project true
 RUN poetry install --without dev --no-root --no-interaction --no-ansi
 
 # 2. Final stage
-FROM python:3.13-alpine
+FROM python:3.12-alpine
 
 # Set working directory
 WORKDIR /app
