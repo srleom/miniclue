@@ -1,5 +1,6 @@
 import logging
 import uuid
+import json
 
 import asyncpg
 import boto3
@@ -53,12 +54,6 @@ async def process_image_analysis_job(
             logging.warning(f"Lecture {lecture_id} not found. Stopping job.")
             return
 
-        # Clear any previous error details since we're starting fresh
-        await conn.execute(
-            "UPDATE lectures SET error_details = NULL WHERE id = $1",
-            lecture_id,
-        )
-
         # 2. Get image path
         storage_path = await db_utils.get_image_storage_path(conn, slide_image_id)
         if not storage_path:
@@ -74,7 +69,7 @@ async def process_image_analysis_job(
         if settings.mock_llm_calls:
             analysis_result = openai_utils.mock_analyze_image(image_bytes)
         else:
-            analysis_result = await openai_utils.analyze_image_with_openai(
+            analysis_result = await openai_utils.analyze_image(
                 image_bytes=image_bytes,
                 prompt="Analyze this image and return its type (content or decorative), any OCR text, and a descriptive alt text as a JSON object.",
             )
@@ -113,6 +108,17 @@ async def process_image_analysis_job(
             f"Image analysis job failed for slide_image_id {slide_image_id}: {e}",
             exc_info=True,
         )
+        if conn:
+            error_info = {
+                "service": "image_analysis",
+                "slide_image_id": str(slide_image_id),
+                "error": str(e),
+            }
+            await conn.execute(
+                "UPDATE lectures SET search_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
+                json.dumps(error_info),
+                lecture_id,
+            )
         # Re-raising ensures the message is not acknowledged and will be redelivered
         raise
     finally:

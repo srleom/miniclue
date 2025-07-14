@@ -1,147 +1,109 @@
-import json
+import logging
 from uuid import UUID
-from typing import List, Tuple
+from typing import Optional, Tuple
 
 import asyncpg
-
-from app.utils.config import Settings
-
-settings = Settings()
+from app.schemas.explanation import ExplanationResult
 
 
-async def fetch_context(
-    conn: asyncpg.Connection, lecture_id: UUID, slide_number: int
-) -> Tuple[List[str], str]:
-    """Fetch previous one-liners for context."""
-    rows = await conn.fetch(
+async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
+    """Verifies that the lecture exists and is not in a terminal state."""
+    exists = await conn.fetchval(
         """
-        SELECT slide_number, one_liner
-          FROM explanations
-         WHERE lecture_id = $1
-           AND slide_number < $2
-         ORDER BY slide_number DESC
-         LIMIT 3
+        SELECT EXISTS (
+            SELECT 1
+            FROM lectures
+            WHERE id = $1 AND status NOT IN ('failed', 'complete')
+        );
         """,
         lecture_id,
-        slide_number,
     )
-    context_recap = [r["one_liner"] for r in reversed(rows)]
-    previous_one_liner = rows[0]["one_liner"] if rows else ""
-    return context_recap, previous_one_liner
+    if not exists:
+        logging.warning(f"Lecture {lecture_id} not found or is in a terminal state.")
+    return exists
 
 
-async def fetch_slide_text(conn: asyncpg.Connection, slide_id: UUID) -> str:
-    """Fetch full slide text."""
-    row = await conn.fetchrow(
-        """
-        SELECT raw_text
-          FROM slides
-         WHERE id = $1
-        """,
+async def explanation_exists(conn: asyncpg.Connection, slide_id: UUID) -> bool:
+    """Checks if an explanation for the given slide_id already exists."""
+    return await conn.fetchval(
+        "SELECT EXISTS(SELECT 1 FROM explanations WHERE slide_id = $1)",
         slide_id,
     )
-    return row.get("raw_text") or "" if row else ""
 
 
-async def fetch_image_data(
-    conn: asyncpg.Connection, lecture_id: UUID, slide_number: int
-) -> Tuple[List[str], List[str]]:
-    """Fetch non-decorative image OCR and alt texts."""
-    img_rows = await conn.fetch(
+async def get_slide_context(
+    conn: asyncpg.Connection, lecture_id: UUID, current_slide_number: int
+) -> Tuple[Optional[str], Optional[str]]:
+    """
+    Fetches the raw text of the previous and next slides for context.
+    """
+    # Fetch previous slide's text
+    prev_text = await conn.fetchval(
         """
-        SELECT ocr_text, alt_text
-          FROM slide_images
-         WHERE lecture_id = $1
-           AND slide_number = $2
-           AND type <> 'decorative'
-         ORDER BY image_index
+        SELECT raw_text FROM slides
+        WHERE lecture_id = $1 AND slide_number = $2
         """,
         lecture_id,
-        slide_number,
+        current_slide_number - 1,
     )
-    ocr_texts = [r["ocr_text"] or "" for r in img_rows]
-    alt_texts = [r["alt_text"] or "" for r in img_rows]
-    return ocr_texts, alt_texts
 
-
-async def fetch_related_concepts(
-    conn: asyncpg.Connection,
-    lecture_id: UUID,
-    exclude_slide_number: int,
-    query_vector_str: str,
-    limit: int = 5,
-) -> list[str]:
-    """Fetch top-K related concept texts via vector similarity (RAG), excluding the current slide."""
-    # Join embeddings with chunks to retrieve the actual text, excluding the current slide
-    rows = await conn.fetch(
+    # Fetch next slide's text
+    next_text = await conn.fetchval(
         """
-        SELECT c.text
-          FROM embeddings e
-          JOIN chunks c ON c.id = e.chunk_id
-         WHERE e.lecture_id = $1
-           AND e.slide_number <> $2
-         ORDER BY e.vector <#> $3::vector
-         LIMIT $4
+        SELECT raw_text FROM slides
+        WHERE lecture_id = $1 AND slide_number = $2
         """,
         lecture_id,
-        exclude_slide_number,
-        query_vector_str,
-        limit,
+        current_slide_number + 1,
     )
-    return [r["text"] for r in rows]
+
+    return prev_text, next_text
 
 
-async def persist_explanation_and_update_progress(
+async def save_explanation(
     conn: asyncpg.Connection,
     slide_id: UUID,
     lecture_id: UUID,
     slide_number: int,
-    one_liner: str,
-    content: str,
-    slide_type: str,
-    metadata_str: str,
-):
-    """Persist the explanation and update lecture progress in a transaction."""
-    async with conn.transaction():
-        await conn.execute(
-            """
-            INSERT INTO explanations
-              (slide_id, lecture_id, slide_number, content, one_liner, slide_type, metadata)
-            VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)
-            ON CONFLICT (slide_id) DO UPDATE
-              SET content = EXCLUDED.content,
-                  one_liner = EXCLUDED.one_liner,
-                  slide_type = EXCLUDED.slide_type,
-                  metadata = EXCLUDED.metadata,
-                  updated_at = NOW()
-            """,
-            slide_id,
-            lecture_id,
-            slide_number,
-            content,
-            one_liner,
-            slide_type,
-            metadata_str,
-        )
+    result: ExplanationResult,
+) -> None:
+    """Saves the AI's explanation to the 'explanations' table."""
+    await conn.execute(
+        """
+        INSERT INTO explanations (slide_id, lecture_id, slide_number, content, one_liner, slide_type)
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (slide_id) DO NOTHING
+        """,
+        slide_id,
+        lecture_id,
+        slide_number,
+        result.explanation,
+        result.one_liner,
+        result.slide_purpose,
+    )
 
+
+async def increment_progress_and_check_completion(
+    conn: asyncpg.Connection, lecture_id: UUID
+) -> bool:
+    """
+    Atomically increments the processed_slides count and returns if the lecture is complete.
+    """
+    async with conn.transaction():
+        # Increment the counter
         await conn.execute(
             "UPDATE lectures SET processed_slides = processed_slides + 1 WHERE id = $1",
             lecture_id,
         )
-
+        # Check if all slides are processed
         progress = await conn.fetchrow(
             "SELECT processed_slides, total_slides FROM lectures WHERE id = $1",
             lecture_id,
         )
-        # Enqueue summary if complete
-        if progress and progress["processed_slides"] == progress["total_slides"]:
+        if progress and progress["processed_slides"] >= progress["total_slides"]:
             await conn.execute(
                 "UPDATE lectures SET status = 'summarising' WHERE id = $1",
                 lecture_id,
             )
-            payload = {"lecture_id": str(lecture_id)}
-            await conn.execute(
-                "SELECT pgmq.send($1::text, $2::jsonb)",
-                settings.summary_queue,
-                json.dumps(payload),
-            )
+            return True
+    return False

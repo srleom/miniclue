@@ -4,9 +4,8 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.schemas.common import PubSubRequest
 from app.schemas.explanation import ExplanationPayload
+from app.services.explanation.orchestrator import process_explanation_job
 
-# TODO: Implement the new explanation service orchestrator
-# from app.services.explain.orchestrator import process_explanation_job
 
 router = APIRouter(prefix="/explanation", tags=["explanation"])
 
@@ -16,15 +15,8 @@ async def handle_explanation_job(request: PubSubRequest):
     """Handles an explanation job request from Pub/Sub."""
     try:
         payload = ExplanationPayload(**request.message.data)
-        logging.info(f"Received explanation job for slide_id: {payload.slide_id}")
-        # await process_explanation_job(
-        #     lecture_id=payload.lecture_id,
-        #     slide_id=payload.slide_id,
-        #     slide_number=payload.slide_number,
-        #     total_slides=payload.total_slides,
-        #     slide_image_path=payload.slide_image_path,
-        # )
-        logging.warning("Placeholder: process_explanation_job not implemented.")
+        logging.info(f"Processing explanation job for slide: {payload.slide_number}")
+        await process_explanation_job(payload)
     except Exception as e:
         logging.error(f"Explanation job failed: {e}", exc_info=True)
         raise HTTPException(

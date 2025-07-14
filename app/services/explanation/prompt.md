@@ -38,10 +38,16 @@ Return this classification as a slide_type field in your output.
 
 ```json
 {
-"slide_type": "cover" | "header" | "content",
-"one_liner": "Key takeaway here (≤ 25 words).",
-"content": "Full explanation in Markdown. Use LaTeX for any equations."
+  "slide_purpose": "The purpose of this slide (e.g., Title, Agenda, Content, Summary).",
+  "one_liner": "Key takeaway here (≤ 25 words).",
+  "explanation": "Full explanation in Markdown. Use LaTeX for any equations."
 }
 ```
 
-Do not include anything else besides the JSON.
+**CRITICAL INSTRUCTIONS:**
+
+- Your entire response MUST be a single, raw, valid JSON object.
+- Do NOT wrap the JSON in markdown code fences (e.g., \`\`\`json).
+- Do NOT add any introductory text, closing remarks, or any other text outside of the JSON structure.
+- The very first character of your output must be `{` and the very last character must be `}`.
+- Ensure all strings, especially those with backslashes (like in LaTeX), are correctly escaped for JSON.

@@ -16,7 +16,7 @@ async def handle_image_analysis_job(request: PubSubRequest):
     try:
         payload = ImageAnalysisPayload(**request.message.data)
         logging.info(
-            f"Received image analysis job for image_hash: {payload.image_hash}"
+            f"Processing image analysis job for image_hash: {payload.image_hash}"
         )
         await process_image_analysis_job(
             slide_image_id=payload.slide_image_id,

@@ -5,6 +5,7 @@ from typing import Dict
 import asyncpg
 import boto3
 import pymupdf
+import json
 
 from app.services.ingestion.db_utils import (
     get_or_create_chunk,
@@ -69,9 +70,9 @@ async def ingest(lecture_id: UUID, storage_path: str):
             )
             return
 
-        # Clear any previous error details since we're starting fresh
+        # Clear any previous search-track errors since we're starting fresh
         await conn.execute(
-            "UPDATE lectures SET error_details = NULL WHERE id = $1",
+            "UPDATE lectures SET search_error_details = NULL, explanation_error_details = NULL WHERE id = $1",
             lecture_id,
         )
 
@@ -169,7 +170,10 @@ async def ingest(lecture_id: UUID, storage_path: str):
     except Exception as e:
         logging.error(f"Ingestion failed for lecture {lecture_id}: {e}", exc_info=True)
         if conn:
-            await update_lecture_status(conn, lecture_id, "failed")
+            error_info = {"service": "ingestion", "error": str(e)}
+            await update_lecture_status(
+                conn, lecture_id, "failed", search_error_details=json.dumps(error_info)
+            )
         raise
     finally:
         if conn:

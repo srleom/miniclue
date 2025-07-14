@@ -10,10 +10,10 @@ class Settings(BaseSettings):
     # Pub/Sub Topics
     gcp_project_id: str = ""
     ingestion_topic: str = ""
-    image_analysis_topic: str = ""
-    embedding_topic: str = ""
-    explanation_topic: str = ""
-    summary_topic: str = ""
+    image_analysis_topic: str | None = None
+    explanation_topic: str | None = None
+    summary_topic: str | None = None
+    embedding_topic: str | None = None
     # OpenAI
     embedding_model: str = "text-embedding-3-small"
     openai_api_key: str = ""
@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     xai_api_key: str = ""
     xai_api_base_url: str = "https://api.x.ai/v1"
     # Gemini
+    explanation_model: str = "gemini-2.5-flash-lite-preview-06-17"
     image_analysis_model: str = "gemini-2.5-flash-lite-preview-06-17"
     gemini_api_key: str = ""
     gemini_api_base_url: str = (

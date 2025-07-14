@@ -1,213 +1,184 @@
+import base64
 import json
-from openai import OpenAI
+import logging
+import re
+from typing import Optional
 
+from openai import AsyncOpenAI
+from pydantic import ValidationError
+
+from app.schemas.explanation import ExplanationResult
 from app.utils.config import Settings
 
 
+# Initialize OpenAI client
 settings = Settings()
-client = OpenAI(api_key=settings.xai_api_key, base_url=settings.xai_api_base_url)
+client = AsyncOpenAI(
+    api_key=settings.gemini_api_key, base_url=settings.gemini_api_base_url
+)
 
 
-def generate_explanation(
+async def generate_explanation(
+    slide_image_bytes: bytes,
     slide_number: int,
-    context_recap: list[str],
-    previous_one_liner: str,
-    full_text: str,
-    related_concepts: list[str],
-    ocr_texts: list[str],
-    alt_texts: list[str],
-) -> tuple[str, str, str, str]:
-    """Build prompt, call API, and parse explanation from response."""
-    with open("app/services/explanation/prompt.md", "r", encoding="utf-8") as file:
-        system_msg = file.read()
-
-    # Prepare formatted sections
-    text_block = full_text.strip()
-    # Use raw OCR text blocks for code fences
-    ocr_block = "\n".join(ocr_texts)
-    alt_bullets = "\n".join(f"- {line}" for line in alt_texts)
-    context_bullets = "\n".join(f"- {line}" for line in context_recap)
-    # Build related concepts bullets
-    related_bullets = "\n\n".join(f"- {line}" for line in related_concepts)
-
-    user_prompt = f"""
-## Slide Information
-**Slide Number**: {slide_number}
-
-**Text Content**:
-```text
-{text_block}
-```
-
-**Image OCR Text**:
-```text
-{ocr_block}
-```
-
-**Image Alt Text**:
-{alt_bullets}
-
-## Previous Slide
-**Previous Slide's One-Liner**:
-{previous_one_liner}
-
-## Context Recap
-**Last 2–3 Slides' One-Liners**:
-{context_bullets}
-
-## Related Concepts
-**From Earlier Slides (via RAG)**:
-{related_bullets}
-
-## Your Task
-- Determine the slide type: "cover", "header", or "content".
-- Explain the slide using the following guidelines:
-    - A smooth transition from the previous slide's one-liner.
-    - A clear high-level summary followed by in-depth explanation (Minto Pyramid).
-    - Plain English, avoiding or clearly explaining jargon.
-    - Analogies and rhetorical questions to aid understanding.
-    - Markdown formatting for clarity.
-    - LaTeX syntax for any formulas or equations.
-    - Emojis to visually support key points.
-    - Only content present in this slide.
-
-## Output Format
-Return your answer as a valid JSON object with the following fields:
-```json
-  "slide_type": "cover" | "header" | "content",
-  "one_liner": "Key takeaway here (≤ 25 words).",
-  "content": "Full explanation here in Markdown and LaTeX."
-```
-Only return the JSON. Do not include any additional text or explanation.
+    total_slides: int,
+    prev_slide_text: Optional[str],
+    next_slide_text: Optional[str],
+) -> ExplanationResult:
     """
+    Generates an explanation for a slide using a multi-modal LLM.
 
-    response = client.chat.completions.create(
-        model="grok-3-mini",
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=1,
-    )
-    content_str = response.choices[0].message.content or ""
+    Args:
+        slide_image_bytes: The byte content of the slide image.
+        slide_number: The number of the current slide.
+        total_slides: The total number of slides in the lecture.
+        prev_slide_text: The raw text from the previous slide, if available.
+        next_slide_text: The raw text from the next slide, if available.
+
+    Returns:
+        An ExplanationResult object with the structured AI response.
+    """
+    logging.info("Generating explanation from AI for a slide.")
+
+    # Encode image to base64
+    base64_image = base64.b64encode(slide_image_bytes).decode("utf-8")
+
+    # Load system prompt
+    try:
+        with open("app/services/explanation/prompt.md", "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+    except FileNotFoundError:
+        logging.error("Explanation prompt file not found.")
+        raise
+
+    # Construct user message
+    user_message_content = [
+        {
+            "type": "image_url",
+            "image_url": {"url": f"data:image/png;base64,{base64_image}"},
+        },
+        {
+            "type": "text",
+            "text": f"""
+Slide {slide_number} of {total_slides}.
+
+Context from adjacent slides:
+- Previous slide text: "{prev_slide_text or 'N/A'}"
+- Next slide text: "{next_slide_text or 'N/A'}"
+
+Please provide your explanation based on the system prompt's instructions.
+            """,
+        },
+    ]
 
     try:
-        data = json.loads(content_str)
-    except json.JSONDecodeError:
-        # Retry by escaping backslashes to handle LaTeX or other backslash sequences
-        sanitized = content_str.replace("\\", "\\\\")
+        response = await client.chat.completions.create(
+            model=settings.explanation_model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message_content},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7,
+            max_tokens=2048,
+        )
+
+        response_content = response.choices[0].message.content
+        if not response_content:
+            raise ValueError("Received an empty response from the AI model.")
+
         try:
-            data = json.loads(sanitized)
+            # First attempt to parse the JSON directly
+            data = json.loads(response_content)
+            ai_result = ExplanationResult.model_validate(data)
         except json.JSONDecodeError:
-            raise ValueError(
-                f"Failed to parse explanation JSON even after sanitizing: {content_str}"
+            # If parsing fails, it's often due to unescaped backslashes.
+            # Attempt to fix this common error and retry parsing.
+            logging.warning(
+                "JSON decoding failed. Attempting to fix invalid backslash escapes and retry."
             )
 
-    one_liner = data.get("one_liner", "")
-    content = data.get("content", "")
-    slide_type = data.get("slide_type", "")
+            # This regex finds backslashes that are NOT followed by a valid JSON escape character
+            # (", \, /, b, f, n, r, t, u) and properly escapes them.
+            sanitized_content = re.sub(
+                r'\\([^"\\/bfnrtu])', r"\\\\\1", response_content
+            )
 
-    metadata = {
-        "response_id": response.id,
-        "object": response.object,
-        "created": response.created,
-        "model": response.model,
-        "finish_reason": response.choices[0].finish_reason,
-        "usage": (
-            {
-                "prompt_tokens": response.usage.prompt_tokens,
-                "completion_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens,
-            }
-            if response.usage
-            else None
-        ),
-    }
-    metadata_str = json.dumps(metadata)
+            try:
+                data = json.loads(sanitized_content)
+                ai_result = ExplanationResult.model_validate(data)
+                logging.info("Successfully parsed JSON after sanitizing backslashes.")
+            except (json.JSONDecodeError, ValidationError) as e:
+                logging.error(
+                    f"Still failed to parse JSON after sanitizing: {sanitized_content}",
+                    exc_info=True,
+                )
+                raise ValueError(
+                    f"Failed to decode JSON from AI response even after sanitizing: {e}"
+                ) from e
 
-    return slide_type, one_liner, content, metadata_str
+        logging.info("Successfully generated and parsed explanation from AI.")
+        return ai_result
+
+    except ValidationError as e:
+        logging.error(f"Failed to validate AI response into Pydantic model: {e}")
+        raise
+    except Exception as e:
+        logging.error(f"An unexpected error occurred while calling OpenAI: {e}")
+        raise
 
 
 def mock_generate_explanation(
+    slide_image_bytes: bytes,
     slide_number: int,
-    context_recap: list[str],
-    previous_one_liner: str,
-    full_text: str,
-    related_concepts: list[str],
-    ocr_texts: list[str],
-    alt_texts: list[str],
-) -> tuple[str, str, str, str]:
-    """Mock: build the full prompt and return it as content without calling the LLM API."""
-    # Load system instructions
-    with open("app/services/explanation/prompt.md", "r", encoding="utf-8") as file:
-        system_msg = file.read()
-
-    # Prepare formatted sections
-    text_block = full_text.strip()
-    # Use raw OCR text blocks for code fences
-    ocr_block = "\n".join(ocr_texts)
-    alt_bullets = "\n".join(f"- {line}" for line in alt_texts)
-    context_bullets = "\n".join(f"- {line}" for line in context_recap)
-    # Build related concepts bullets
-    related_bullets = "\n\n".join(f"- {line}" for line in related_concepts)
-    # Build user prompt exactly as in generate_explanation
-    user_prompt = f"""
-## Slide Information
-**Slide Number**: {slide_number}
-
-**Text Content**:
-```text
-{text_block}
-```
-
-**Image OCR Text**:
-```text
-{ocr_block}
-```
-
-**Image Alt Text**:
-{alt_bullets}
-
-## Previous Slide
-**Previous Slide's One-Liner**:
-{previous_one_liner}
-
-## Context Recap
-**Last 2–3 Slides' One-Liners**:
-{context_bullets}
-
-## Related Concepts
-**From Earlier Slides (via RAG)**:
-{related_bullets}
-
-## Your Task
-- Determine the slide type: "cover", "header", or "content".
-- Explain the slide using the following guidelines:
-    - A smooth transition from the previous slide's one-liner.
-    - A clear high-level summary followed by in-depth explanation (Minto Pyramid).
-    - Plain English, avoiding or clearly explaining jargon.
-    - Analogies and rhetorical questions to aid understanding.
-    - Markdown formatting for clarity.
-    - LaTeX syntax for any formulas or equations.
-    - Emojis to visually support key points.
-    - Only content present in this slide.
-
-## Output Format
-Return your answer as a valid JSON object with the following fields:
-```json
-  "slide_type": "cover" | "header" | "content",
-  "one_liner": "Key takeaway here (≤ 25 words).",
-  "content": "Full explanation here in Markdown and LaTeX."
-```
-Only return the JSON. Do not include any additional text or explanation.
+    total_slides: int,
+    prev_slide_text: Optional[str],
+    next_slide_text: Optional[str],
+) -> ExplanationResult:
     """
+    Returns a mock explanation result containing the full prompt that would have
+    been sent to the AI model.
+    """
+    logging.info("Generating MOCK explanation with full prompt for a slide.")
 
-    # Combine system and user messages as the full prompt
-    combined_prompt = system_msg + "\n\n" + user_prompt
+    # Load system prompt
+    try:
+        with open("app/services/explanation/prompt.md", "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+    except FileNotFoundError:
+        logging.error("Explanation prompt file not found for mock generation.")
+        system_prompt = "[System Prompt Not Found]"
 
-    # Return mock values
-    one_liner = "prompt"
-    metadata = {"mock": True}
-    metadata_str = json.dumps(metadata)
-    slide_type = "mock"
-    return slide_type, one_liner, combined_prompt, metadata_str
+    # Construct the text part of the user prompt
+    user_text_prompt = f"""
+Slide {slide_number} of {total_slides}.
+
+Context from adjacent slides:
+- Previous slide text: "{prev_slide_text or 'N/A'}"
+- Next slide text: "{next_slide_text or 'N/A'}"
+
+Please provide your explanation based on the system prompt's instructions.
+"""
+
+    # Combine the prompts into a single string for debugging purposes
+    full_prompt_for_debug = f"""
+---
+# SYSTEM PROMPT
+---
+{system_prompt}
+
+---
+# USER PROMPT
+---
+### Image Data:
+(Image with {len(slide_image_bytes)} bytes would be here)
+
+### Text Data:
+{user_text_prompt}
+"""
+
+    return ExplanationResult(
+        explanation=full_prompt_for_debug,
+        one_liner="MOCK: The full prompt that would be sent to the AI is in the main content area.",
+        slide_purpose="mock_prompt_debug",
+    )
