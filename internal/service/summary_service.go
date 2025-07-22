@@ -5,6 +5,8 @@ import (
 
 	"app/internal/model"
 	"app/internal/repository"
+
+	"github.com/rs/zerolog"
 )
 
 // SummaryService defines summary-related operations
@@ -15,15 +17,24 @@ type SummaryService interface {
 
 // summaryService is the implementation of SummaryService
 type summaryService struct {
-	repo repository.SummaryRepository
+	repo          repository.SummaryRepository
+	summaryLogger zerolog.Logger
 }
 
 // NewSummaryService creates a new SummaryService
-func NewSummaryService(repo repository.SummaryRepository) SummaryService {
-	return &summaryService{repo: repo}
+func NewSummaryService(repo repository.SummaryRepository, logger zerolog.Logger) SummaryService {
+	return &summaryService{
+		repo:          repo,
+		summaryLogger: logger.With().Str("service", "SummaryService").Logger(),
+	}
 }
 
-// GetSummaryByLectureID retrieves a lecture's summary
+// GetSummaryByLectureID retrieves the summary for a given lecture
 func (s *summaryService) GetSummaryByLectureID(ctx context.Context, lectureID string) (*model.Summary, error) {
-	return s.repo.GetSummaryByLectureID(ctx, lectureID)
+	summary, err := s.repo.GetSummaryByLectureID(ctx, lectureID)
+	if err != nil {
+		s.summaryLogger.Error().Err(err).Str("lecture_id", lectureID).Msg("Failed to get summary by lecture ID")
+		return nil, err
+	}
+	return summary, nil
 }

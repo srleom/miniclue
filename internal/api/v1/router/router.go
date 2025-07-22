@@ -8,10 +8,8 @@ import (
 	"app/internal/repository"
 	"app/internal/service"
 	"context"
-	"database/sql"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -19,12 +17,13 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	awsmiddleware "github.com/aws/smithy-go/middleware"
 	"github.com/go-playground/validator/v10"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
 	"github.com/rs/zerolog"
 )
 
-func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *sql.DB, error) {
+func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool, error) {
 	logger.Info().Msg("Router initialized")
 
 	// Log environment variables for debugging
@@ -33,49 +32,49 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *sql.DB, erro
 
 	// 2. Open DB connection (connection pooling)
 	dsn := cfg.DBConnectionString
-	// In a development environment, we want to ensure that SSL is disabled for
-	// local testing. In production, the connection string should be provided
-	// with the correct SSL settings.
-	if cfg.Environment == "development" && !strings.Contains(dsn, "sslmode") {
-		separator := " "
-		if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
-			if strings.Contains(dsn, "?") {
-				separator = "&"
-			} else {
-				separator = "?"
-			}
-		}
-		dsn += separator + "sslmode=disable"
-	}
-	// For non-development environments that use a transaction pooler like pgbouncer,
-	// we must use the simple query protocol to avoid issues with server-side prepared statements.
-	if cfg.Environment != "development" {
-		if !strings.Contains(dsn, "prefer_simple_protocol") {
-			separator := "&"
-			if !strings.Contains(dsn, "?") {
-				separator = "?"
-			}
-			dsn += separator + "prefer_simple_protocol=true"
-		}
-	}
+	var pool *pgxpool.Pool
+	var err error
 
-	db, err := sql.Open("pgx", dsn)
-	if err != nil {
-		logger.Fatal().Msgf("Failed to open DB connection: %v", err)
-		return nil, nil, err
+	if cfg.Environment == "development" {
+		// For development, use a direct connection but still manage it with pgxpool for consistency.
+		if !strings.Contains(dsn, "sslmode") {
+			separator := " "
+			if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") {
+				if strings.Contains(dsn, "?") {
+					separator = "&"
+				} else {
+					separator = "?"
+				}
+			}
+			dsn += separator + "sslmode=disable"
+		}
+		pool, err = pgxpool.New(context.Background(), dsn)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("Failed to create connection pool for development")
+			return nil, nil, err
+		}
+	} else {
+		// For staging/production, use the transaction pooler with prepared statements disabled.
+		dbConfig, parseErr := pgxpool.ParseConfig(dsn)
+		if parseErr != nil {
+			logger.Fatal().Err(parseErr).Msg("Failed to parse DB connection string for production")
+			return nil, nil, parseErr
+		}
+		dbConfig.ConnConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+
+		pool, err = pgxpool.NewWithConfig(context.Background(), dbConfig)
+		if err != nil {
+			logger.Fatal().Err(err).Msg("Failed to create connection pool for production")
+			return nil, nil, err
+		}
 	}
 
 	// Ping the database to ensure connection is valid
-	if err := db.Ping(); err != nil {
-		logger.Fatal().Msgf("Failed to ping DB: %v", err)
+	if err := pool.Ping(context.Background()); err != nil {
+		logger.Fatal().Err(err).Msg("Failed to ping DB")
 		return nil, nil, err
 	}
 	logger.Info().Msg("Database connection successful")
-
-	// Set reasonable connection pool limits
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(25)
-	db.SetConnMaxIdleTime(5 * time.Minute)
 
 	// 3. Initialize S3 client
 	s3Config, err := awsconfig.LoadDefaultConfig(context.TODO(),
@@ -102,21 +101,21 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *sql.DB, erro
 	}
 
 	// 6. Initialize repositories & services & handlers
-	userRepo := repository.NewUserRepo(db)
-	lectureRepo := repository.NewLectureRepository(db, logger)
-	courseRepo := repository.NewCourseRepo(db, logger)
-	summaryRepo := repository.NewSummaryRepository(db)
-	explanationRepo := repository.NewExplanationRepository(db, logger)
-	noteRepo := repository.NewNoteRepository(db, logger)
-	dlqRepo := repository.NewDLQRepository(db)
+	userRepo := repository.NewUserRepo(pool)
+	lectureRepo := repository.NewLectureRepository(pool)
+	courseRepo := repository.NewCourseRepo(pool)
+	summaryRepo := repository.NewSummaryRepository(pool)
+	explanationRepo := repository.NewExplanationRepository(pool)
+	noteRepo := repository.NewNoteRepository(pool)
+	dlqRepo := repository.NewDLQRepository(pool)
 
-	userSvc := service.NewUserService(userRepo, courseRepo, lectureRepo)
-	lectureSvc := service.NewLectureService(lectureRepo, s3Client, cfg.S3Bucket, pubSubPublisher, cfg.PubSubIngestionTopic)
-	courseSvc := service.NewCourseService(courseRepo, lectureSvc)
-	summarySvc := service.NewSummaryService(summaryRepo)
-	explanationSvc := service.NewExplanationService(explanationRepo)
-	noteSvc := service.NewNoteService(noteRepo)
-	dlqSvc := service.NewDLQService(dlqRepo)
+	userSvc := service.NewUserService(userRepo, courseRepo, lectureRepo, logger)
+	lectureSvc := service.NewLectureService(lectureRepo, s3Client, cfg.S3Bucket, pubSubPublisher, cfg.PubSubIngestionTopic, logger)
+	courseSvc := service.NewCourseService(courseRepo, lectureSvc, logger)
+	summarySvc := service.NewSummaryService(summaryRepo, logger)
+	explanationSvc := service.NewExplanationService(explanationRepo, logger)
+	noteSvc := service.NewNoteService(noteRepo, logger)
+	dlqSvc := service.NewDLQService(dlqRepo, logger)
 
 	userHandler := handler.NewUserHandler(userSvc, validate, logger)
 	courseHandler := handler.NewCourseHandler(courseSvc, validate, logger)
@@ -172,7 +171,7 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *sql.DB, erro
 		Debug:            false, // Enable debug logging for CORS
 	})
 
-	return middleware.LoggerMiddleware(c.Handler(mux)), db, nil
+	return middleware.LoggerMiddleware(c.Handler(mux)), pool, nil
 }
 
 // getPortFromDSN is a helper function to extract the port from a DSN string.

@@ -8,26 +8,36 @@ import (
 	"app/internal/api/v1/dto"
 	"app/internal/model"
 	"app/internal/repository"
+
+	"github.com/rs/zerolog"
 )
 
+// DLQService defines the interface for Dead Letter Queue operations.
 type DLQService interface {
 	ProcessAndSave(ctx context.Context, req *dto.PubSubPushRequest) error
 }
 
+// dlqService is the implementation of DLQService.
 type dlqService struct {
-	repo repository.DLQRepository
+	repo      repository.DLQRepository
+	dlqLogger zerolog.Logger
 }
 
-func NewDLQService(repo repository.DLQRepository) DLQService {
-	return &dlqService{repo: repo}
+// NewDLQService creates a new DLQService.
+func NewDLQService(repo repository.DLQRepository, logger zerolog.Logger) DLQService {
+	return &dlqService{
+		repo:      repo,
+		dlqLogger: logger.With().Str("service", "DLQService").Logger(),
+	}
 }
 
+// ProcessAndSave processes and saves a message from a Pub/Sub push request.
 func (s *dlqService) ProcessAndSave(ctx context.Context, req *dto.PubSubPushRequest) error {
 	// Decode the base64-encoded payload
 	decodedPayload, err := base64.StdEncoding.DecodeString(req.Message.Data)
 	if err != nil {
-		// If we can't even decode it, save the raw data
-		decodedPayload = []byte(req.Message.Data)
+		s.dlqLogger.Warn().Err(err).Str("message_id", req.Message.MessageID).Msg("Failed to decode DLQ message payload, saving as is")
+		decodedPayload = []byte(req.Message.Data) // Save the raw base64 string
 	}
 
 	// Marshal attributes to a JSON string, if they exist
@@ -37,6 +47,8 @@ func (s *dlqService) ProcessAndSave(ctx context.Context, req *dto.PubSubPushRequ
 		if err == nil {
 			attrStr := string(attrBytes)
 			attributesJSON = &attrStr
+		} else {
+			s.dlqLogger.Warn().Err(err).Str("message_id", req.Message.MessageID).Msg("Failed to marshal DLQ message attributes")
 		}
 	}
 
@@ -50,5 +62,11 @@ func (s *dlqService) ProcessAndSave(ctx context.Context, req *dto.PubSubPushRequ
 	}
 
 	// Save to the database
-	return s.repo.Create(ctx, dbMessage)
+	if err := s.repo.Create(ctx, dbMessage); err != nil {
+		s.dlqLogger.Error().Err(err).Str("subscription", dbMessage.SubscriptionName).Msg("Failed to save DLQ message")
+		return err
+	}
+
+	s.dlqLogger.Info().Str("message_id", dbMessage.MessageID).Msg("Successfully processed and saved DLQ message")
+	return nil
 }

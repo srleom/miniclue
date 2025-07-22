@@ -16,6 +16,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+	"github.com/rs/zerolog"
 )
 
 // LectureService defines lecture-related operations
@@ -36,27 +37,39 @@ type lectureService struct {
 	bucketName     string
 	publisher      pubsub.Publisher
 	ingestionTopic string
+	lectureLogger  zerolog.Logger
 }
 
 // NewLectureService creates a new LectureService
-func NewLectureService(repo repository.LectureRepository, s3Client *s3.Client, bucketName string, publisher pubsub.Publisher, ingestionTopic string) LectureService {
+func NewLectureService(repo repository.LectureRepository, s3Client *s3.Client, bucketName string, publisher pubsub.Publisher, ingestionTopic string, logger zerolog.Logger) LectureService {
 	return &lectureService{
 		repo:           repo,
 		s3Client:       s3Client,
 		bucketName:     bucketName,
 		publisher:      publisher,
 		ingestionTopic: ingestionTopic,
+		lectureLogger:  logger.With().Str("service", "LectureService").Logger(),
 	}
 }
 
 // GetLecturesByCourseID retrieves lectures for a given course with pagination
 func (s *lectureService) GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error) {
-	return s.repo.GetLecturesByCourseID(ctx, courseID, limit, offset)
+	lectures, err := s.repo.GetLecturesByCourseID(ctx, courseID, limit, offset)
+	if err != nil {
+		s.lectureLogger.Error().Err(err).Str("course_id", courseID).Msg("Failed to get lectures by course ID")
+		return nil, err
+	}
+	return lectures, nil
 }
 
 // GetLectureByID retrieves a lecture by ID
 func (s *lectureService) GetLectureByID(ctx context.Context, lectureID string) (*model.Lecture, error) {
-	return s.repo.GetLectureByID(ctx, lectureID)
+	lecture, err := s.repo.GetLectureByID(ctx, lectureID)
+	if err != nil {
+		s.lectureLogger.Error().Err(err).Str("lecture_id", lectureID).Msg("Failed to get lecture by ID")
+		return nil, err
+	}
+	return lecture, nil
 }
 
 // DeleteLecture removes a lecture by ID and cleans up external resources.
@@ -64,6 +77,7 @@ func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) er
 	// Retrieve lecture metadata for cleanup
 	lecture, err := s.repo.GetLectureByID(ctx, lectureID)
 	if err != nil {
+		s.lectureLogger.Error().Err(err).Str("lecture_id", lectureID).Msg("Failed to get lecture for deletion")
 		return fmt.Errorf("failed to get lecture: %w", err)
 	}
 	if lecture == nil {
@@ -80,7 +94,7 @@ func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) er
 	for paginator.HasMorePages() {
 		page, err := paginator.NextPage(ctx)
 		if err != nil {
-			fmt.Printf("failed to list objects for deletion: %v\n", err)
+			s.lectureLogger.Error().Err(err).Str("prefix", prefix).Msg("Failed to list S3 objects for deletion")
 			break
 		}
 		for _, obj := range page.Contents {
@@ -92,17 +106,26 @@ func (s *lectureService) DeleteLecture(ctx context.Context, lectureID string) er
 			Bucket: aws.String(s.bucketName),
 			Delete: &types.Delete{Objects: toDelete, Quiet: aws.Bool(true)},
 		}); err != nil {
-			fmt.Printf("failed to delete objects from storage: %v\n", err)
+			s.lectureLogger.Error().Err(err).Str("lecture_id", lectureID).Msg("Failed to delete objects from S3")
+			// This is not a fatal error, we can still proceed to delete the DB record.
 		}
 	}
 
 	// Delete lecture and cascade database cleanup
-	return s.repo.DeleteLecture(ctx, lectureID)
+	if err := s.repo.DeleteLecture(ctx, lectureID); err != nil {
+		s.lectureLogger.Error().Err(err).Str("lecture_id", lectureID).Msg("Failed to delete lecture from database")
+		return err
+	}
+	return nil
 }
 
 // UpdateLecture applies title and accessed_at changes to a lecture
 func (s *lectureService) UpdateLecture(ctx context.Context, l *model.Lecture) error {
-	return s.repo.UpdateLecture(ctx, l)
+	if err := s.repo.UpdateLecture(ctx, l); err != nil {
+		s.lectureLogger.Error().Err(err).Str("lecture_id", l.ID).Msg("Failed to update lecture")
+		return err
+	}
+	return nil
 }
 
 func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, userID, title string, file multipart.File, header *multipart.FileHeader) (*model.Lecture, error) {
@@ -115,6 +138,7 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 	}
 	createdLecture, err := s.repo.CreateLecture(ctx, lecture)
 	if err != nil {
+		s.lectureLogger.Error().Err(err).Msg("Failed to create lecture record")
 		return nil, fmt.Errorf("failed to create lecture record: %w", err)
 	}
 
@@ -124,6 +148,7 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 	if _, err := io.Copy(buf, file); err != nil {
 		// Cleanup on failure
 		_ = s.repo.DeleteLecture(ctx, createdLecture.ID)
+		s.lectureLogger.Error().Err(err).Str("lecture_id", createdLecture.ID).Msg("Failed to read file into buffer")
 		return nil, fmt.Errorf("failed to read file into buffer: %w", err)
 	}
 
@@ -136,6 +161,7 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 	if err != nil {
 		// Cleanup on failure
 		_ = s.repo.DeleteLecture(ctx, createdLecture.ID)
+		s.lectureLogger.Error().Err(err).Str("storage_path", storagePath).Msg("Failed to upload PDF to S3")
 		return nil, fmt.Errorf("failed to upload pdf to s3: %w", err)
 	}
 
@@ -144,6 +170,7 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 	// After upload, mark as pending further processing
 	createdLecture.Status = "pending_processing"
 	if err := s.repo.UpdateLecture(ctx, createdLecture); err != nil {
+		s.lectureLogger.Error().Err(err).Str("lecture_id", createdLecture.ID).Msg("Failed to update lecture with storage path and status")
 		return nil, fmt.Errorf("failed to update lecture with pdf url and status: %w", err)
 	}
 
@@ -157,10 +184,12 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 	}
 	data, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Printf("failed to marshal ingestion payload: %v\n", err)
+		s.lectureLogger.Error().Err(err).Str("lecture_id", createdLecture.ID).Msg("Failed to marshal ingestion payload")
+		// Don't return an error here, the lecture is created, but ingestion won't start automatically.
 	} else {
 		if _, err := s.publisher.Publish(ctx, s.ingestionTopic, data); err != nil {
-			fmt.Printf("failed to publish ingestion job: %v\n", err)
+			s.lectureLogger.Error().Err(err).Str("topic", s.ingestionTopic).Msg("Failed to publish ingestion job")
+			// Don't return an error here either.
 		}
 	}
 
@@ -175,6 +204,7 @@ func (s *lectureService) GetPresignedURL(ctx context.Context, storagePath string
 		Key:    aws.String(storagePath),
 	}, s3.WithPresignExpires(15*time.Minute))
 	if err != nil {
+		s.lectureLogger.Error().Err(err).Str("storage_path", storagePath).Msg("Failed to generate presigned URL")
 		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
 	return resp.URL, nil

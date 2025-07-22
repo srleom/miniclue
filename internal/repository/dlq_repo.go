@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
-	"database/sql"
+	"fmt"
 
 	"app/internal/model"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DLQRepository interface {
@@ -12,11 +14,11 @@ type DLQRepository interface {
 }
 
 type dlqRepository struct {
-	db *sql.DB
+	pool *pgxpool.Pool
 }
 
-func NewDLQRepository(db *sql.DB) DLQRepository {
-	return &dlqRepository{db: db}
+func NewDLQRepository(pool *pgxpool.Pool) DLQRepository {
+	return &dlqRepository{pool: pool}
 }
 
 func (r *dlqRepository) Create(ctx context.Context, message *model.DeadLetterMessage) error {
@@ -24,7 +26,7 @@ func (r *dlqRepository) Create(ctx context.Context, message *model.DeadLetterMes
         INSERT INTO dead_letter_messages (subscription_name, message_id, payload, attributes, status)
         VALUES ($1, $2, $3, $4, $5)
     `
-	_, err := r.db.ExecContext(
+	_, err := r.pool.Exec(
 		ctx,
 		query,
 		message.SubscriptionName,
@@ -33,5 +35,8 @@ func (r *dlqRepository) Create(ctx context.Context, message *model.DeadLetterMes
 		message.Attributes,
 		message.Status,
 	)
-	return err
+	if err != nil {
+		return fmt.Errorf("creating dead letter message for subscription %s: %w", message.SubscriptionName, err)
+	}
+	return nil
 }

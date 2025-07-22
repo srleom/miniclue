@@ -2,12 +2,13 @@ package repository
 
 import (
 	"context"
-	"database/sql"
+	"errors"
 	"fmt"
 
 	"app/internal/model"
 
-	"github.com/rs/zerolog"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type LectureRepository interface {
@@ -20,12 +21,11 @@ type LectureRepository interface {
 }
 
 type lectureRepository struct {
-	db     *sql.DB
-	logger zerolog.Logger
+	pool *pgxpool.Pool
 }
 
-func NewLectureRepository(db *sql.DB, logger zerolog.Logger) LectureRepository {
-	return &lectureRepository{db: db, logger: logger}
+func NewLectureRepository(pool *pgxpool.Pool) LectureRepository {
+	return &lectureRepository{pool: pool}
 }
 
 func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID string, limit, offset int) ([]model.Lecture, error) {
@@ -37,15 +37,11 @@ func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID stri
 		LIMIT %d OFFSET %d
 	`, limit, offset)
 
-	rows, err := r.db.QueryContext(ctx, query, userID)
+	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query recent lectures: %w", err)
+		return nil, fmt.Errorf("querying recent lectures for user %s: %w", userID, err)
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			r.logger.Error().Err(err).Msg("Failed to close rows")
-		}
-	}()
+	defer rows.Close()
 
 	var lectures []model.Lecture
 	for rows.Next() {
@@ -61,13 +57,13 @@ func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID stri
 			&lecture.UpdatedAt,
 			&lecture.AccessedAt,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan lecture row: %w", err)
+			return nil, fmt.Errorf("scanning lecture row: %w", err)
 		}
 		lectures = append(lectures, lecture)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("row iteration error: %w", err)
+		return nil, fmt.Errorf("iterating recent lecture rows: %w", err)
 	}
 
 	return lectures, nil
@@ -82,15 +78,11 @@ func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID 
 		LIMIT %d OFFSET %d
 	`, limit, offset)
 
-	rows, err := r.db.QueryContext(ctx, query, courseID)
+	rows, err := r.pool.Query(ctx, query, courseID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to query lectures by course: %w", err)
+		return nil, fmt.Errorf("querying lectures for course %s: %w", courseID, err)
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			r.logger.Error().Err(err).Msg("Failed to close rows")
-		}
-	}()
+	defer rows.Close()
 
 	var lectures []model.Lecture
 	for rows.Next() {
@@ -106,13 +98,13 @@ func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID 
 			&lecture.UpdatedAt,
 			&lecture.AccessedAt,
 		); err != nil {
-			return nil, fmt.Errorf("failed to scan lecture row: %w", err)
+			return nil, fmt.Errorf("scanning lecture row for course: %w", err)
 		}
 		lectures = append(lectures, lecture)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("row iteration error: %w", err)
+		return nil, fmt.Errorf("iterating lecture rows for course: %w", err)
 	}
 
 	return lectures, nil
@@ -124,9 +116,8 @@ func (r *lectureRepository) GetLectureByID(ctx context.Context, lectureID string
 		FROM lectures
 		WHERE id = $1
 	`
-	row := r.db.QueryRowContext(ctx, query, lectureID)
 	var lecture model.Lecture
-	if err := row.Scan(
+	err := r.pool.QueryRow(ctx, query, lectureID).Scan(
 		&lecture.ID,
 		&lecture.UserID,
 		&lecture.CourseID,
@@ -136,19 +127,20 @@ func (r *lectureRepository) GetLectureByID(ctx context.Context, lectureID string
 		&lecture.CreatedAt,
 		&lecture.UpdatedAt,
 		&lecture.AccessedAt,
-	); err != nil {
-		if err == sql.ErrNoRows {
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to scan lecture row: %w", err)
+		return nil, fmt.Errorf("scanning lecture row for id %s: %w", lectureID, err)
 	}
 	return &lecture, nil
 }
 
 func (r *lectureRepository) DeleteLecture(ctx context.Context, lectureID string) error {
 	query := `DELETE FROM lectures WHERE id = $1`
-	if _, err := r.db.ExecContext(ctx, query, lectureID); err != nil {
-		return fmt.Errorf("failed to delete lecture: %w", err)
+	if _, err := r.pool.Exec(ctx, query, lectureID); err != nil {
+		return fmt.Errorf("deleting lecture %s: %w", lectureID, err)
 	}
 	return nil
 }
@@ -160,7 +152,7 @@ func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture)
 		WHERE id = $5
 		RETURNING user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 	`
-	return r.db.QueryRowContext(ctx, query,
+	err := r.pool.QueryRow(ctx, query,
 		l.Title, l.AccessedAt, l.StoragePath, l.Status, l.ID,
 	).Scan(
 		&l.UserID,
@@ -172,13 +164,17 @@ func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture)
 		&l.UpdatedAt,
 		&l.AccessedAt,
 	)
+	if err != nil {
+		return fmt.Errorf("updating lecture %s: %w", l.ID, err)
+	}
+	return nil
 }
 
 func (r *lectureRepository) CreateLecture(ctx context.Context, lecture *model.Lecture) (*model.Lecture, error) {
 	query := `INSERT INTO lectures (course_id, user_id, title, status, storage_path) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at, updated_at, accessed_at`
-	err := r.db.QueryRowContext(ctx, query, lecture.CourseID, lecture.UserID, lecture.Title, lecture.Status, lecture.StoragePath).Scan(&lecture.ID, &lecture.CreatedAt, &lecture.UpdatedAt, &lecture.AccessedAt)
+	err := r.pool.QueryRow(ctx, query, lecture.CourseID, lecture.UserID, lecture.Title, lecture.Status, lecture.StoragePath).Scan(&lecture.ID, &lecture.CreatedAt, &lecture.UpdatedAt, &lecture.AccessedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create lecture: %w", err)
+		return nil, fmt.Errorf("creating lecture: %w", err)
 	}
 	return lecture, nil
 }

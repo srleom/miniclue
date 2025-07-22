@@ -38,15 +38,11 @@ func main() {
 	}
 
 	// 2. Build router (and get DB connection)
-	r, db, err := router.New(cfg, logger)
+	r, pool, err := router.New(cfg, logger)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to build router: %v", err)
 	}
-	defer func() {
-		if err := db.Close(); err != nil {
-			logger.Error().Msgf("Failed to close database connection: %v", err)
-		}
-	}()
+	defer pool.Close()
 
 	// Determine port for HTTP server.
 	port := os.Getenv("PORT")

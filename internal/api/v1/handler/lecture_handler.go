@@ -75,23 +75,19 @@ func (h *LectureHandler) handleLecture(w http.ResponseWriter, r *http.Request) {
 			h.listLectureExplanations(w, r)
 			return
 		}
-		if strings.HasSuffix(path, "/notes") {
-			h.listLectureNotes(w, r)
-			return
-		}
 		if strings.HasSuffix(path, "/url") {
 			h.getSignedURL(w, r)
 			return
 		}
 		h.getLecture(w, r)
 	case http.MethodPatch:
-		if strings.HasSuffix(path, "/notes") {
+		if strings.HasSuffix(path, "/note") {
 			h.updateLectureNote(w, r)
 			return
 		}
 		h.updateLecture(w, r)
 	case http.MethodPost:
-		if strings.HasSuffix(path, "/notes") {
+		if strings.HasSuffix(path, "/note") {
 			h.createLectureNote(w, r)
 			return
 		}
@@ -555,74 +551,6 @@ func (h *LectureHandler) listLectureExplanations(w http.ResponseWriter, r *http.
 	}
 }
 
-// listLectureNotes godoc
-// @Summary List lecture notes
-// @Description Retrieves notes for a lecture. If no limit is specified, all notes are returned.
-// @Tags lectures
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param limit query int false "Limit number of results"
-// @Param offset query int false "Pagination offset"
-// @Success 200 {array} dto.LectureNoteResponseDTO
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Lecture not found"
-// @Failure 500 {string} string "Failed to retrieve notes"
-// @Router /lectures/{lectureId}/notes [get]
-func (h *LectureHandler) listLectureNotes(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
-	}
-	lectureID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/lectures/"), "/notes")
-	lecture, err := h.lectureService.GetLectureByID(r.Context(), lectureID)
-	if err != nil {
-		http.Error(w, "Failed to retrieve lecture: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if lecture == nil {
-		http.Error(w, "Lecture not found", http.StatusNotFound)
-		return
-	}
-	course, err := h.courseService.GetCourseByID(r.Context(), lecture.CourseID)
-	if err != nil || course == nil || course.UserID != userID {
-		http.Error(w, "Lecture not found", http.StatusNotFound)
-		return
-	}
-	q := r.URL.Query()
-	limit := 1000
-	if l := q.Get("limit"); l != "" {
-		if v, err := strconv.Atoi(l); err == nil && v > 0 {
-			limit = v
-		}
-	}
-	offset := 0
-	if o := q.Get("offset"); o != "" {
-		if v, err := strconv.Atoi(o); err == nil && v >= 0 {
-			offset = v
-		}
-	}
-	notes, err := h.noteService.GetNotesByLectureID(r.Context(), lectureID, limit, offset)
-	if err != nil {
-		http.Error(w, "Failed to retrieve notes: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	var resp []dto.LectureNoteResponseDTO
-	for _, n := range notes {
-		resp = append(resp, dto.LectureNoteResponseDTO{
-			ID:        n.ID,
-			LectureID: n.LectureID,
-			Content:   n.Content,
-			CreatedAt: n.CreatedAt,
-			UpdatedAt: n.UpdatedAt,
-		})
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
-}
-
 // updateLectureNote godoc
 // @Summary Update a lecture note
 // @Description Updates the content of a note for a lecture.
@@ -724,8 +652,8 @@ func (h *LectureHandler) createLectureNote(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Lecture not found", http.StatusNotFound)
 		return
 	}
-	// Prevent duplicate note for this lecture and user
-	existing, err := h.noteService.GetNoteByLectureIDAndUserID(r.Context(), lectureID, userID)
+	// Prevent duplicate note for this lecture
+	existing, err := h.noteService.GetNoteByLectureID(r.Context(), lectureID)
 	if err != nil {
 		http.Error(w, "Failed to check existing note: "+err.Error(), http.StatusInternalServerError)
 		return

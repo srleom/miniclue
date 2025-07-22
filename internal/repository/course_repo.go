@@ -2,11 +2,13 @@ package repository
 
 import (
 	"context"
-	"database/sql"
+	"errors"
+	"fmt"
 
 	"app/internal/model"
 
-	"github.com/rs/zerolog"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // CourseRepository defines the interface for interacting with course data
@@ -22,13 +24,12 @@ type CourseRepository interface {
 }
 
 type courseRepo struct {
-	db     *sql.DB
-	logger zerolog.Logger
+	pool *pgxpool.Pool
 }
 
 // NewCourseRepo creates a new CourseRepository
-func NewCourseRepo(db *sql.DB, logger zerolog.Logger) CourseRepository {
-	return &courseRepo{db: db, logger: logger}
+func NewCourseRepo(pool *pgxpool.Pool) CourseRepository {
+	return &courseRepo{pool: pool}
 }
 
 // GetCoursesByUserID retrieves all courses associated with a given user ID
@@ -41,15 +42,11 @@ func (r *courseRepo) GetCoursesByUserID(ctx context.Context, userID string) ([]m
 		ORDER BY updated_at DESC
 	`
 
-	rows, err := r.db.QueryContext(ctx, query, userID)
+	rows, err := r.pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("querying courses for user %s: %w", userID, err)
 	}
-	defer func() {
-		if err := rows.Close(); err != nil {
-			r.logger.Error().Err(err).Msg("Failed to close rows")
-		}
-	}()
+	defer rows.Close()
 
 	for rows.Next() {
 		var course model.Course
@@ -60,13 +57,13 @@ func (r *courseRepo) GetCoursesByUserID(ctx context.Context, userID string) ([]m
 			&course.IsDefault,
 			&course.UpdatedAt,
 		); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("scanning course row: %w", err)
 		}
 		courses = append(courses, course)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("iterating course rows: %w", err)
 	}
 
 	// If no courses found, return an empty slice, not nil
@@ -84,8 +81,12 @@ func (r *courseRepo) CreateCourse(ctx context.Context, c *model.Course) error {
 		VALUES ($1, $2, $3, $4)
 		RETURNING id, user_id, title, description, is_default, created_at, updated_at
 	`
-	return r.db.QueryRowContext(ctx, query, c.UserID, c.Title, c.Description, c.IsDefault).
+	err := r.pool.QueryRow(ctx, query, c.UserID, c.Title, c.Description, c.IsDefault).
 		Scan(&c.CourseID, &c.UserID, &c.Title, &c.Description, &c.IsDefault, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("creating course: %w", err)
+	}
+	return nil
 }
 
 // GetCourseByID retrieves a course by its ID
@@ -96,7 +97,7 @@ func (r *courseRepo) GetCourseByID(ctx context.Context, courseID string) (*model
 		WHERE id = $1
 	`
 	var c model.Course
-	err := r.db.QueryRowContext(ctx, query, courseID).Scan(
+	err := r.pool.QueryRow(ctx, query, courseID).Scan(
 		&c.CourseID,
 		&c.UserID,
 		&c.Title,
@@ -106,10 +107,10 @@ func (r *courseRepo) GetCourseByID(ctx context.Context, courseID string) (*model
 		&c.UpdatedAt,
 	)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("getting course by id %s: %w", courseID, err)
 	}
 	return &c, nil
 }
@@ -122,12 +123,19 @@ func (r *courseRepo) UpdateCourse(ctx context.Context, c *model.Course) error {
 		WHERE id = $4
 		RETURNING user_id, title, description, is_default, created_at, updated_at
 	`
-	return r.db.QueryRowContext(ctx, query, c.Title, c.Description, c.IsDefault, c.CourseID).
+	err := r.pool.QueryRow(ctx, query, c.Title, c.Description, c.IsDefault, c.CourseID).
 		Scan(&c.UserID, &c.Title, &c.Description, &c.IsDefault, &c.CreatedAt, &c.UpdatedAt)
+	if err != nil {
+		return fmt.Errorf("updating course %s: %w", c.CourseID, err)
+	}
+	return nil
 }
 
 // DeleteCourse deletes a course and cascades to related records via DB ON DELETE CASCADE
 func (r *courseRepo) DeleteCourse(ctx context.Context, courseID string) error {
-	_, err := r.db.ExecContext(ctx, `DELETE FROM courses WHERE id = $1`, courseID)
-	return err
+	_, err := r.pool.Exec(ctx, `DELETE FROM courses WHERE id = $1`, courseID)
+	if err != nil {
+		return fmt.Errorf("deleting course %s: %w", courseID, err)
+	}
+	return nil
 }
