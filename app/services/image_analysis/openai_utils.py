@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import re
 from io import BytesIO
 from PIL import Image
 
@@ -67,15 +68,33 @@ async def analyze_image(
             raise ValueError("Received empty response from Gemini.")
 
         logging.info("Received analysis from Gemini.")
-        analysis_data = json.loads(response_text)
+
+        # Strip markdown code fences if present
+        if response_text.startswith("```json"):
+            response_text = re.sub(
+                r"^\s*```json\s*(.*?)\s*```\s*$", r"\1", response_text, flags=re.DOTALL
+            )
+
+        try:
+            analysis_data = json.loads(response_text)
+        except json.JSONDecodeError:
+            logging.warning(
+                "JSON decoding failed. Attempting to fix invalid backslash escapes and retry."
+            )
+            sanitized_text = re.sub(r'\\([^"\\/bfnrtu])', r"\\\\\1", response_text)
+            try:
+                analysis_data = json.loads(sanitized_text)
+                logging.info("Successfully parsed JSON after sanitizing backslashes.")
+            except json.JSONDecodeError as e:
+                logging.error(
+                    f"Still failed to parse JSON after sanitizing: {sanitized_text}",
+                    exc_info=True,
+                )
+                raise ValueError(
+                    "Gemini response was not valid JSON even after sanitizing."
+                ) from e
         return ImageAnalysisResult(**analysis_data)
 
-    except json.JSONDecodeError as e:
-        logging.error(
-            f"Failed to decode JSON from Gemini response: {response_text}",
-            exc_info=True,
-        )
-        raise ValueError("Gemini response was not valid JSON.") from e
     except ValidationError as e:
         logging.error(
             f"Gemini response did not match Pydantic model: {response_text}",
