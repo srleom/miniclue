@@ -24,25 +24,22 @@ logging.basicConfig(
 
 async def analyze_image(
     image_bytes: bytes,
-    prompt: str,
 ) -> ImageAnalysisResult:
     """
-    Analyzes an image using the OpenAI API (configured for Gemini).
+    Analyzes an image using the Gemini API
     """
+    try:
+        with open("app/services/image_analysis/prompt.md", "r", encoding="utf-8") as f:
+            system_prompt = f.read()
+    except FileNotFoundError:
+        logging.error("Image analysis prompt file not found for mock generation.")
+        raise
+
     image = Image.open(BytesIO(image_bytes))
     image_mime_type = f"image/{image.format.lower() or 'png'}"
 
     base64_image = base64.b64encode(image_bytes).decode("utf-8")
     data_url = f"data:{image_mime_type};base64,{base64_image}"
-
-    prompt = """
-Analyze the provided image and return a JSON object with three fields:
-1. "type": Classify the image as either "content" (if it contains meaningful information like diagrams, charts, or important text) or "decorative" (if it's primarily for aesthetic purposes, like a background image or stock photo).
-2. "ocr_text": Extract any and all text visible in the image. If no text is present, return an empty string.
-3. "alt_text": Provide a concise, descriptive alt text for the image, explaining its content and purpose for accessibility.
-
-Return ONLY the raw JSON object, without any markdown formatting or explanations.
-"""
 
     try:
         logging.info("Sending image to Gemini for analysis...")
@@ -52,7 +49,7 @@ Return ONLY the raw JSON object, without any markdown formatting or explanations
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": prompt},
+                        {"type": "text", "text": system_prompt},
                         {
                             "type": "image_url",
                             "image_url": {"url": data_url},
@@ -66,12 +63,11 @@ Return ONLY the raw JSON object, without any markdown formatting or explanations
         )
 
         response_text = response.choices[0].message.content
+        if not response_text:
+            raise ValueError("Received empty response from Gemini.")
+
         logging.info("Received analysis from Gemini.")
-
-        # The response should be a JSON string, parse it
         analysis_data = json.loads(response_text)
-
-        # Validate with Pydantic
         return ImageAnalysisResult(**analysis_data)
 
     except json.JSONDecodeError as e:

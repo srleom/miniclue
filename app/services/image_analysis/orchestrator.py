@@ -64,10 +64,7 @@ async def process_image_analysis_job(
         if settings.mock_llm_calls:
             analysis_result = openai_utils.mock_analyze_image(image_bytes)
         else:
-            analysis_result = await openai_utils.analyze_image(
-                image_bytes=image_bytes,
-                prompt="Analyze this image and return its type (content or decorative), any OCR text, and a descriptive alt text as a JSON object.",
-            )
+            analysis_result = await openai_utils.analyze_image(image_bytes=image_bytes)
 
         # Use a transaction for the final updates to ensure atomicity
         async with conn.transaction():
