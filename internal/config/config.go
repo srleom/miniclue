@@ -26,7 +26,7 @@ type Config struct {
 
 	// Local Secrets
 	// Environment
-	Environment string `envconfig:"ENV" default:"development"`
+	Environment string `envconfig:"ENV"`
 
 	// API
 	Port string `envconfig:"PORT" default:"8080"`

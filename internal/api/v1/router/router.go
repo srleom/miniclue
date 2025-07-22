@@ -3,7 +3,6 @@ package router
 import (
 	"app/internal/api/v1/handler"
 	"app/internal/config"
-	"app/internal/logger"
 	"app/internal/middleware"
 	"app/internal/pubsub"
 	"app/internal/repository"
@@ -22,11 +21,10 @@ import (
 	"github.com/go-playground/validator/v10"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/rs/cors"
+	"github.com/rs/zerolog"
 )
 
-func New(cfg *config.Config) (http.Handler, *sql.DB, error) {
-	// 1. Initialize logger
-	logger := logger.New()
+func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *sql.DB, error) {
 	logger.Info().Msg("Router initialized")
 
 	// Log environment variables for debugging

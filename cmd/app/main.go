@@ -23,20 +23,22 @@ import (
 // @Schemes http https
 
 func main() {
+	// It's important to load the .env file before anything else,
+	// so that components like the logger can initialize correctly based on the environment.
+	// We deliberately ignore the error from godotenv.Load(), as it's expected
+	// that a .env file may not be present in all environments (e.g., production).
+	_ = godotenv.Load()
+
 	logger := logger.New()
 
-	// 1. Load configuration
-	if err := godotenv.Load(); err != nil {
-		logger.Warn().Msg("Warning: no .env file found")
-	}
-
+	// 1. Load configuration from environment variables
 	cfg, err := config.Load()
 	if err != nil {
 		logger.Fatal().Msgf("Error loading config: %v", err)
 	}
 
 	// 2. Build router (and get DB connection)
-	r, db, err := router.New(cfg)
+	r, db, err := router.New(cfg, logger)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to build router: %v", err)
 	}
