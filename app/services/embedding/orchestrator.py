@@ -1,18 +1,19 @@
 import logging
-from uuid import UUID
 from collections import defaultdict
 import json
 
 import asyncpg
 
 from app.services.embedding import db_utils
+from app.schemas.embedding import EmbeddingPayload
 from app.services.embedding import openai_utils
 from app.utils.config import Settings
 
 settings = Settings()
 
 
-async def process_embedding_job(lecture_id: UUID):
+async def process_embedding_job(payload: EmbeddingPayload):
+    lecture_id = payload.lecture_id
     """
     Orchestrates the embedding process for an entire lecture.
     """
@@ -66,14 +67,27 @@ async def process_embedding_job(lecture_id: UUID):
 
         # 4. Generate embeddings in a batch
         if settings.mock_llm_calls:
-            embedding_results = openai_utils.mock_generate_embeddings(enriched_texts)
+            embedding_results = openai_utils.mock_generate_embeddings(
+                enriched_texts,
+                str(lecture_id),
+            )
         else:
-            embedding_results = await openai_utils.generate_embeddings(enriched_texts)
+            embedding_results = await openai_utils.generate_embeddings(
+                enriched_texts,
+                str(lecture_id),
+            )
 
-        # 5. Prepare data for batch database insertion
+        # 5. Prepare data for batch database insertion, ensuring result count matches inputs
+        if len(embedding_results) != len(chunks):
+            msg = (
+                f"Expected {len(chunks)} embeddings but got {len(embedding_results)} "
+                f"results for lecture {lecture_id}"
+            )
+            logging.error(msg)
+            raise RuntimeError(msg)
         embeddings_to_insert = []
-        for i, chunk in enumerate(chunks):
-            result = embedding_results[i]
+        # Pair up each chunk with its corresponding result (skipping unmatched)
+        for chunk, result in zip(chunks, embedding_results):
             embeddings_to_insert.append(
                 {
                     "chunk_id": chunk["id"],
@@ -84,6 +98,12 @@ async def process_embedding_job(lecture_id: UUID):
                     "metadata": result["metadata"],
                 }
             )
+        # Warn for any chunks without a result
+        if len(embedding_results) < len(chunks):
+            for missing_chunk in chunks[len(embedding_results) :]:
+                logging.warning(
+                    f"No embedding result for chunk {missing_chunk['id']} in lecture {lecture_id}, skipping."
+                )
 
         # 6. Save vectors and finalize the process in a single transaction
         async with conn.transaction():

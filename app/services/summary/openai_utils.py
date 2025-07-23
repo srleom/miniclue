@@ -2,18 +2,23 @@ import logging
 from openai import AsyncOpenAI
 from app.utils.config import Settings
 import uuid
+from typing import Optional
 
 # Initialize OpenAI client
 settings = Settings()
 # Note: The summary service uses the OpenAI API, whereas other services might use different providers.
 # This is consistent with the config variables available.
 client = AsyncOpenAI(
-    api_key=settings.gemini_api_key, base_url=settings.gemini_api_base_url
+    api_key=settings.keywordsai_api_key, base_url=settings.keywordsai_proxy_base_url
 )
 
 
 async def generate_summary(
     explanations: list[str],
+    lecture_id: str,
+    customer_identifier: str,
+    name: Optional[str] = None,
+    email: Optional[str] = None,
 ) -> tuple[str, dict]:
     """
     Generates a comprehensive lecture summary using an AI model.
@@ -49,6 +54,18 @@ async def generate_summary(
             ],
             temperature=0.3,
             n=1,
+            extra_body={
+                "metadata": {
+                    "environment": settings.app_env,
+                    "service": "summary",
+                    "lecture_id": lecture_id,
+                },
+                "customer_params": {
+                    "customer_identifier": customer_identifier,
+                    "name": name,
+                    "email": email,
+                },
+            },
         )
         summary = response.choices[0].message.content
 
@@ -74,6 +91,7 @@ async def generate_summary(
 
 def mock_generate_summary(
     explanations: list[str],
+    lecture_id: str,
 ) -> tuple[str, dict]:
     """
     Returns a mock summary result containing the full prompt that would have
@@ -114,4 +132,11 @@ This is a mock response. If this were a real request, the following prompt would
         "mock": True,
     }
 
+    metadata.update(
+        {
+            "environment": settings.app_env,
+            "service": "summary",
+            "lecture_id": lecture_id,
+        }
+    )
     return summary, metadata
