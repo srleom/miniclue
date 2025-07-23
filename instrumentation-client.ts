@@ -13,4 +13,8 @@ if (isProductionDomain) {
     capture_exceptions: true,
     debug: process.env.NODE_ENV === "development",
   });
+
+  posthog.set_config({
+    persistence: "localStorage+cookie",
+  });
 }
