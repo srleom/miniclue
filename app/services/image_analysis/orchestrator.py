@@ -41,7 +41,7 @@ async def process_image_analysis_job(
     conn = None
 
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn)
+        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
         logging.info("Established connections to DB.")
 
         # 1. Verify lecture exists (Defensive Subscriber)

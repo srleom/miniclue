@@ -16,7 +16,7 @@ async def process_summary_job(payload: SummaryPayload):
     logging.info(f"[{lecture_id}]: Starting summary process.")
 
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn)
+        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
 
         # 1. Verify the lecture exists and is in a processable state
         if not await db_utils.verify_lecture_exists(conn, lecture_id):

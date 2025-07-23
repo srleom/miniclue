@@ -58,7 +58,7 @@ async def ingest(lecture_id: UUID, storage_path: str):
 
     conn = None
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn)
+        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
         logging.info("Postgres connection established")
 
         # Verify the lecture exists before proceeding (Defensive Subscriber)

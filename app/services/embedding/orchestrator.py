@@ -21,7 +21,7 @@ async def process_embedding_job(lecture_id: UUID):
         logging.error("Postgres DSN not configured")
         raise RuntimeError("Postgres DSN not configured")
 
-    conn = await asyncpg.connect(settings.postgres_dsn)
+    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
     try:
         # 1. Verify the lecture exists and is in a valid state
         if not await db_utils.verify_lecture_exists(conn, lecture_id):

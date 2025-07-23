@@ -34,7 +34,7 @@ async def process_explanation_job(payload: ExplanationPayload):
     # Initialize connections
     if not settings.postgres_dsn:
         raise ValueError("POSTGRES_DSN is not configured.")
-    conn = await asyncpg.connect(settings.postgres_dsn)
+    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
 
     s3_client = boto3.client(
         "s3",
