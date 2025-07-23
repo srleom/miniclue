@@ -4,8 +4,6 @@ from typing import List, Dict, Any, Optional
 
 import asyncpg
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
 
 async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
     """Verifies that the lecture exists and is not in a terminal state."""

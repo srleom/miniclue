@@ -13,6 +13,11 @@ from app.routers import (
 
 import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:     %(message)s",
+)
+
 
 # Load configuration
 settings = Settings()

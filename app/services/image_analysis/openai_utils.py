@@ -17,11 +17,6 @@ client = AsyncOpenAI(
     api_key=settings.gemini_api_key, base_url=settings.gemini_api_base_url
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s:     %(message)s",
-)
-
 
 async def analyze_image(
     image_bytes: bytes,

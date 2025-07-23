@@ -9,11 +9,6 @@ from app.utils.config import Settings
 
 settings = Settings()
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s: %(message)s",
-)
-
 client = AsyncOpenAI(
     api_key=settings.openai_api_key, base_url=settings.openai_api_base_url
 )

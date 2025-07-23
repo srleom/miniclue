@@ -32,8 +32,6 @@ from app.utils.config import Settings
 
 settings = Settings()
 
-logging.basicConfig(level=logging.INFO, format="%(levelname)s:     %(message)s")
-
 
 async def ingest(lecture_id: UUID, storage_path: str):
     """
