@@ -5,10 +5,12 @@ const isProductionDomain =
   typeof window !== "undefined" &&
   window.location.origin === "https://app.miniclue.com";
 
-console.log(isProductionDomain);
 if (isProductionDomain) {
   posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY!, {
-    api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    api_host: "/ingest",
+    ui_host: "https://us.posthog.com",
     defaults: "2025-05-24",
+    capture_exceptions: true,
+    debug: process.env.NODE_ENV === "development",
   });
 }
