@@ -22,11 +22,6 @@ export async function GET(request: Request) {
     // create user and default Drafts course on first signup
     if (!error && data) {
       const api = createApi(data.session.access_token);
-      // Check if this is a new user based on created_at timestamp
-      const userCreatedAt = new Date(data.user.created_at).getTime();
-      const currentTime = Date.now();
-      const isNewUser = currentTime - userCreatedAt < 5000; // Consider new if created within last 5 seconds
-
       // create/update user profile
       await api.POST("/users/me", {
         body: {
@@ -36,15 +31,20 @@ export async function GET(request: Request) {
         },
       });
 
-      // create default Drafts course only on first signup
-      if (isNewUser) {
-        await api.POST("/courses", {
-          body: {
-            title: "Drafts",
-            is_default: true,
-            description: "Default course",
-          },
-        });
+      // ensure at least one course exists for this user
+      const { data: existingCourses, error: fetchCoursesError } =
+        await api.GET("/users/me/courses");
+      if (!fetchCoursesError) {
+        const courses = existingCourses ?? [];
+        if (courses.length === 0) {
+          await api.POST("/courses", {
+            body: {
+              title: "Drafts",
+              is_default: true,
+              description: "Default course",
+            },
+          });
+        }
       }
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
       const vercelUrl = process.env.VERCEL_URL;

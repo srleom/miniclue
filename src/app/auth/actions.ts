@@ -1,29 +1,7 @@
 "use server";
 
-// next
 import { redirect } from "next/navigation";
-
-// code
 import { createClient } from "@/lib/supabase/server";
-
-export async function handleLogin() {
-  const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_FE_BASE_URL}/auth/callback?next=/`,
-    },
-  });
-
-  if (error) {
-    console.error("Login error:", error);
-    return;
-  }
-
-  if (data.url) {
-    redirect(data.url);
-  }
-}
 
 export async function handleLogout() {
   const supabase = await createClient();
@@ -34,5 +12,6 @@ export async function handleLogout() {
     return;
   }
 
-  redirect("/auth");
+  // After logout, send user to login page
+  redirect("/auth/login");
 }
