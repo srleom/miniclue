@@ -68,6 +68,10 @@ export default function LecturePage() {
     ReturnType<typeof supabase.channel> | undefined
   >(undefined);
 
+  // ----------------------------------------
+  // Section: PDF & Explanations Fetching
+  // Description: Load PDF URL and initial explanations on mount
+  // ----------------------------------------
   React.useEffect(() => {
     setLoading(true);
     const pdfPromise = getSignedPdfUrl(lectureId);
@@ -100,9 +104,10 @@ export default function LecturePage() {
     });
   }, [lectureId]);
 
-  // Effect 1: Subscribe to the channel when the component is ready.
-  // We disable the lint rule because we intentionally want this effect to run only
-  // once when loading is finished, not every time `explanations` changes.
+  // ----------------------------------------
+  // Section: Explanations Realtime Subscription
+  // Description: Subscribe to new explanation inserts until all slides are received
+  // ----------------------------------------
   React.useEffect(() => {
     // Don't run if we're still loading initial data or don't know the page count.
     if (loading || totalPageCount === 0) {
@@ -115,7 +120,7 @@ export default function LecturePage() {
       return;
     }
 
-    console.log("Subscribing to explanations channel");
+    console.log("📖 Explanations: subscribing for realtime updates");
     channelRef.current = supabase
       .channel(`realtime:explanations:${lectureId}`)
       .on(
@@ -127,7 +132,7 @@ export default function LecturePage() {
           filter: `lecture_id=eq.${lectureId}`,
         },
         ({ new: row }) => {
-          console.log("New explanation:", row);
+          console.log("📖 Explanations: received slide", row.slide_number);
           setExplanations((prev) => ({
             ...prev,
             [row.slide_number]: row.content,
@@ -135,9 +140,9 @@ export default function LecturePage() {
         },
       )
       .subscribe((status, err) => {
-        console.log("Explanations subscription status:", status);
+        console.log("📖 Explanations: subscription status", status);
         if (err) {
-          console.error("Subscription error:", err);
+          console.error("📖 Explanations: subscription error", err);
         }
       });
 
@@ -152,7 +157,10 @@ export default function LecturePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, totalPageCount, lectureId, supabase]);
 
-  // Effect 2: Unsubscribe when all explanations have been received.
+  // ----------------------------------------
+  // Section: Explanations Cleanup
+  // Description: Unsubscribe once all explanations have been received
+  // ----------------------------------------
   React.useEffect(() => {
     const explanationsCount = Object.keys(explanations).length;
     if (
@@ -160,145 +168,140 @@ export default function LecturePage() {
       explanationsCount >= totalPageCount &&
       channelRef.current
     ) {
-      console.log("All explanations received, unsubscribing.");
+      console.log("📖 Explanations: all slides received, unsubscribing");
       supabase.removeChannel(channelRef.current);
       channelRef.current = undefined;
     }
   }, [explanations, totalPageCount, supabase]);
 
+  // ----------------------------------------
+  // Section: Status Fetch & Realtime Subscription
+  // Description: Fetch initial lecture status and subscribe to updates until terminal
+  // ----------------------------------------
   React.useEffect(() => {
-    if (
-      lectureStatus === undefined ||
-      lectureStatus === "complete" ||
-      lectureStatus === "failed"
-    ) {
-      return;
-    }
-
-    console.log("Subscribing to status channel");
-    statusChannelRef.current = supabase
-      .channel(`realtime:status:${lectureId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "lectures",
-          filter: `id=eq.${lectureId}`,
-        },
-        ({ new: row }) => {
-          console.log("New status row:", row);
-          if (row.status) {
-            console.log("Realtime status update:", row.status);
-            setLectureStatus(row.status);
-            toast.info(
-              row.status
-                .split("_")
-                .map(
-                  (word: string) =>
-                    word.charAt(0).toUpperCase() + word.slice(1),
-                )
-                .join(" "),
-            );
-          }
-          if (row.status === "complete" || row.status === "failed") {
-            console.log(
-              `Status ${row.status} reached, unsubscribing status channel`,
-            );
-            if (row.status === "complete") {
-              toast.success("Success");
-            } else if (row.status === "failed") {
-              toast.error("Error");
-            }
-            if (statusChannelRef.current) {
-              supabase.removeChannel(statusChannelRef.current);
-              statusChannelRef.current = undefined;
-            }
-          }
-        },
-      )
-      .subscribe((status, err) => {
-        console.log("Status subscription status:", status);
-        if (err) {
-          console.error("Status subscription error:", err);
-        }
-      });
-
-    return () => {
-      console.log("Unsubscribing from status channel on unmount");
-      if (statusChannelRef.current) {
-        supabase.removeChannel(statusChannelRef.current);
-        statusChannelRef.current = undefined;
-      }
-    };
-  }, [lectureStatus, lectureId, supabase]);
-
-  // Initial fetch of summary on mount
-  React.useEffect(() => {
-    setSummaryLoading(true);
-    getSummary(lectureId)
-      .then(({ data }) => {
-        if (data?.content) {
-          setSummary(data.content);
-        }
-      })
-      .finally(() => {
-        setSummaryLoading(false);
-      });
-  }, [lectureId]);
-
-  // Subscribe to INSERT events on summaries for live updates
-  React.useEffect(() => {
-    if (summaryChannelRef.current || summary !== undefined) {
-      return;
-    }
-    console.log("Subscribing to summaries channel");
-    summaryChannelRef.current = supabase
-      .channel(`realtime:summaries:${lectureId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "summaries",
-          filter: `lecture_id=eq.${lectureId}`,
-        },
-        ({ new: row }) => {
-          console.log("New summary row:", row);
-          setSummary(row.content);
-          if (summaryChannelRef.current) {
-            supabase.removeChannel(summaryChannelRef.current);
-            summaryChannelRef.current = undefined;
-          }
-        },
-      )
-      .subscribe((status, err) => {
-        console.log("Summary subscription status:", status);
-        if (err) console.error("Summary subscription error:", err);
-      });
-    return () => {
-      if (summaryChannelRef.current) {
-        console.log("Unsubscribing from summary channel on unmount");
-        supabase.removeChannel(summaryChannelRef.current);
-        summaryChannelRef.current = undefined;
-      }
-    };
-  }, [lectureId, summary, supabase]);
-
-  // Initial fetch of lecture status
-  React.useEffect(() => {
-    console.log("Fetching initial lecture status");
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    console.log("⚡️ Status: fetching initial status");
     getLecture(lectureId).then(({ data, error }) => {
       if (error) {
         console.error("Failed fetching lecture:", error);
         return;
       }
-      if (data?.status) {
-        console.log("Initial lecture status:", data.status);
-        setLectureStatus(data.status);
+      const st = data?.status;
+      if (st) {
+        console.log(
+          "⚡️ Status: initial status '%s', subscribing for realtime updates",
+          st,
+        );
+        setLectureStatus(st);
+      }
+      if (st && st !== "complete" && st !== "failed") {
+        channel = supabase
+          .channel(`realtime:status:${lectureId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "lectures",
+              filter: `id=eq.${lectureId}`,
+            },
+            ({ new: row }) => {
+              if (!row.status) return;
+              console.log("⚡️ Status: received update '%s'", row.status);
+              setLectureStatus(row.status);
+              const label = row.status
+                .split("_")
+                .map(
+                  (word: string) =>
+                    word.charAt(0).toUpperCase() + word.slice(1),
+                )
+                .join(" ");
+              toast.info(label);
+              if (row.status === "complete") {
+                console.log(
+                  "⚡️ Status: terminal status 'complete' reached, unsubscribing",
+                );
+                toast.success("Success");
+                if (channel) supabase.removeChannel(channel);
+              } else if (row.status === "failed") {
+                console.log(
+                  "⚡️ Status: terminal status 'failed' reached, unsubscribing",
+                );
+                toast.error("Error");
+                if (channel) supabase.removeChannel(channel);
+              }
+            },
+          )
+          .subscribe((status, err) => {
+            console.log("⚡️ Status: subscription status", status);
+            if (err) console.error("⚡️ Status: subscription error", err);
+          });
+        statusChannelRef.current = channel;
       }
     });
-  }, [lectureId]);
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+      statusChannelRef.current = undefined;
+    };
+  }, [lectureId, supabase]);
+
+  // ----------------------------------------
+  // Section: Summary Fetch & Realtime Subscription
+  // Description: Fetch initial summary then subscribe to realtime updates if needed
+  // ----------------------------------------
+  React.useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    setSummaryLoading(true);
+    console.log("🔖 Summary: fetching initial content");
+    getSummary(lectureId)
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("Failed fetching summary:", error);
+          return;
+        }
+        if (data?.content) {
+          setSummary(data.content);
+        } else {
+          console.log(
+            "🔖 Summary: no initial content, subscribing for realtime updates",
+          );
+          channel = supabase
+            .channel(`realtime:summaries:${lectureId}`)
+            .on(
+              "postgres_changes",
+              {
+                event: "INSERT",
+                schema: "public",
+                table: "summaries",
+                filter: `lecture_id=eq.${lectureId}`,
+              },
+              ({ new: row }) => {
+                console.log("🔖 Summary: content updated");
+                setSummary(row.content);
+                if (channel) {
+                  supabase.removeChannel(channel);
+                  summaryChannelRef.current = undefined;
+                }
+              },
+            )
+            .subscribe((status, err) => {
+              console.log("🔖 Summary: subscription status", status);
+              if (err) console.error("🔖 Summary: subscription error", err);
+            });
+          summaryChannelRef.current = channel;
+        }
+      })
+      .finally(() => {
+        setSummaryLoading(false);
+      });
+    return () => {
+      if (channel) {
+        console.log("🔖 Summary: unsubscribing from realtime updates");
+        supabase.removeChannel(channel);
+      }
+      summaryChannelRef.current = undefined;
+    };
+  }, [lectureId, supabase]);
 
   const handlePdfPageChange = (newPage: number) => {
     setScrollSource("pdf");
