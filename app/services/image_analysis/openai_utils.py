@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from app.schemas.image_analysis import ImageAnalysisResult
 from app.utils.config import Settings
+import uuid
 
 # Initialize settings and client at the module level
 settings = Settings()
@@ -26,7 +27,7 @@ async def analyze_image(
     customer_identifier: str,
     name: Optional[str] = None,
     email: Optional[str] = None,
-) -> ImageAnalysisResult:
+) -> tuple[ImageAnalysisResult, dict]:
     """
     Analyzes an image using the Gemini API
     """
@@ -110,7 +111,15 @@ async def analyze_image(
                 raise ValueError(
                     "Gemini response was not valid JSON even after sanitizing."
                 ) from e
-        return ImageAnalysisResult(**analysis_data)
+        # Build result and metadata for logging and database
+        result = ImageAnalysisResult(**analysis_data)
+        metadata = {
+            "model": response.model,
+            "usage": response.usage.model_dump() if response.usage else None,
+            "finish_reason": response.choices[0].finish_reason,
+            "response_id": response.id,
+        }
+        return result, metadata
 
     except ValidationError as e:
         logging.error(
@@ -127,13 +136,22 @@ async def analyze_image(
 
 def mock_analyze_image(
     image_bytes: bytes, lecture_id: str, slide_image_id: str
-) -> ImageAnalysisResult:
+) -> tuple[ImageAnalysisResult, dict]:
     """
     Mock function for image analysis for development and testing.
     """
     logging.info(f"Mocking image analysis for image of size {len(image_bytes)} bytes.")
-    return ImageAnalysisResult(
+    # Create a mock result and metadata for testing
+    result = ImageAnalysisResult(
         type="content",
         ocr_text="This is mock OCR text from the image.",
         alt_text="This is a mock alt text describing the image.",
     )
+    metadata = {
+        "model": "mock-image-analysis-model",
+        "usage": {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        "finish_reason": "stop",
+        "response_id": f"mock_response_{uuid.uuid4()}",
+        "mock": True,
+    }
+    return result, metadata

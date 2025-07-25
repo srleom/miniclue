@@ -1,5 +1,6 @@
 import logging
 import uuid
+import json
 from typing import Optional, Tuple
 
 from asyncpg import Connection
@@ -53,6 +54,7 @@ async def update_image_analysis_results(
     image_type: str,
     ocr_text: str,
     alt_text: str,
+    metadata: dict,
 ):
     """Propagates analysis results to all instances of an image in a lecture."""
     query = """
@@ -61,12 +63,19 @@ async def update_image_analysis_results(
             type = $1,
             ocr_text = $2,
             alt_text = $3,
+            metadata = $4::jsonb,
             updated_at = NOW()
-        WHERE lecture_id = $4 AND image_hash = $5;
+        WHERE lecture_id = $5 AND image_hash = $6;
     """
     try:
         await conn.execute(
-            query, image_type, ocr_text, alt_text, lecture_id, image_hash
+            query,
+            image_type,
+            ocr_text,
+            alt_text,
+            json.dumps(metadata),
+            lecture_id,
+            image_hash,
         )
         logging.info(
             f"Updated analysis for image hash {image_hash} in lecture {lecture_id}."

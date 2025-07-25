@@ -7,6 +7,7 @@ import boto3
 from app.services.image_analysis import db_utils, openai_utils, s3_utils, pubsub_utils
 from app.utils.config import Settings
 from app.schemas.image_analysis import ImageAnalysisPayload
+from app.utils.llm_db_utils import log_llm_call, compute_cost
 
 settings = Settings()
 
@@ -68,14 +69,15 @@ async def process_image_analysis_job(
         )
 
         # 4. Analyze image with OpenAI
+        # Perform image analysis and capture metadata
         if settings.mock_llm_calls:
-            analysis_result = openai_utils.mock_analyze_image(
+            analysis_result, metadata = openai_utils.mock_analyze_image(
                 image_bytes,
                 str(lecture_id),
                 str(slide_image_id),
             )
         else:
-            analysis_result = await openai_utils.analyze_image(
+            analysis_result, metadata = await openai_utils.analyze_image(
                 image_bytes=image_bytes,
                 lecture_id=str(lecture_id),
                 slide_image_id=str(slide_image_id),
@@ -83,10 +85,34 @@ async def process_image_analysis_job(
                 name=name,
                 email=email,
             )
+        # Log LLM call for image analysis
+        try:
+            # Extract token usage from metadata
+            usage = metadata.get("usage", {}) if metadata else {}
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+            cost = compute_cost(
+                settings.image_analysis_model, prompt_tokens, completion_tokens
+            )
+            # Pass computed cost, no metadata for now, and None for slide_id
+            await log_llm_call(
+                conn,
+                lecture_id,
+                None,
+                "image_analysis",
+                settings.image_analysis_model,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                cost,
+            )
+        except Exception:
+            logging.error("Failed to log LLM call for image analysis", exc_info=True)
 
         # Use a transaction for the final updates to ensure atomicity
         async with conn.transaction():
-            # 5. Propagate results to all matching images
+            # 5. Propagate results to all matching images, including metadata
             await db_utils.update_image_analysis_results(
                 conn=conn,
                 lecture_id=lecture_id,
@@ -94,6 +120,7 @@ async def process_image_analysis_job(
                 image_type=analysis_result.image_type,
                 ocr_text=analysis_result.ocr_text,
                 alt_text=analysis_result.alt_text,
+                metadata=metadata,
             )
 
             # 6. Increment counter and check if last job

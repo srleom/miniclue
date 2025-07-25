@@ -3,6 +3,7 @@ import asyncpg
 from app.schemas.summary import SummaryPayload
 from app.services.summary import db_utils, openai_utils
 from app.utils.config import Settings
+from app.utils.llm_db_utils import log_llm_call, compute_cost
 
 settings = Settings()
 
@@ -54,6 +55,29 @@ async def process_summary_job(payload: SummaryPayload):
                 payload.name,
                 payload.email,
             )
+        # Log LLM call for summary
+        try:
+            usage = metadata.get("usage") or {}
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+            cost = compute_cost(
+                settings.summary_model, prompt_tokens, completion_tokens
+            )
+            await log_llm_call(
+                conn,
+                lecture_id,
+                None,
+                "summary",
+                settings.summary_model,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                cost,
+                metadata,
+            )
+        except Exception:
+            logging.error("Failed to log LLM call for summary", exc_info=True)
 
         # 5. Atomically save summary, update status, and check for rendezvous
         embeddings_are_complete = False

@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 from openai import AsyncOpenAI
 
@@ -17,12 +17,12 @@ client = AsyncOpenAI(
 
 async def generate_embeddings(
     texts: List[str], lecture_id: str
-) -> List[Dict[str, Any]]:
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Generate embedding vectors for a batch of text chunks.
     """
     if not texts:
-        return []
+        return [], {}
 
     response = await client.embeddings.create(
         model=settings.embedding_model,
@@ -36,40 +36,55 @@ async def generate_embeddings(
         },
     )
 
-    results = []
+    # Batch-level metadata
+    common_metadata: Dict[str, Any] = {
+        "model": response.model,
+        "usage": response.usage.model_dump(),
+    }
+    results: List[Dict[str, Any]] = []
     for data in response.data:
         vector_str = json.dumps(data.embedding)
-        metadata = {
-            "model": response.model,
-            "usage": response.usage.model_dump(),
-        }
-        results.append({"vector": vector_str, "metadata": json.dumps(metadata)})
-
-    return results
+        # Store an empty object for per-item metadata to avoid redundancy
+        results.append({"vector": vector_str, "metadata": json.dumps({})})
+    return results, common_metadata
 
 
-def mock_generate_embeddings(texts: List[str], lecture_id: str) -> List[Dict[str, Any]]:
+def mock_generate_embeddings(
+    texts: List[str], lecture_id: str
+) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Mock embedding function for development.
     Returns a list of fake embedding vectors and metadata.
     """
     if not texts:
-        return []
+        return [], {}
 
-    results = []
+    # Generate mock results and aggregate usage
+    total_prompt = 0
+    results: List[Dict[str, Any]] = []
     for text in texts:
+        tokens = len(text.split())
+        total_prompt += tokens
         fake_vector = [random.uniform(-1, 1) for _ in range(1536)]
         vector_str = json.dumps(fake_vector)
-        metadata = {
-            "model": "mock-embedding-model",
-            "prompt_tokens": len(text.split()),
-            "total_tokens": len(text.split()),
-            "mock": True,
-            "text": text,
-        }
-        results.append({"vector": vector_str, "metadata": json.dumps(metadata)})
-
+        # Per-item metadata for DB is an empty object
+        results.append(
+            {
+                "vector": vector_str,
+                "metadata": json.dumps({}),
+            }
+        )
+    # Batch-level metadata
+    common_metadata = {
+        "model": "mock-embedding-model",
+        "usage": {
+            "prompt_tokens": total_prompt,
+            "completion_tokens": 0,
+            "total_tokens": total_prompt,
+        },
+        "mock": True,
+    }
     logging.info(
         f"Mock embeddings generated for {len(texts)} texts (lecture_id={lecture_id})."
     )
-    return results
+    return results, common_metadata

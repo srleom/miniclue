@@ -8,6 +8,7 @@ from app.services.embedding import db_utils
 from app.schemas.embedding import EmbeddingPayload
 from app.services.embedding import openai_utils
 from app.utils.config import Settings
+from app.utils.llm_db_utils import log_llm_call, compute_cost
 
 settings = Settings()
 
@@ -65,17 +66,39 @@ async def process_embedding_job(payload: EmbeddingPayload):
             enriched_text = " ".join(texts_to_join).strip()
             enriched_texts.append(enriched_text)
 
-        # 4. Generate embeddings in a batch
+        # 4. Generate embeddings in a batch, capturing metadata
         if settings.mock_llm_calls:
-            embedding_results = openai_utils.mock_generate_embeddings(
+            embedding_results, metadata = openai_utils.mock_generate_embeddings(
                 enriched_texts,
                 str(lecture_id),
             )
         else:
-            embedding_results = await openai_utils.generate_embeddings(
+            embedding_results, metadata = await openai_utils.generate_embeddings(
                 enriched_texts,
                 str(lecture_id),
             )
+        # Log LLM call for embedding using the returned metadata
+        try:
+            usage = metadata.get("usage", {}) if metadata else {}
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+            cost = compute_cost(
+                settings.embedding_model, prompt_tokens, completion_tokens
+            )
+            await log_llm_call(
+                conn,
+                lecture_id,
+                None,
+                "embedding",
+                settings.embedding_model,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                cost,
+            )
+        except Exception:
+            logging.error("Failed to log LLM call for embedding", exc_info=True)
 
         # 5. Prepare data for batch database insertion, ensuring result count matches inputs
         if len(embedding_results) != len(chunks):

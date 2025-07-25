@@ -18,6 +18,7 @@ from app.services.explanation.openai_utils import (
 from app.services.explanation.s3_utils import download_slide_image
 from app.services.explanation.pubsub_utils import publish_summary_job
 from app.utils.config import Settings
+from app.utils.llm_db_utils import log_llm_call, compute_cost
 
 
 settings = Settings()
@@ -96,6 +97,29 @@ async def process_explanation_job(payload: ExplanationPayload):
                 name,
                 email,
             )
+        # Log LLM call for explanation
+        try:
+            usage = metadata.get("usage") or {}
+            prompt_tokens = usage.get("prompt_tokens", 0)
+            completion_tokens = usage.get("completion_tokens", 0)
+            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+            cost = compute_cost(
+                settings.explanation_model, prompt_tokens, completion_tokens
+            )
+            await log_llm_call(
+                conn,
+                lecture_id,
+                slide_id,
+                "explanation",
+                settings.explanation_model,
+                prompt_tokens,
+                completion_tokens,
+                total_tokens,
+                cost,
+                metadata,
+            )
+        except Exception:
+            logging.error("Failed to log LLM call for explanation", exc_info=True)
 
         # 6. Save the structured response
         await save_explanation(
