@@ -31,6 +31,7 @@ import {
   FileListName,
   FileListSize,
 } from "@/components/ui/file-list";
+import { useRouter } from "next/navigation";
 
 export function DropzoneComponent({
   isCoursePage = false,
@@ -50,6 +51,7 @@ export function DropzoneComponent({
 }) {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
+  const router = useRouter();
 
   const onDrop = (acceptedFiles: File[]) => {
     setFiles(acceptedFiles);
@@ -87,6 +89,30 @@ export function DropzoneComponent({
     }
     if (result?.error) {
       toast.error(result.error);
+      return;
+    }
+    if (result?.data) {
+      let firstLectureId: string | null = null;
+      result.data.forEach((res) => {
+        if (res.status === "ok" && res.lecture_id) {
+          if (!firstLectureId) {
+            firstLectureId = res.lecture_id;
+          }
+          toast.success(`Successfully uploaded ${res.filename}`);
+        } else if (res.status === "upload_limit_exceeded") {
+          toast.error(
+            `Could not upload ${res.filename}. You have exceeded your monthly upload limit.`,
+          );
+        } else {
+          toast.error(
+            `An unexpected error occurred while uploading ${res.filename}.`,
+          );
+        }
+      });
+
+      if (firstLectureId) {
+        router.push(`/lecture/${firstLectureId}`);
+      }
     }
   };
 

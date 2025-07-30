@@ -67,11 +67,6 @@ export async function uploadLectures(
   revalidateTag(`lectures:${courseId}`);
   revalidateTag("recents");
 
-  const firstLectureId = data?.[0]?.lecture_id;
-  if (firstLectureId) {
-    redirect(`/lecture/${firstLectureId}`);
-  }
-
   return { data, error: undefined };
 }
 

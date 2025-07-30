@@ -42,13 +42,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get session
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  console.log(session);
-
   if (user && request.nextUrl.pathname.startsWith("/auth")) {
     // user exists, potentially respond by redirecting the user to the home page
     const url = request.nextUrl.clone();

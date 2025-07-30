@@ -12,6 +12,9 @@ if (isProductionDomain) {
     defaults: "2025-05-24",
     capture_exceptions: true,
     debug: process.env.NODE_ENV === "development",
+    loaded: (posthog) => {
+      posthog.register({ site: "app" });
+    },
   });
 
   posthog.set_config({

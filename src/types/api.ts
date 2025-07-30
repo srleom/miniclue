@@ -1323,6 +1323,7 @@ export interface components {
       title?: string;
     };
     "app_internal_api_v1_dto.LectureUploadResponseDTO": {
+      filename?: string;
       lecture_id?: string;
       status?: string;
     };
