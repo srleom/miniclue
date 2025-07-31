@@ -12,3 +12,15 @@ type User struct {
 	CreatedAt        time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
 }
+
+// UserUsage represents a user's usage within their billing period
+type UserUsage struct {
+	UserID             string    `db:"user_id" json:"user_id"`
+	CurrentUsage       int       `db:"current_usage" json:"current_usage"`
+	MaxUploads         int       `db:"max_uploads" json:"max_uploads"`
+	MaxSizeMB          int       `db:"max_size_mb" json:"max_size_mb"`
+	PlanID             string    `db:"plan_id" json:"plan_id"`
+	BillingPeriodStart time.Time `db:"starts_at" json:"billing_period_start"`
+	BillingPeriodEnd   time.Time `db:"ends_at" json:"billing_period_end"`
+	PlanName           string    `db:"plan_name" json:"plan_name"`
+}

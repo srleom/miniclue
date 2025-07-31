@@ -20,6 +20,7 @@ type UserService interface {
 	Get(ctx context.Context, id string) (*model.User, error)
 	GetRecentLectures(ctx context.Context, userID string, limit, offset int) ([]model.Lecture, error)
 	GetCourses(ctx context.Context, userID string) ([]model.Course, error)
+	GetUsage(ctx context.Context, userID string) (*model.UserUsage, error)
 }
 
 type userService struct {
@@ -98,4 +99,13 @@ func (s *userService) GetRecentLectures(ctx context.Context, userID string, limi
 		return nil, err
 	}
 	return lectures, nil
+}
+
+func (s *userService) GetUsage(ctx context.Context, userID string) (*model.UserUsage, error) {
+	usage, err := s.userRepo.GetUserUsage(ctx, userID)
+	if err != nil {
+		s.userLogger.Error().Err(err).Str("user_id", userID).Msg("Failed to get usage for user")
+		return nil, err
+	}
+	return usage, nil
 }

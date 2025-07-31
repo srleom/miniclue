@@ -35,6 +35,7 @@ func (h *UserHandler) RegisterRoutes(mux *http.ServeMux, authMw func(http.Handle
 	mux.Handle("/users/me", authMw(http.HandlerFunc(h.handleUsers)))
 	mux.Handle("/users/me/courses", authMw(http.HandlerFunc(h.getUserCourses)))
 	mux.Handle("/users/me/recents", authMw(http.HandlerFunc(h.getRecentLectures)))
+	mux.Handle("/users/me/usage", authMw(http.HandlerFunc(h.getUserUsage)))
 }
 
 func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
@@ -269,6 +270,61 @@ func (h *UserHandler) getRecentLectures(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(lectureDTOs); err != nil {
+		h.logger.Error().Err(err).Msg("Failed to encode response")
+	}
+}
+
+// getUserUsage godoc
+// @Summary Get user usage
+// @Description Retrieves the authenticated user's current usage within their billing period, including plan details and limits.
+// @Tags users
+// @Produce json
+// @Success 200 {object} dto.UserUsageResponseDTO "User usage information including current uploads, plan limits, and billing period"
+// @Failure 401 {string} string "Unauthorized: user ID not found in context"
+// @Failure 404 {string} string "No active subscription found"
+// @Failure 500 {string} string "Failed to retrieve user usage"
+// @Router /users/me/usage [get]
+func (h *UserHandler) getUserUsage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// 1. Extract UserID from context
+	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	// 2. Call service to get usage data
+	usage, err := h.userService.GetUsage(r.Context(), userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrUserNotFound):
+			http.Error(w, "No active subscription found", http.StatusNotFound)
+		default:
+			http.Error(w, "Failed to retrieve user usage: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// 3. Map domain model to response DTO
+	resp := dto.UserUsageResponseDTO{
+		UserID:             usage.UserID,
+		CurrentUsage:       usage.CurrentUsage,
+		MaxUploads:         usage.MaxUploads,
+		MaxSizeMB:          usage.MaxSizeMB,
+		PlanID:             usage.PlanID,
+		BillingPeriodStart: usage.BillingPeriodStart,
+		BillingPeriodEnd:   usage.BillingPeriodEnd,
+		PlanName:           usage.PlanName,
+	}
+
+	// 4. Return response
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error().Err(err).Msg("Failed to encode response")
 	}
 }

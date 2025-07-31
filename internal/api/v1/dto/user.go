@@ -29,3 +29,14 @@ type UserRecentLectureResponseDTO struct {
 	LectureID string `json:"lecture_id"`
 	Title     string `json:"title"`
 }
+
+type UserUsageResponseDTO struct {
+	UserID             string    `json:"user_id"`
+	CurrentUsage       int       `json:"current_usage"`
+	MaxUploads         int       `json:"max_uploads"`
+	MaxSizeMB          int       `json:"max_size_mb"`
+	PlanID             string    `json:"plan_id"`
+	BillingPeriodStart time.Time `json:"billing_period_start"`
+	BillingPeriodEnd   time.Time `json:"billing_period_end"`
+	PlanName           string    `json:"plan_name"`
+}

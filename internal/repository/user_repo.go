@@ -16,6 +16,8 @@ type UserRepository interface {
 	UpdateStripeCustomerID(ctx context.Context, userID, customerID string) error
 	// GetUserByStripeCustomerID returns the user associated with the given Stripe customer ID, or nil if none
 	GetUserByStripeCustomerID(ctx context.Context, customerID string) (*model.User, error)
+	// GetUserUsage returns the user's current usage within their billing period
+	GetUserUsage(ctx context.Context, userID string) (*model.UserUsage, error)
 }
 
 type userRepo struct {
@@ -76,4 +78,48 @@ func (r *userRepo) GetUserByStripeCustomerID(ctx context.Context, customerID str
 		return nil, fmt.Errorf("get user by stripe customer id: %w", err)
 	}
 	return &u, nil
+}
+
+// GetUserUsage returns the user's current usage within their billing period
+func (r *userRepo) GetUserUsage(ctx context.Context, userID string) (*model.UserUsage, error) {
+	const q = `
+		SELECT 
+			us.user_id,
+			us.starts_at,
+			us.ends_at,
+			sp.name as plan_name,
+			sp.max_uploads,
+			sp.max_size_mb,
+			sp.id as plan_id,
+			COALESCE(COUNT(ue.id), 0) as current_usage
+		FROM user_subscriptions us
+		JOIN subscription_plans sp ON us.plan_id = sp.id
+		LEFT JOIN usage_events ue ON us.user_id = ue.user_id 
+			AND ue.event_type = 'lecture_upload'
+			AND ue.created_at >= us.starts_at 
+			AND ue.created_at < us.ends_at
+		WHERE us.user_id = $1
+			AND us.status IN ('active', 'cancelled')
+			AND (us.ends_at + INTERVAL '6 hours') > NOW()
+		GROUP BY us.user_id, us.starts_at, us.ends_at, sp.name, sp.max_uploads, sp.max_size_mb, sp.id
+	`
+
+	var usage model.UserUsage
+	err := r.pool.QueryRow(ctx, q, userID).Scan(
+		&usage.UserID,
+		&usage.BillingPeriodStart,
+		&usage.BillingPeriodEnd,
+		&usage.PlanName,
+		&usage.MaxUploads,
+		&usage.MaxSizeMB,
+		&usage.PlanID,
+		&usage.CurrentUsage,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("no active subscription found for user %s", userID)
+		}
+		return nil, fmt.Errorf("getting usage for user %s: %w", userID, err)
+	}
+	return &usage, nil
 }
