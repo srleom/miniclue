@@ -121,8 +121,8 @@ func (s *StripeService) CreateCheckoutSession(ctx context.Context, userID, plan 
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
 		LineItems:          []*stripe.CheckoutSessionLineItemParams{{Price: stripe.String(priceID), Quantity: stripe.Int64(1)}},
 		Mode:               stripe.String(stripe.CheckoutSessionModeSubscription),
-		SuccessURL:         stripe.String(s.cfg.StripePortalReturnURL),
-		CancelURL:          stripe.String(s.cfg.StripePortalReturnURL),
+		SuccessURL:         stripe.String(s.cfg.StripePortalReturnURL + "?status=success"),
+		CancelURL:          stripe.String(s.cfg.StripePortalReturnURL + "?status=cancel"),
 		Metadata:           map[string]string{"user_id": userID},
 	}
 	sess, err := checkoutsession.New(sessParams)
