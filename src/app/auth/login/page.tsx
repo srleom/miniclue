@@ -16,7 +16,15 @@ export default function LoginPage() {
       <div className="m-auto h-fit w-full max-w-sm">
         <div className="p-8">
           <div className="flex flex-col items-center gap-2">
-            <h1 className="mb-6 text-lg font-medium">Login to MiniClue</h1>
+            <h1 className="mb-6 text-lg font-medium">
+              Login to{" "}
+              <Link
+                href="https://www.miniclue.com"
+                className="hover:cursor-pointer hover:underline"
+              >
+                MiniClue
+              </Link>
+            </h1>
           </div>
 
           <div className="grid grid-cols-1 gap-3">

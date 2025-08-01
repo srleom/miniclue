@@ -33,6 +33,8 @@ export async function handleUpdateLectureAccessedAt(
     return { error: lectureError };
   }
 
+  revalidateTag("recents");
+
   return { error: undefined };
 }
 

@@ -1466,8 +1466,8 @@ export interface paths {
       cookie?: never;
     };
     /**
-     * Get recent lectures
-     * @description Retrieves a list of recently viewed lectures for the authenticated user.
+     * Get recent lectures with count
+     * @description Retrieves a list of recently viewed lectures for the authenticated user with total count.
      */
     get: {
       parameters: {
@@ -1489,7 +1489,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"][];
+            "application/json": components["schemas"]["app_internal_api_v1_dto.UserRecentLecturesResponseDTO"];
           };
         };
         /** @description Unauthorized: user ID not found in context */
@@ -1695,6 +1695,10 @@ export interface components {
     "app_internal_api_v1_dto.UserRecentLectureResponseDTO": {
       lecture_id?: string;
       title?: string;
+    };
+    "app_internal_api_v1_dto.UserRecentLecturesResponseDTO": {
+      lectures?: components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"][];
+      total_count?: number;
     };
     "app_internal_api_v1_dto.UserResponseDTO": {
       avatar_url?: string;

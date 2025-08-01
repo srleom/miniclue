@@ -17,7 +17,13 @@ export default function SignupPage() {
         <div className="p-8">
           <div className="flex flex-col items-center gap-2">
             <h1 className="mb-6 text-lg font-medium">
-              Create an account on MiniClue
+              Create an account on{" "}
+              <Link
+                href="https://www.miniclue.com"
+                className="hover:cursor-pointer hover:underline"
+              >
+                MiniClue
+              </Link>
             </h1>
           </div>
 

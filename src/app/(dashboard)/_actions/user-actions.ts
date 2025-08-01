@@ -42,10 +42,21 @@ export async function getUser(): Promise<
 
 /**
  * Gets the authenticated user's recent lectures.
- * @returns {Promise<ActionResponse<{ name: string; lectureId: string; url: string }[]>>}
+ * @param {number} limit - Number of recents to fetch (default: 5)
+ * @param {number} offset - Offset for pagination (default: 0)
+ * @returns {Promise<
+ *   ActionResponse<
+ *     { name: string; lectureId: string; url: string; totalCount: number }[]
+ *   >
+ * >}
  */
-export async function getUserRecents(): Promise<
-  ActionResponse<{ name: string; lectureId: string; url: string }[]>
+export async function getUserRecents(
+  limit: number = 5,
+  offset: number = 0,
+): Promise<
+  ActionResponse<
+    { name: string; lectureId: string; url: string; totalCount: number }[]
+  >
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -53,7 +64,12 @@ export async function getUserRecents(): Promise<
   }
 
   const { data, error: fetchError } = await api.GET("/users/me/recents", {
-    query: { limit: 10, offset: 0 },
+    params: {
+      query: {
+        limit,
+        offset,
+      },
+    },
     next: { tags: ["recents"] },
   });
 
@@ -62,7 +78,9 @@ export async function getUserRecents(): Promise<
     return { error: fetchError };
   }
 
-  const recentsData = data ?? [];
+  const recentsData = data?.lectures ?? [];
+  const totalCount = data?.total_count ?? 0;
+
   const navRecents = recentsData.map(
     (
       r: components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"],
@@ -70,6 +88,7 @@ export async function getUserRecents(): Promise<
       name: r.title ?? "",
       lectureId: r.lecture_id!,
       url: `/lecture/${r.lecture_id!}`,
+      totalCount,
     }),
   );
 
