@@ -64,31 +64,46 @@ Base URL:
 - Production: https://api.miniclue.com/v1
 
 ```
-/api/v1/courses
+/v1/courses
 ├── POST / → create course
 ├── GET /:courseId → fetch course
 ├── PATCH /:courseId → update course
 └── DELETE /:courseId → delete course
 
-/api/v1/lectures
-├── POST / → create lecture
+/v1/lectures
+├── POST / → upload lecture (multipart form)
 ├── GET / → list lectures (query by course_id) (`?limit=&offset=`)
 ├── GET /:lectureId → fetch lecture
 ├── PATCH /:lectureId → update lecture metadata
 └── DELETE /:lectureId → delete lecture
 
-/api/v1/lectures/:lectureId
+/v1/lectures/:lectureId
 ├── GET /summary → get lecture summary
 ├── GET /explanations → list lecture explanations (`?limit=&offset=`)
-├── GET /notes → get lecture notes
-├── POST /notes → create lecture note
-└── PATCH /notes → update lecture note
+├── GET /note → get lecture note
+├── POST /note → create lecture note
+└── PATCH /note → update lecture note
 
-/api/v1/users/me
+/v1/lectures/:lectureId/url
+└── GET / → get signed URL for lecture file
+
+/v1/users/me
 ├── GET / → fetch user profile
 ├── POST / → create or update profile
 ├── GET /courses → list user's courses
-└── GET /recents → list recent lectures (`?limit=&offset=`)
+├── GET /recents → list recent lectures (`?limit=&offset=`)
+└── GET /usage → get user usage statistics
+└── GET /subscriptions → get user's active subscription
+
+/v1/subscriptions
+├── POST /checkout → create Stripe checkout session
+└── GET /portal → create Stripe customer portal session
+
+/v1/stripe/webhooks
+└── POST / → handle Stripe webhook events
+
+/v1/dlq
+└── POST / → handle dead-letter queue messages (Pub/Sub push)
 ```
 
 # Pricing

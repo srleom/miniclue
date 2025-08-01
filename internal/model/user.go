@@ -23,4 +23,5 @@ type UserUsage struct {
 	BillingPeriodStart time.Time `db:"starts_at" json:"billing_period_start"`
 	BillingPeriodEnd   time.Time `db:"ends_at" json:"billing_period_end"`
 	PlanName           string    `db:"plan_name" json:"plan_name"`
+	Status             string    `db:"status" json:"status"`
 }

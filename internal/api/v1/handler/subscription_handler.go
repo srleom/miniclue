@@ -8,9 +8,6 @@ import (
 	"app/internal/middleware"
 	"app/internal/service"
 
-	"errors"
-
-	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 )
 
@@ -28,7 +25,6 @@ func NewSubscriptionHandler(stripeSvc *service.StripeService, subSvc service.Sub
 
 // RegisterRoutes registers the subscription endpoints.
 func (h *SubscriptionHandler) RegisterRoutes(mux *http.ServeMux, authMiddleware func(http.Handler) http.Handler) {
-	mux.Handle("/subscriptions", authMiddleware(http.HandlerFunc(h.Get)))
 	mux.Handle("/subscriptions/checkout", authMiddleware(http.HandlerFunc(h.Checkout)))
 	mux.Handle("/subscriptions/portal", authMiddleware(http.HandlerFunc(h.Portal)))
 }
@@ -93,59 +89,6 @@ func (h *SubscriptionHandler) Portal(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(map[string]string{"url": url}); err != nil {
-		h.logger.Error().Err(err).Msg("failed to encode response")
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-}
-
-// Get godoc
-// @Summary Get current user's subscription
-// @Description Retrieves the authenticated user's current subscription details.
-// @Tags subscriptions
-// @Produce json
-// @Success 200 {object} dto.SubscriptionResponseDTO
-// @Failure 401 {string} string "Unauthorized: user ID not found in context"
-// @Failure 404 {string} string "No active subscription"
-// @Failure 500 {string} string "Failed to fetch subscription"
-// @Router /subscriptions [get]
-func (h *SubscriptionHandler) Get(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet || r.URL.Path != "/subscriptions" {
-		http.NotFound(w, r)
-		return
-	}
-	ctx := r.Context()
-	userID, ok := ctx.Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: user ID not found in context", http.StatusUnauthorized)
-		return
-	}
-	sub, err := h.subSvc.GetActiveSubscription(ctx, userID)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			http.Error(w, "No active subscription", http.StatusNotFound)
-			return
-		}
-		h.logger.Error().Err(err).Msg("Failed to fetch subscription")
-		http.Error(w, "Failed to fetch subscription", http.StatusInternalServerError)
-		return
-	}
-	plan, err := h.subSvc.GetPlan(ctx, sub.PlanID)
-	if err != nil {
-		h.logger.Error().Err(err).Msg("Failed to fetch plan")
-		http.Error(w, "Failed to fetch plan", http.StatusInternalServerError)
-		return
-	}
-	resp := dto.SubscriptionResponseDTO{
-		PlanID:               sub.PlanID,
-		Name:                 plan.Name,
-		StripeSubscriptionID: sub.StripeSubscriptionID,
-		StartsAt:             sub.StartsAt,
-		EndsAt:               sub.EndsAt,
-		Status:               sub.Status,
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error().Err(err).Msg("failed to encode response")
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return

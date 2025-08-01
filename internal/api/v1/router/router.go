@@ -121,7 +121,7 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	noteSvc := service.NewNoteService(noteRepo, logger)
 	dlqSvc := service.NewDLQService(dlqRepo, logger)
 
-	userHandler := handler.NewUserHandler(userSvc, validate, logger)
+	userHandler := handler.NewUserHandler(userSvc, subscriptionSvc, validate, logger)
 	courseHandler := handler.NewCourseHandler(courseSvc, validate, logger)
 	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, summarySvc, explanationSvc, noteSvc, validate, cfg.S3URL, cfg.S3Bucket, logger)
 	dlqHandler := handler.NewDLQHandler(dlqSvc, logger)

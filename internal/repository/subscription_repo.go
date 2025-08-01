@@ -14,6 +14,7 @@ import (
 // SubscriptionRepository defines methods for accessing subscription data.
 type SubscriptionRepository interface {
 	GetActiveSubscription(ctx context.Context, userID string) (*model.UserSubscription, error)
+	GetSubscription(ctx context.Context, userID string) (*model.UserSubscription, error)
 	GetPlanByID(ctx context.Context, planID string) (*model.SubscriptionPlan, error)
 	// UpsertSubscription creates a subscription with the given planId for a new user if none exists, using the plan's billing_period.
 	UpsertSubscription(ctx context.Context, userID, planID string) error
@@ -52,6 +53,30 @@ func (r *subscriptionRepo) GetActiveSubscription(ctx context.Context, userID str
 	)
 	if err != nil {
 		return nil, fmt.Errorf("fetch active subscription for user %s: %w", userID, err)
+	}
+	return &us, nil
+}
+
+// GetSubscription returns the user's subscription regardless of status.
+func (r *subscriptionRepo) GetSubscription(ctx context.Context, userID string) (*model.UserSubscription, error) {
+	const q = `
+        SELECT user_id, plan_id, stripe_subscription_id, starts_at, ends_at, status, created_at, updated_at
+        FROM user_subscriptions
+        WHERE user_id = $1
+    `
+	var us model.UserSubscription
+	err := r.pool.QueryRow(ctx, q, userID).Scan(
+		&us.UserID,
+		&us.PlanID,
+		&us.StripeSubscriptionID,
+		&us.StartsAt,
+		&us.EndsAt,
+		&us.Status,
+		&us.CreatedAt,
+		&us.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("fetch subscription for user %s: %w", userID, err)
 	}
 	return &us, nil
 }

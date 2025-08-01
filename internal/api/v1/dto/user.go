@@ -44,4 +44,5 @@ type UserUsageResponseDTO struct {
 	BillingPeriodStart time.Time `json:"billing_period_start"`
 	BillingPeriodEnd   time.Time `json:"billing_period_end"`
 	PlanName           string    `json:"plan_name"`
+	Status             string    `json:"status"`
 }

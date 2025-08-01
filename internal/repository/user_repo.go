@@ -16,7 +16,7 @@ type UserRepository interface {
 	UpdateStripeCustomerID(ctx context.Context, userID, customerID string) error
 	// GetUserByStripeCustomerID returns the user associated with the given Stripe customer ID, or nil if none
 	GetUserByStripeCustomerID(ctx context.Context, customerID string) (*model.User, error)
-	// GetUserUsage returns the user's current usage within their billing period
+	// GetUserUsage returns the user's current usage within their billing period and subscription status
 	GetUserUsage(ctx context.Context, userID string) (*model.UserUsage, error)
 }
 
@@ -80,7 +80,7 @@ func (r *userRepo) GetUserByStripeCustomerID(ctx context.Context, customerID str
 	return &u, nil
 }
 
-// GetUserUsage returns the user's current usage within their billing period
+// GetUserUsage returns the user's current usage within their billing period and subscription status
 func (r *userRepo) GetUserUsage(ctx context.Context, userID string) (*model.UserUsage, error) {
 	const q = `
 		SELECT 
@@ -91,6 +91,7 @@ func (r *userRepo) GetUserUsage(ctx context.Context, userID string) (*model.User
 			sp.max_uploads,
 			sp.max_size_mb,
 			sp.id as plan_id,
+			us.status,
 			COALESCE(COUNT(ue.id), 0) as current_usage
 		FROM user_subscriptions us
 		JOIN subscription_plans sp ON us.plan_id = sp.id
@@ -99,9 +100,9 @@ func (r *userRepo) GetUserUsage(ctx context.Context, userID string) (*model.User
 			AND ue.created_at >= us.starts_at 
 			AND ue.created_at < us.ends_at
 		WHERE us.user_id = $1
-			AND us.status IN ('active', 'cancelled')
+			AND us.status IN ('active', 'cancelled', 'past_due')
 			AND (us.ends_at + INTERVAL '6 hours') > NOW()
-		GROUP BY us.user_id, us.starts_at, us.ends_at, sp.name, sp.max_uploads, sp.max_size_mb, sp.id
+		GROUP BY us.user_id, us.starts_at, us.ends_at, sp.name, sp.max_uploads, sp.max_size_mb, sp.id, us.status
 	`
 
 	var usage model.UserUsage
@@ -113,6 +114,7 @@ func (r *userRepo) GetUserUsage(ctx context.Context, userID string) (*model.User
 		&usage.MaxUploads,
 		&usage.MaxSizeMB,
 		&usage.PlanID,
+		&usage.Status,
 		&usage.CurrentUsage,
 	)
 	if err != nil {

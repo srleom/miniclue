@@ -13,20 +13,23 @@ import (
 	"app/internal/service"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog"
 )
 
 type UserHandler struct {
-	userService service.UserService
-	validate    *validator.Validate
-	logger      zerolog.Logger
+	userService     service.UserService
+	subscriptionSvc service.SubscriptionService
+	validate        *validator.Validate
+	logger          zerolog.Logger
 }
 
-func NewUserHandler(userService service.UserService, v *validator.Validate, logger zerolog.Logger) *UserHandler {
+func NewUserHandler(userService service.UserService, subscriptionSvc service.SubscriptionService, v *validator.Validate, logger zerolog.Logger) *UserHandler {
 	return &UserHandler{
-		userService: userService,
-		validate:    v,
-		logger:      logger,
+		userService:     userService,
+		subscriptionSvc: subscriptionSvc,
+		validate:        v,
+		logger:          logger,
 	}
 }
 
@@ -36,6 +39,7 @@ func (h *UserHandler) RegisterRoutes(mux *http.ServeMux, authMw func(http.Handle
 	mux.Handle("/users/me/courses", authMw(http.HandlerFunc(h.getUserCourses)))
 	mux.Handle("/users/me/recents", authMw(http.HandlerFunc(h.getRecentLecturesWithCount)))
 	mux.Handle("/users/me/usage", authMw(http.HandlerFunc(h.getUserUsage)))
+	mux.Handle("/users/me/subscriptions", authMw(http.HandlerFunc(h.getUserSubscription)))
 }
 
 func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
@@ -325,6 +329,7 @@ func (h *UserHandler) getUserUsage(w http.ResponseWriter, r *http.Request) {
 		BillingPeriodStart: usage.BillingPeriodStart,
 		BillingPeriodEnd:   usage.BillingPeriodEnd,
 		PlanName:           usage.PlanName,
+		Status:             usage.Status,
 	}
 
 	// 4. Return response
@@ -332,5 +337,58 @@ func (h *UserHandler) getUserUsage(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		h.logger.Error().Err(err).Msg("Failed to encode response")
+	}
+}
+
+// getUserSubscription godoc
+// @Summary Get current user's subscription
+// @Description Retrieves the authenticated user's current subscription details, including edge cases like past_due status.
+// @Tags users
+// @Produce json
+// @Success 200 {object} dto.SubscriptionResponseDTO
+// @Failure 401 {string} string "Unauthorized: user ID not found in context"
+// @Failure 404 {string} string "No subscription found"
+// @Failure 500 {string} string "Failed to fetch subscription"
+// @Router /users/me/subscriptions [get]
+func (h *UserHandler) getUserSubscription(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	ctx := r.Context()
+	userID, ok := ctx.Value(middleware.UserContextKey).(string)
+	if !ok || userID == "" {
+		http.Error(w, "Unauthorized: user ID not found in context", http.StatusUnauthorized)
+		return
+	}
+	sub, err := h.subscriptionSvc.GetSubscription(ctx, userID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			http.Error(w, "No subscription found", http.StatusNotFound)
+			return
+		}
+		h.logger.Error().Err(err).Msg("Failed to fetch subscription")
+		http.Error(w, "Failed to fetch subscription", http.StatusInternalServerError)
+		return
+	}
+	plan, err := h.subscriptionSvc.GetPlan(ctx, sub.PlanID)
+	if err != nil {
+		h.logger.Error().Err(err).Msg("Failed to fetch plan")
+		http.Error(w, "Failed to fetch plan", http.StatusInternalServerError)
+		return
+	}
+	resp := dto.SubscriptionResponseDTO{
+		PlanID:               sub.PlanID,
+		Name:                 plan.Name,
+		StripeSubscriptionID: sub.StripeSubscriptionID,
+		StartsAt:             sub.StartsAt,
+		EndsAt:               sub.EndsAt,
+		Status:               sub.Status,
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		h.logger.Error().Err(err).Msg("failed to encode response")
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
 	}
 }

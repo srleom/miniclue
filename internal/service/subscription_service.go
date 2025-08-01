@@ -12,6 +12,7 @@ import (
 // SubscriptionService defines business logic methods for subscriptions.
 type SubscriptionService interface {
 	GetActiveSubscription(ctx context.Context, userID string) (*model.UserSubscription, error)
+	GetSubscription(ctx context.Context, userID string) (*model.UserSubscription, error)
 	GetPlan(ctx context.Context, planID string) (*model.SubscriptionPlan, error)
 	UpsertStripeSubscription(ctx context.Context, userID, planID string, startsAt, endsAt time.Time, status, stripeSubscriptionID string) error
 	DowngradeUserToFreePlan(ctx context.Context, userID, freePlanID string) error
@@ -24,8 +25,10 @@ type subscriptionService struct {
 
 // NewSubscriptionService creates a new SubscriptionService with a scoped logger.
 func NewSubscriptionService(repo repository.SubscriptionRepository, logger zerolog.Logger) SubscriptionService {
-	lg := logger.With().Str("service", "SubscriptionService").Logger()
-	return &subscriptionService{repo: repo, logger: lg}
+	return &subscriptionService{
+		repo:   repo,
+		logger: logger.With().Str("service", "SubscriptionService").Logger(),
+	}
 }
 
 // GetActiveSubscription returns the current active subscription for a user.
@@ -33,6 +36,17 @@ func (s *subscriptionService) GetActiveSubscription(ctx context.Context, userID 
 	sub, err := s.repo.GetActiveSubscription(ctx, userID)
 	if err != nil {
 		s.logger.Error().Err(err).Str("user_id", userID).Msg("Failed to fetch active subscription")
+		return nil, err
+	}
+
+	return sub, nil
+}
+
+// GetSubscription returns the user's subscription regardless of status.
+func (s *subscriptionService) GetSubscription(ctx context.Context, userID string) (*model.UserSubscription, error) {
+	sub, err := s.repo.GetSubscription(ctx, userID)
+	if err != nil {
+		s.logger.Error().Err(err).Str("user_id", userID).Msg("Failed to fetch subscription")
 		return nil, err
 	}
 
