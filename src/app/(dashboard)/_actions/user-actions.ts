@@ -202,7 +202,7 @@ export async function getUserSubscription(): Promise<
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/subscriptions", {
+  const { data, error: fetchError } = await api.GET("/users/me/subscriptions", {
     next: { tags: ["user-subscription"] },
   });
 
