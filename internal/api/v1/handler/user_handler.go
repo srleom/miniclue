@@ -116,7 +116,8 @@ func (h *UserHandler) createUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
+		// Error already handled by http.Error in other cases
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
@@ -157,7 +158,8 @@ func (h *UserHandler) getUser(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
+		// Error already handled by http.Error in other cases
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
@@ -206,7 +208,8 @@ func (h *UserHandler) getUserCourses(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(courseDTOs); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
+		// Error already handled by http.Error in other cases
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
@@ -280,7 +283,8 @@ func (h *UserHandler) getRecentLecturesWithCount(w http.ResponseWriter, r *http.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
+		// Error already handled by http.Error in other cases
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
@@ -336,7 +340,8 @@ func (h *UserHandler) getUserUsage(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
+		// Error already handled by http.Error in other cases
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
 	}
 }
 
@@ -387,7 +392,7 @@ func (h *UserHandler) getUserSubscription(w http.ResponseWriter, r *http.Request
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("failed to encode response")
+		// Error already handled by http.Error in other cases
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

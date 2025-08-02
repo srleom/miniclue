@@ -66,7 +66,6 @@ func (s *dlqService) ProcessAndSave(ctx context.Context, req *dto.PubSubPushRequ
 		s.dlqLogger.Error().Err(err).Str("subscription", dbMessage.SubscriptionName).Msg("Failed to save DLQ message")
 		return err
 	}
-
-	s.dlqLogger.Info().Str("message_id", dbMessage.MessageID).Msg("Successfully processed and saved DLQ message")
+	// Success is expected, no need to log it
 	return nil
 }

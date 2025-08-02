@@ -18,7 +18,9 @@ func New() zerolog.Logger {
 	// Use ConsoleWriter for local development for more readable logs.
 	if os.Getenv("ENV") == "development" {
 		logger = logger.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		return logger.Level(zerolog.DebugLevel)
 	}
 
-	return logger.Level(zerolog.DebugLevel) // TODO: change to InfoLevel in production
+	// For staging and production, use InfoLevel to reduce noise
+	return logger.Level(zerolog.InfoLevel)
 }

@@ -45,15 +45,16 @@ func (s *StripeService) getUserIDFromEvent(ctx context.Context, metadata map[str
 	if customerID == "" {
 		return "", errors.New("cannot determine user: missing metadata and customer id")
 	}
-	s.logger.Warn().Str("stripe_customer_id", customerID).Msg("Missing user_id metadata; looking up user by customer ID")
-	u, err := s.userRepo.GetUserByStripeCustomerID(ctx, customerID)
+	// If no user_id in metadata, try to look up user by customer ID
+	// This is normal fallback logic, not a warning
+	user, err := s.userRepo.GetUserByStripeCustomerID(ctx, customerID)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup user by Stripe customer ID: %w", err)
+		return "", fmt.Errorf("failed to get user by stripe customer ID: %w", err)
 	}
-	if u == nil {
+	if user == nil {
 		return "", fmt.Errorf("no user found for customer ID: %s", customerID)
 	}
-	return u.UserID, nil
+	return user.UserID, nil
 }
 
 // GetOrCreateCustomer ensures a Stripe Customer exists for a user
@@ -64,7 +65,6 @@ func (s *StripeService) GetOrCreateCustomer(ctx context.Context, user *model.Use
 	}
 
 	// Fallback: create customer if it doesn't exist (for legacy users or edge cases)
-	s.logger.Warn().Str("user_id", user.UserID).Msg("No Stripe customer ID found, creating customer as fallback")
 	return s.CreateCustomer(ctx, user)
 }
 
@@ -168,8 +168,8 @@ func (s *StripeService) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "signature verification failed", http.StatusBadRequest)
 		return
 	}
-	// Log receipt of webhook
-	s.logger.Info().Str("event_type", string(event.Type)).Msg("Stripe webhook received")
+	// Log receipt of webhook at debug level since this is internal processing
+	s.logger.Debug().Str("event_type", string(event.Type)).Msg("Stripe webhook received")
 
 	// Log the raw payload for debugging (be careful with sensitive data)
 	s.logger.Debug().Str("event_type", string(event.Type)).RawJSON("payload", event.Data.Raw).Msg("Webhook payload received")
@@ -211,7 +211,8 @@ func (s *StripeService) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		start := time.Unix(item.CurrentPeriodStart, 0)
 		end := time.Unix(item.CurrentPeriodEnd, 0)
 
-		s.logger.Info().Str("subscription_id", cs.Subscription.ID).Str("plan_id", planID).Msg("Extracted plan ID from checkout session")
+		// Log at debug level since this is internal processing
+		s.logger.Debug().Str("subscription_id", cs.Subscription.ID).Str("plan_id", planID).Msg("Extracted plan ID from checkout session")
 
 		userID := cs.Metadata["user_id"]
 		if userID == "" {
@@ -259,7 +260,8 @@ func (s *StripeService) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 		// Skip if no subscription ID (this is likely a one-time invoice)
 		if subID == "" {
-			s.logger.Info().Str("invoice_id", invoice.ID).Msg("Invoice has no subscription, skipping subscription update")
+			// Log at debug level since this is normal business logic
+			s.logger.Debug().Str("invoice_id", invoice.ID).Msg("Invoice has no subscription, skipping subscription update")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -267,25 +269,27 @@ func (s *StripeService) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 		var priceID string
 
 		// Get price ID from subscription directly
-		sub, err := subscriptionpkg.Get(subID, nil)
+		subObj, err := subscriptionpkg.Get(subID, nil)
 		if err != nil {
 			s.logger.Error().Err(err).Str("subscription_id", subID).Msg("Failed to fetch subscription for price ID")
 			http.Error(w, "failed to fetch subscription details", http.StatusInternalServerError)
 			return
 		}
 
-		if len(sub.Items.Data) > 0 && sub.Items.Data[0].Price != nil {
-			priceID = sub.Items.Data[0].Price.ID
-			s.logger.Info().Str("subscription_id", subID).Str("price_id", priceID).Msg("Extracted price ID from subscription")
-		}
+		// Log at debug level since this is internal processing
+		s.logger.Debug().Str("subscription_id", subID).Str("price_id", priceID).Msg("Extracted price ID from subscription")
 
+		if len(subObj.Items.Data) > 0 && subObj.Items.Data[0].Price != nil {
+			priceID = subObj.Items.Data[0].Price.ID
+		}
 		if priceID == "" {
 			s.logger.Error().Str("subscription_id", subID).Msg("Could not determine price ID from subscription")
 			http.Error(w, "could not determine price ID", http.StatusInternalServerError)
 			return
 		}
 
-		s.logger.Info().Str("subscription_id", subID).Str("plan_id", priceID).Str("user_id", userID).Msg("Extracted plan ID from invoice.payment_succeeded")
+		// Log at debug level since this is internal processing
+		s.logger.Debug().Str("subscription_id", subID).Str("plan_id", priceID).Str("user_id", userID).Msg("Extracted plan ID from invoice.payment_succeeded")
 
 		if err := s.subSvc.UpsertStripeSubscription(ctx, userID, priceID, start, end, "active", subID); err != nil {
 			s.logger.Error().Err(err).Str("user_id", userID).Str("plan_id", priceID).Msg("Failed to update subscription on invoice.payment_succeeded")
