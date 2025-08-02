@@ -12,6 +12,9 @@ import { Button } from "@/components/ui/button";
 // actions
 import { createCheckoutSession } from "@/app/(dashboard)/_actions/user-actions";
 
+// lib
+import { logger } from "@/lib/logger";
+
 interface UpgradeButtonProps {
   plan: "monthly_launch" | "annual_launch";
   variant?: "outline" | "default" | "secondary" | "destructive" | "ghost";
@@ -32,7 +35,7 @@ export function UpgradeButton({ plan, variant }: UpgradeButtonProps) {
         await createCheckoutSession(planType);
 
       if (error) {
-        console.error("Failed to create checkout session:", error);
+        logger.error("Failed to create checkout session:", error);
         toast.error("Failed to create checkout session. Please try again.");
         return;
       }
@@ -42,7 +45,7 @@ export function UpgradeButton({ plan, variant }: UpgradeButtonProps) {
         toast.success("Redirecting to checkout...");
       }
     } catch (error) {
-      console.error("Failed to create checkout session:", error);
+      logger.error("Failed to create checkout session:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

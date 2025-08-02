@@ -10,6 +10,9 @@ import {
   getUserSubscription,
 } from "@/app/(dashboard)/_actions/user-actions";
 
+// lib
+import { logger } from "@/lib/logger";
+
 export default async function Page() {
   const { data: courses, error } = await getUserCourses();
   const { data: userUsage, error: usageError } = await getUserUsage();
@@ -18,15 +21,15 @@ export default async function Page() {
 
   if (error) {
     // Handle error case, maybe show a message to the user
-    console.error("Failed to load courses:", error);
+    logger.error("Failed to load courses:", error);
   }
 
   if (usageError) {
-    console.error("Failed to load user usage:", usageError);
+    logger.error("Failed to load user usage:", usageError);
   }
 
   if (subscriptionError) {
-    console.error("Failed to load subscription:", subscriptionError);
+    logger.error("Failed to load subscription:", subscriptionError);
   }
 
   const defaultCourse = courses?.find((c) => c.isDefault);

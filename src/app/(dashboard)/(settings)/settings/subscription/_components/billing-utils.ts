@@ -9,6 +9,9 @@ import { toast } from "sonner";
 // actions
 import { getStripePortalUrl } from "@/app/(dashboard)/_actions/user-actions";
 
+// lib
+import { logger } from "@/lib/logger";
+
 export function useManageBilling() {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,7 +21,7 @@ export function useManageBilling() {
       const { data: portalUrl, error } = await getStripePortalUrl();
 
       if (error) {
-        console.error("Failed to get portal URL:", error);
+        logger.error("Failed to get portal URL:", error);
         toast.error("Failed to access billing portal. Please try again.");
         return;
       }
@@ -28,7 +31,7 @@ export function useManageBilling() {
         toast.success("Redirecting to billing portal...");
       }
     } catch (error) {
-      console.error("Failed to get portal URL:", error);
+      logger.error("Failed to get portal URL:", error);
       toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);

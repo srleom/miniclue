@@ -13,6 +13,7 @@ import {
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
 import { createAdminClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 /**
  * Gets the authenticated user's profile info.
@@ -33,7 +34,7 @@ export async function getUser(): Promise<
   });
 
   if (fetchError) {
-    console.error("Get user error:", fetchError);
+    logger.error("Get user error:", fetchError);
     return { error: fetchError };
   }
 
@@ -74,7 +75,7 @@ export async function getUserRecents(
   });
 
   if (fetchError) {
-    console.error("Get recents error:", fetchError);
+    logger.error("Get recents error:", fetchError);
     return { error: fetchError };
   }
 
@@ -119,7 +120,7 @@ export async function getUserCourses(): Promise<
   });
 
   if (fetchError) {
-    console.error("Get courses error:", fetchError);
+    logger.error("Get courses error:", fetchError);
     return { error: fetchError };
   }
 
@@ -166,7 +167,7 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
     );
 
     if (deleteError) {
-      console.error("Delete user error:", deleteError);
+      logger.error("Delete user error:", deleteError);
       return { error: deleteError.message };
     }
 
@@ -183,7 +184,7 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
       throw error;
     }
 
-    console.error("Delete user account error:", error);
+    logger.error("Delete user account error:", error);
     return { error: "Failed to delete user account" };
   }
 }
@@ -207,7 +208,7 @@ export async function getUserSubscription(): Promise<
   });
 
   if (fetchError) {
-    console.error("Get subscription error:", fetchError);
+    logger.error("Get subscription error:", fetchError);
     return { error: fetchError };
   }
 
@@ -227,7 +228,7 @@ export async function getStripePortalUrl(): Promise<ActionResponse<string>> {
   const { data, error: fetchError } = await api.GET("/subscriptions/portal");
 
   if (fetchError) {
-    console.error("Get portal URL error:", fetchError);
+    logger.error("Get portal URL error:", fetchError);
     return { error: fetchError };
   }
 
@@ -255,7 +256,7 @@ export async function createCheckoutSession(
   );
 
   if (fetchError) {
-    console.error("Create checkout session error:", fetchError);
+    logger.error("Create checkout session error:", fetchError);
     return { error: fetchError };
   }
 
@@ -281,7 +282,7 @@ export async function getUserUsage(): Promise<
   });
 
   if (fetchError) {
-    console.error("Get usage error:", fetchError);
+    logger.error("Get usage error:", fetchError);
     return { error: fetchError };
   }
 

@@ -16,8 +16,6 @@ import { Badge } from "@/components/ui/badge";
 async function UsageContent() {
   const { data: usage, error } = await getUserUsage();
 
-  console.log(usage);
-
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center space-y-4">

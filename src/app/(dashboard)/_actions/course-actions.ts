@@ -12,6 +12,7 @@ import {
   ActionResponse,
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
+import { logger } from "@/lib/logger";
 
 export async function createUntitledCourse(): Promise<
   ActionResponse<
@@ -31,7 +32,7 @@ export async function createUntitledCourse(): Promise<
   });
 
   if (courseError) {
-    console.error("Create course error:", courseError);
+    logger.error("Create course error:", courseError);
     return { error: courseError };
   }
 
@@ -52,7 +53,7 @@ export async function deleteCourse(
   });
 
   if (deleteError) {
-    console.error("Delete course error:", deleteError);
+    logger.error("Delete course error:", deleteError);
     return { error: deleteError };
   }
 
@@ -80,7 +81,7 @@ export async function getCourseLectures(
   });
 
   if (fetchError) {
-    console.error("Get lectures error:", fetchError);
+    logger.error("Get lectures error:", fetchError);
     return { data: [], error: fetchError };
   }
 
@@ -105,7 +106,7 @@ export async function getCourseDetails(
   });
 
   if (fetchError) {
-    console.error("Get lecture error:", fetchError);
+    logger.error("Get lecture error:", fetchError);
     return { data: undefined, error: fetchError };
   }
 
@@ -132,7 +133,7 @@ export async function updateCourse(
   });
 
   if (updateError) {
-    console.error("Update course error:", updateError);
+    logger.error("Update course error:", updateError);
     return { error: updateError };
   }
 

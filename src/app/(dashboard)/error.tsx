@@ -12,6 +12,9 @@ import { GalleryVerticalEnd } from "lucide-react";
 // components
 import { Button } from "@/components/ui/button";
 
+// lib
+import { logger } from "@/lib/logger";
+
 export default function DashboardErrorPage({
   error,
 }: {
@@ -19,7 +22,7 @@ export default function DashboardErrorPage({
 }) {
   useEffect(() => {
     // Log the error to an error reporting service
-    console.error(error);
+    logger.error("Dashboard error:", error);
   }, [error]);
 
   return (

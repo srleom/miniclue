@@ -21,6 +21,9 @@ import {
   getUserSubscription,
 } from "@/app/(dashboard)/_actions/user-actions";
 
+// lib
+import { logger } from "@/lib/logger";
+
 interface CoursePageProps {
   params: Promise<{ courseId: string }>;
 }
@@ -56,11 +59,11 @@ export default async function CoursePage({ params }: CoursePageProps) {
     await getUserSubscription();
 
   if (usageError) {
-    console.error("Failed to load user usage:", usageError);
+    logger.error("Failed to load user usage:", usageError);
   }
 
   if (subscriptionError) {
-    console.error("Failed to load subscription:", subscriptionError);
+    logger.error("Failed to load subscription:", subscriptionError);
   }
 
   const tableLectures: LectureResponseDTO[] =

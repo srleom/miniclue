@@ -2,13 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { logger } from "@/lib/logger";
 
 export async function handleLogout() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();
 
   if (error) {
-    console.error("Logout error:", error);
+    logger.error("Logout error:", error);
     return;
   }
 

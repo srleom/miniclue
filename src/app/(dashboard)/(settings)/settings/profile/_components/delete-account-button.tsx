@@ -23,6 +23,9 @@ import {
 // actions
 import { deleteUserAccount } from "@/app/(dashboard)/_actions/user-actions";
 
+// lib
+import { logger } from "@/lib/logger";
+
 export function DeleteAccountButton() {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -45,7 +48,7 @@ export function DeleteAccountButton() {
         return;
       }
 
-      console.error("Failed to delete account:", error);
+      logger.error("Failed to delete account:", error);
       toast.error("Failed to delete account. Please try again.");
       setIsDeleting(false);
     }

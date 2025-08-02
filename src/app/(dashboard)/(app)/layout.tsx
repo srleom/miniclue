@@ -36,7 +36,7 @@ export default async function DashboardLayout({
   let navRecents: NavRecentsItem[] = [];
   let navCourses: CourseWithLectures[] = [];
 
-  const recentsRes = await getUserRecents();
+  const recentsRes = await getUserRecents(10000, 0);
   if (recentsRes.data) {
     navRecents = recentsRes.data;
   }

@@ -38,7 +38,6 @@ interface ItemActionsProps<T> {
   children: React.ReactNode;
   isDefault?: boolean;
   dropdownMenuContentProps?: React.ComponentProps<typeof DropdownMenuContent>;
-  onRenameSuccess?: () => void;
   onDeleteSuccess?: () => void;
 }
 
@@ -50,7 +49,6 @@ export function ItemActions<T>({
   children,
   isDefault = false,
   dropdownMenuContentProps,
-  onRenameSuccess,
   onDeleteSuccess,
 }: ItemActionsProps<T>) {
   const [openMenu, setOpenMenu] = useState(false);
@@ -82,7 +80,6 @@ export function ItemActions<T>({
               } renamed`}
               onSuccess={() => {
                 setOpenMenu(false);
-                onRenameSuccess?.();
               }}
             />
           }

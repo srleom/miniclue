@@ -12,6 +12,7 @@ import {
   ActionResponse,
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
+import { logger } from "@/lib/logger";
 
 export async function handleUpdateLectureAccessedAt(
   lectureId: string,
@@ -29,7 +30,7 @@ export async function handleUpdateLectureAccessedAt(
   });
 
   if (lectureError) {
-    console.error("Update lecture error:", lectureError);
+    logger.error("Update lecture error:", lectureError);
     return { error: lectureError };
   }
 
@@ -62,7 +63,7 @@ export async function uploadLectures(
   });
 
   if (uploadError) {
-    console.error("Upload lectures error:", uploadError);
+    logger.error("Upload lectures error:", uploadError);
     return { error: uploadError };
   }
 
@@ -90,7 +91,7 @@ export async function getLecture(
   });
 
   if (fetchError) {
-    console.error("Get lecture error:", fetchError);
+    logger.error("Get lecture error:", fetchError);
     return { data: undefined, error: fetchError };
   }
 
@@ -118,7 +119,7 @@ export async function getExplanations(
   );
 
   if (fetchError) {
-    console.error("Get explanations error:", fetchError);
+    logger.error("Get explanations error:", fetchError);
     return { data: undefined, error: fetchError };
   }
 
@@ -141,7 +142,7 @@ export async function deleteLecture(
   );
 
   if (fetchError || !lecture?.course_id) {
-    console.error("Fetch lecture for delete error:", fetchError);
+    logger.error("Fetch lecture for delete error:", fetchError);
     return { error: "Failed to fetch lecture to determine course." };
   }
 
@@ -150,7 +151,7 @@ export async function deleteLecture(
   });
 
   if (deleteError) {
-    console.error("Delete lecture error:", deleteError);
+    logger.error("Delete lecture error:", deleteError);
     return { error: "Failed to delete lecture." };
   }
 
@@ -178,7 +179,7 @@ export async function getSignedPdfUrl(
     },
   );
   if (fetchError) {
-    console.error("Get signed PDF URL error:", fetchError);
+    logger.error("Get signed PDF URL error:", fetchError);
     return { data: undefined, error: fetchError };
   }
   return { data: data ?? undefined, error: undefined };
@@ -205,7 +206,7 @@ export async function getSummary(
   );
 
   if (fetchError) {
-    console.error("Get summary error:", fetchError);
+    logger.error("Get summary error:", fetchError);
     return { data: undefined, error: fetchError };
   }
 
@@ -234,7 +235,7 @@ export async function updateLecture(
   );
 
   if (updateError) {
-    console.error("Update lecture error:", updateError);
+    logger.error("Update lecture error:", updateError);
     return { error: updateError };
   }
 

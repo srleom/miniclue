@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 // lib
 import { isSubscriptionPastDue } from "@/lib/utils";
+import { logger } from "@/lib/logger";
 
 // actions
 import { getUserSubscription } from "@/app/(dashboard)/_actions/user-actions";
@@ -35,13 +36,13 @@ export function PaymentWarningToast() {
           setSubscription(result.data);
         } else {
           // User is not authenticated, which is expected for unauthenticated users
-          console.log(
+          logger.debug(
             "User not authenticated, skipping subscription fetch:",
             result.error,
           );
         }
       } catch (error) {
-        console.error("Failed to fetch subscription:", error);
+        logger.error("Failed to fetch subscription:", error);
       }
     }
 

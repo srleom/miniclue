@@ -2,11 +2,9 @@
 
 // next
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
 
 // icons
-import { MoreHorizontal, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 // types
 import { NavRecentsItem } from "../../_types/types";
@@ -18,14 +16,9 @@ import {
   SidebarGroupAction,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import NavLecture from "./nav-lecture";
-
-// actions
-import { getUserRecents } from "@/app/(dashboard)/_actions/user-actions";
 
 export function NavRecents({
   items,
@@ -39,46 +32,10 @@ export function NavRecents({
   deleteLecture: (lectureId: string) => Promise<ActionResponse<void>>;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
-  const router = useRouter();
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [additionalItems, setAdditionalItems] = useState<NavRecentsItem[]>([]);
-
-  const allItems = [...items, ...additionalItems];
-  const hasMore = allItems.length < (allItems[0]?.totalCount ?? 0);
 
   const handleNavigation = () => {
     if (isMobile) {
       setOpenMobile(false);
-    }
-  };
-
-  const handleRenameSuccess = () => {
-    // Refresh the page data to get updated recents
-    router.refresh();
-  };
-
-  const handleLoadMore = async () => {
-    if (isLoadingMore || !hasMore) return;
-
-    setIsLoadingMore(true);
-    try {
-      const result = await getUserRecents(5, allItems.length);
-
-      if (result.data && result.data.length > 0) {
-        // Check for duplicates by comparing lecture IDs
-        const existingIds = new Set(allItems.map((item) => item.lectureId));
-        const newItems = result.data.filter(
-          (item) => !existingIds.has(item.lectureId),
-        );
-
-        if (newItems.length > 0) {
-          setAdditionalItems((prev) => [...prev, ...newItems]);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load more recents:", error);
-    } finally {
-      setIsLoadingMore(false);
     }
   };
 
@@ -96,29 +53,16 @@ export function NavRecents({
           </Link>
         </SidebarGroupAction>
       </SidebarGroupLabel>
-      <SidebarMenu>
-        {allItems.map((item) => (
+      <SidebarMenu className="max-h-64 overflow-y-auto">
+        {items.map((item) => (
           <NavLecture
             key={item.lectureId}
             lecture={{ lecture_id: item.lectureId, title: item.name }}
             isMobile={isMobile}
             handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
             deleteLecture={deleteLecture}
-            onRenameSuccess={handleRenameSuccess}
           />
         ))}
-        {hasMore && (
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLoadMore}
-              disabled={isLoadingMore}
-              className={isLoadingMore ? "cursor-not-allowed opacity-50" : ""}
-            >
-              <MoreHorizontal />
-              <span>{isLoadingMore ? "Loading..." : "More"}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        )}
       </SidebarMenu>
     </SidebarGroup>
   );

@@ -97,7 +97,7 @@ export function NavCourses({
           <span className="sr-only">Add course</span>
         </SidebarGroupAction>
       </SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="max-h-64 overflow-y-auto">
         {sortedItems.map((item) =>
           item.courseId && item.title ? (
             <SidebarMenuItem key={item.courseId}>
