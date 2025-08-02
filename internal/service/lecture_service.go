@@ -31,9 +31,10 @@ type LectureService interface {
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
 	CreateLectureWithPDF(ctx context.Context, courseID, userID, title string, file multipart.File, header *multipart.FileHeader) (*model.Lecture, error)
 	GetPresignedURL(ctx context.Context, storagePath string) (string, error)
-	CountLecturesByUserInTimeRange(ctx context.Context, userID string, start, end time.Time) (int, error)
 	// CheckAndRecordUpload atomically enforces and records an upload event.
 	CheckAndRecordUpload(ctx context.Context, userID string, start, end time.Time, maxUploads int) error
+	// CountLecturesByUserInTimeRange counts lecture uploads in the given period.
+	CountLecturesByUserInTimeRange(ctx context.Context, userID string, start, end time.Time) (int, error)
 }
 
 // lectureService is the implementation of LectureService
@@ -230,10 +231,8 @@ func (s *lectureService) CreateLectureWithPDF(ctx context.Context, courseID, use
 		}
 	}
 
-	// Record upload event for usage tracking
-	if err := s.usageRepo.RecordUploadEvent(ctx, userID); err != nil {
-		s.lectureLogger.Error().Err(err).Msg("Failed to record upload event")
-	}
+	// Note: Upload event recording is handled atomically in the handler via CheckAndRecordUpload
+	// to prevent race conditions with concurrent uploads
 
 	return createdLecture, nil
 }
@@ -259,5 +258,5 @@ func (s *lectureService) CheckAndRecordUpload(ctx context.Context, userID string
 
 // CountLecturesByUserInTimeRange delegates to repository
 func (s *lectureService) CountLecturesByUserInTimeRange(ctx context.Context, userID string, start, end time.Time) (int, error) {
-	return s.usageRepo.CountUploadEvents(ctx, userID, start, end)
+	return s.usageRepo.CountUploadEventsInTimeRange(ctx, userID, start, end)
 }

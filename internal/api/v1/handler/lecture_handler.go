@@ -9,6 +9,7 @@ import (
 	"app/internal/api/v1/dto"
 	"app/internal/middleware"
 	"app/internal/model"
+	"app/internal/repository"
 	"app/internal/service"
 
 	"github.com/go-playground/validator/v10"
@@ -435,16 +436,15 @@ func (h *LectureHandler) uploadLecture(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(207)
 	for _, header := range files {
-		// Atomically check and record before processing each file
-		if plan.MaxUploads > 0 {
-			err := h.lectureService.CheckAndRecordUpload(r.Context(), userID, sub.StartsAt, sub.EndsAt, plan.MaxUploads)
-			if err == service.ErrUploadLimitExceeded {
-				results = append(results, dto.LectureUploadResponseDTO{Filename: header.Filename, LectureID: "", Status: "upload_limit_exceeded"})
-				continue
-			} else if err != nil {
-				results = append(results, dto.LectureUploadResponseDTO{Filename: header.Filename, LectureID: "", Status: "error_recording_usage"})
-				continue
-			}
+		// Atomically check and record upload limit before processing each file
+		// Always record usage events, even for unlimited plans (MaxUploads = -1)
+		err := h.lectureService.CheckAndRecordUpload(r.Context(), userID, sub.StartsAt, sub.EndsAt, plan.MaxUploads)
+		if err == repository.ErrUploadLimitExceeded {
+			results = append(results, dto.LectureUploadResponseDTO{Filename: header.Filename, LectureID: "", Status: "upload_limit_exceeded"})
+			continue
+		} else if err != nil {
+			results = append(results, dto.LectureUploadResponseDTO{Filename: header.Filename, LectureID: "", Status: "error_recording_usage"})
+			continue
 		}
 		f, err := header.Open()
 		if err != nil {
@@ -463,8 +463,8 @@ func (h *LectureHandler) uploadLecture(w http.ResponseWriter, r *http.Request) {
 			results = append(results, dto.LectureUploadResponseDTO{Filename: header.Filename, LectureID: "", Status: "error_creating_lecture"})
 			continue
 		}
-		// Success: lecture created and usage event recorded, increment usage
-		// Note: upload event recording is handled atomically in handler via CheckAndRecordUpload
+		// Note: Upload event recording is handled atomically in CheckAndRecordUpload
+		// to prevent race conditions with concurrent uploads
 		results = append(results, dto.LectureUploadResponseDTO{
 			Filename:  header.Filename,
 			LectureID: lec.ID,

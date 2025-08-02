@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"app/internal/model"
 
@@ -19,7 +18,6 @@ type LectureRepository interface {
 	DeleteLecture(ctx context.Context, lectureID string) error
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
 	CreateLecture(ctx context.Context, lecture *model.Lecture) (*model.Lecture, error)
-	CountLecturesByUserInTimeRange(ctx context.Context, userID string, start, end time.Time) (int, error)
 	CountLecturesByUserID(ctx context.Context, userID string) (int, error)
 }
 
@@ -180,24 +178,6 @@ func (r *lectureRepository) CreateLecture(ctx context.Context, lecture *model.Le
 		return nil, fmt.Errorf("creating lecture: %w", err)
 	}
 	return lecture, nil
-}
-
-func (r *lectureRepository) CountLecturesByUserInTimeRange(ctx context.Context, userID string, start, end time.Time) (int, error) {
-	// Count actual lecture upload events rather than stored lectures
-	var count int
-	query := `
-		SELECT COUNT(*)
-		FROM usage_events
-		WHERE user_id = $1
-			AND event_type = 'lecture_upload'
-			AND created_at >= $2
-			AND created_at < $3
-	`
-	err := r.pool.QueryRow(ctx, query, userID, start, end).Scan(&count)
-	if err != nil {
-		return 0, fmt.Errorf("counting lectures for user %s: %w", userID, err)
-	}
-	return count, nil
 }
 
 func (r *lectureRepository) CountLecturesByUserID(ctx context.Context, userID string) (int, error) {
