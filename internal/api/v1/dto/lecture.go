@@ -16,4 +16,5 @@ type LectureResponseDTO struct {
 type LectureUpdateDTO struct {
 	Title      *string    `json:"title,omitempty"`
 	AccessedAt *time.Time `json:"accessed_at,omitempty"`
+	CourseID   *string    `json:"course_id,omitempty"`
 }

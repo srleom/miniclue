@@ -154,16 +154,16 @@ func (h *LectureHandler) getLecture(w http.ResponseWriter, r *http.Request) {
 
 // updateLecture godoc
 // @Summary Update a lecture
-// @Description Updates lecture metadata.
+// @Description Updates lecture metadata including title, accessed_at, and course_id.
 // @Tags lectures
 // @Accept json
 // @Produce json
 // @Param lectureId path string true "Lecture ID"
 // @Param lecture body dto.LectureUpdateDTO true "Lecture update data"
 // @Success 200 {object} dto.LectureResponseDTO
-// @Failure 400 {string} string "Invalid JSON payload, or title cannot be empty"
+// @Failure 400 {string} string "Invalid JSON payload, title cannot be empty, or course_id cannot be empty"
 // @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Lecture not found"
+// @Failure 404 {string} string "Lecture not found or course not found"
 // @Failure 500 {string} string "Failed to update lecture"
 // @Router /lectures/{lectureId} [patch]
 func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
@@ -182,6 +182,10 @@ func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Title cannot be empty", http.StatusBadRequest)
 		return
 	}
+	if req.CourseID != nil && strings.TrimSpace(*req.CourseID) == "" {
+		http.Error(w, "Course ID cannot be empty", http.StatusBadRequest)
+		return
+	}
 	lecture, err := h.lectureService.GetLectureByID(r.Context(), lectureID)
 	if err != nil {
 		http.Error(w, "Failed to retrieve lecture: "+err.Error(), http.StatusInternalServerError)
@@ -191,10 +195,24 @@ func (h *LectureHandler) updateLecture(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Lecture not found", http.StatusNotFound)
 		return
 	}
-	course, err := h.courseService.GetCourseByID(r.Context(), lecture.CourseID)
-	if err != nil || course == nil || course.UserID != userID {
+	// Verify user owns the current course
+	currentCourse, err := h.courseService.GetCourseByID(r.Context(), lecture.CourseID)
+	if err != nil || currentCourse == nil || currentCourse.UserID != userID {
 		http.Error(w, "Lecture not found", http.StatusNotFound)
 		return
+	}
+	// If course_id is being updated, verify the new course exists and belongs to the user
+	if req.CourseID != nil {
+		newCourse, err := h.courseService.GetCourseByID(r.Context(), *req.CourseID)
+		if err != nil {
+			http.Error(w, "Failed to retrieve new course: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if newCourse == nil || newCourse.UserID != userID {
+			http.Error(w, "Course not found", http.StatusNotFound)
+			return
+		}
+		lecture.CourseID = *req.CourseID
 	}
 	if req.Title != nil {
 		lecture.Title = *req.Title

@@ -151,12 +151,12 @@ func (r *lectureRepository) DeleteLecture(ctx context.Context, lectureID string)
 func (r *lectureRepository) UpdateLecture(ctx context.Context, l *model.Lecture) error {
 	query := `
 		UPDATE lectures
-		SET title = $1, accessed_at = $2, storage_path = $3, status = $4, updated_at = NOW()
-		WHERE id = $5
+		SET title = $1, accessed_at = $2, storage_path = $3, status = $4, course_id = $5, updated_at = NOW()
+		WHERE id = $6
 		RETURNING user_id, course_id, title, storage_path, status, created_at, updated_at, accessed_at
 	`
 	err := r.pool.QueryRow(ctx, query,
-		l.Title, l.AccessedAt, l.StoragePath, l.Status, l.ID,
+		l.Title, l.AccessedAt, l.StoragePath, l.Status, l.CourseID, l.ID,
 	).Scan(
 		&l.UserID,
 		&l.CourseID,
