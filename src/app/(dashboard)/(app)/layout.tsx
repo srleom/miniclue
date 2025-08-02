@@ -59,6 +59,13 @@ export default async function DashboardLayout({
     navCourses = await Promise.all(lecturePromises);
   }
 
+  // Transform available courses for the move functionality
+  const availableCourses =
+    coursesRes.data?.map((course) => ({
+      courseId: course.courseId,
+      title: course.title,
+    })) ?? [];
+
   return (
     <div className="flex h-screen overflow-hidden">
       <SidebarProvider defaultOpen={sidebarOpen}>
@@ -70,6 +77,7 @@ export default async function DashboardLayout({
           renameCourse={updateCourse}
           handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
           deleteLecture={deleteLecture}
+          availableCourses={availableCourses}
         />
         <SidebarInset className="flex min-h-0 flex-1 flex-col">
           {children}

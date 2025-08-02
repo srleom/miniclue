@@ -247,3 +247,70 @@ export async function updateLecture(
   revalidateTag("recents");
   return { data, error: undefined };
 }
+
+export async function moveLecture(
+  lectureId: string,
+  newCourseId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"]
+  >
+> {
+  // Validate inputs
+  if (!lectureId || lectureId.trim() === "") {
+    logger.error("Invalid lecture ID:", lectureId);
+    return { error: "Invalid lecture ID" };
+  }
+
+  if (!newCourseId || newCourseId.trim() === "") {
+    logger.error("Invalid course ID:", newCourseId);
+    return { error: "Invalid course ID" };
+  }
+
+  const { api, error } = await createAuthenticatedApi();
+  if (error || !api) {
+    logger.error("Failed to create authenticated API:", error);
+    return { error };
+  }
+
+  // Get current lecture for revalidation
+  const { data: currentLecture, error: fetchError } = await api.GET(
+    "/lectures/{lectureId}",
+    {
+      params: { path: { lectureId } },
+    },
+  );
+
+  if (fetchError || !currentLecture) {
+    logger.error("Failed to fetch current lecture:", fetchError);
+    return { error: "Failed to fetch lecture details" };
+  }
+
+  const oldCourseId = currentLecture.course_id;
+
+  // Update the lecture with the new course_id
+  const { data, error: updateError } = await api.PATCH(
+    "/lectures/{lectureId}",
+    {
+      params: { path: { lectureId } },
+      body: { course_id: newCourseId },
+    },
+  );
+
+  if (updateError) {
+    logger.error("Move lecture error:", updateError);
+    return { error: updateError };
+  }
+
+  // Revalidate lecture lists for both old and new courses
+  if (oldCourseId) {
+    revalidateTag(`lectures:${oldCourseId}`);
+  }
+  revalidateTag(`lectures:${newCourseId}`);
+  revalidateTag("recents");
+
+  // Revalidate the specific lecture detail page
+  revalidateTag(`lecture:${lectureId}`);
+
+  return { data, error: undefined };
+}

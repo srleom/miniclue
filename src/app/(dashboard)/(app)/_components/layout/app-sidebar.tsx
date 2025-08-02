@@ -37,6 +37,7 @@ export function AppSidebar({
   renameCourse,
   handleUpdateLectureAccessedAt,
   deleteLecture,
+  availableCourses = [],
   ...props
 }: {
   navCourses: CourseWithLectures[];
@@ -59,6 +60,7 @@ export function AppSidebar({
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
   deleteLecture: (lectureId: string) => Promise<ActionResponse<void>>;
+  availableCourses?: Array<{ courseId: string; title: string }>;
 } & React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
@@ -90,11 +92,13 @@ export function AppSidebar({
           renameCourse={renameCourse}
           handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
           deleteLecture={deleteLecture}
+          availableCourses={availableCourses}
         />
         <NavRecents
           items={navRecents}
           handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
           deleteLecture={deleteLecture}
+          availableCourses={availableCourses}
         />
         <NavSecondary
           items={[

@@ -2,11 +2,8 @@
 import { Metadata } from "next";
 
 // components
-import {
-  columns,
-  LectureResponseDTO,
-} from "@/app/(dashboard)/(app)/course/[courseId]/_components/columns";
-import { DataTable } from "@/app/(dashboard)/(app)/course/[courseId]/_components/data-table";
+import { LectureResponseDTO } from "@/app/(dashboard)/(app)/course/[courseId]/_components/columns";
+import { CourseTable } from "@/app/(dashboard)/(app)/course/[courseId]/_components/course-table";
 import { DropzoneComponent } from "@/app/(dashboard)/(app)/_components/dropzone";
 import CourseHeader from "./_components/course-header";
 
@@ -19,6 +16,7 @@ import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
 import {
   getUserUsage,
   getUserSubscription,
+  getUserCourses,
 } from "@/app/(dashboard)/_actions/user-actions";
 
 // lib
@@ -58,6 +56,13 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const { data: subscription, error: subscriptionError } =
     await getUserSubscription();
 
+  // Get available courses for move functionality
+  const { data: availableCourses, error: coursesError } =
+    await getUserCourses();
+  if (coursesError) {
+    logger.error("Failed to load available courses:", coursesError);
+  }
+
   if (usageError) {
     logger.error("Failed to load user usage:", usageError);
   }
@@ -72,6 +77,14 @@ export default async function CoursePage({ params }: CoursePageProps) {
       title: lec.title ?? "",
       created_at: lec.created_at ?? "",
     })) ?? [];
+
+  // Transform available courses for the move functionality
+  const moveAvailableCourses = coursesError
+    ? [] // Fallback to empty array if courses fetch fails
+    : (availableCourses?.map((course) => ({
+        courseId: course.courseId,
+        title: course.title,
+      })) ?? []);
 
   return (
     <div className="mx-auto mt-16 flex w-full flex-col items-center lg:w-3xl">
@@ -90,7 +103,11 @@ export default async function CoursePage({ params }: CoursePageProps) {
           subscription={subscription}
         />
       </div>
-      <DataTable columns={columns} data={tableLectures} />
+      <CourseTable
+        data={tableLectures}
+        currentCourseId={courseId}
+        availableCourses={moveAvailableCourses}
+      />
     </div>
   );
 }

@@ -28,7 +28,15 @@ import {
 export type LectureResponseDTO =
   components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
 
-export const columns: ColumnDef<LectureResponseDTO>[] = [
+interface ColumnsProps {
+  currentCourseId: string;
+  availableCourses: Array<{ courseId: string; title: string }>;
+}
+
+export const createColumns = ({
+  currentCourseId,
+  availableCourses,
+}: ColumnsProps): ColumnDef<LectureResponseDTO>[] => [
   {
     accessorKey: "title",
     header: "Title",
@@ -70,6 +78,8 @@ export const columns: ColumnDef<LectureResponseDTO>[] = [
             renameAction={updateLecture}
             deleteAction={deleteLecture}
             dropdownMenuContentProps={{ align: "end" }}
+            currentCourseId={currentCourseId}
+            availableCourses={availableCourses}
           >
             <Button variant="ghost" className="h-8 w-8 p-0">
               <span className="sr-only">Open menu</span>

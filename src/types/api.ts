@@ -590,7 +590,7 @@ export interface paths {
     head?: never;
     /**
      * Update a lecture
-     * @description Updates lecture metadata.
+     * @description Updates lecture metadata including title, accessed_at, and course_id.
      */
     patch: {
       parameters: {
@@ -618,7 +618,7 @@ export interface paths {
             "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
           };
         };
-        /** @description Invalid JSON payload, or title cannot be empty */
+        /** @description Invalid JSON payload, title cannot be empty, or course_id cannot be empty */
         400: {
           headers: {
             [name: string]: unknown;
@@ -636,7 +636,7 @@ export interface paths {
             "application/json": string;
           };
         };
-        /** @description Lecture not found */
+        /** @description Lecture not found or course not found */
         404: {
           headers: {
             [name: string]: unknown;
@@ -1646,6 +1646,7 @@ export interface components {
     };
     "app_internal_api_v1_dto.LectureUpdateDTO": {
       accessed_at?: string;
+      course_id?: string;
       title?: string;
     };
     "app_internal_api_v1_dto.LectureUploadResponseDTO": {

@@ -27,6 +27,8 @@ export default function NavLecture({
   isMobile,
   handleUpdateLectureAccessedAt,
   deleteLecture,
+  currentCourseId,
+  availableCourses = [],
 }: {
   lecture: { lecture_id: string; title: string };
   isMobile: boolean;
@@ -34,6 +36,8 @@ export default function NavLecture({
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
   deleteLecture: (lectureId: string) => Promise<ActionResponse<void>>;
+  currentCourseId?: string;
+  availableCourses?: Array<{ courseId: string; title: string }>;
 }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
@@ -76,6 +80,8 @@ export default function NavLecture({
           side: isMobile ? "bottom" : "right",
           align: isMobile ? "end" : "start",
         }}
+        currentCourseId={currentCourseId}
+        availableCourses={availableCourses}
       >
         <SidebarMenuAction className="opacity-100 md:opacity-0 md:group-hover/lecture:opacity-100">
           <MoreHorizontal />

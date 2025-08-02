@@ -8,7 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 // icons
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, FolderOpen } from "lucide-react";
 
 // types
 import { ActionResponse } from "@/lib/api/authenticated-api";
@@ -20,10 +20,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import DeleteDialog from "./delete-dialog";
 import { RenameDialog } from "./rename-dialog";
 import { RenameForm } from "./rename-form";
+
+// code
+import { moveLecture } from "@/app/(dashboard)/_actions/lecture-actions";
 
 type Item = {
   id: string;
@@ -39,6 +45,9 @@ interface ItemActionsProps<T> {
   isDefault?: boolean;
   dropdownMenuContentProps?: React.ComponentProps<typeof DropdownMenuContent>;
   onDeleteSuccess?: () => void;
+  // For lecture move functionality
+  currentCourseId?: string;
+  availableCourses?: Array<{ courseId: string; title: string }>;
 }
 
 export function ItemActions<T>({
@@ -50,8 +59,51 @@ export function ItemActions<T>({
   isDefault = false,
   dropdownMenuContentProps,
   onDeleteSuccess,
+  currentCourseId,
+  availableCourses = [],
 }: ItemActionsProps<T>) {
   const [openMenu, setOpenMenu] = useState(false);
+
+  // Filter out current course from available courses for move option
+  const moveTargetCourses = availableCourses.filter((course) => {
+    // Ensure both values are strings and do a strict comparison
+    const courseId = String(course.courseId || "");
+    const currentId = String(currentCourseId || "");
+    return courseId !== currentId && courseId.length > 0;
+  });
+
+  const handleMoveLecture = async (
+    targetCourseId: string,
+    targetCourseTitle: string,
+  ) => {
+    // Validate inputs
+    if (!targetCourseId || targetCourseId.trim() === "") {
+      toast.error("Invalid target course");
+      return;
+    }
+
+    if (!item.id || item.id.trim() === "") {
+      toast.error("Invalid lecture");
+      return;
+    }
+
+    const toastId = toast.loading(
+      `Moving lecture to "${targetCourseTitle}"...`,
+    );
+    try {
+      const result = await moveLecture(item.id, targetCourseId);
+      if (result?.error) {
+        toast.error(result.error as string);
+      } else {
+        toast.success(`Lecture moved to "${targetCourseTitle}"`);
+      }
+    } catch {
+      toast.error("Failed to move lecture");
+    } finally {
+      toast.dismiss(toastId);
+      setOpenMenu(false);
+    }
+  };
 
   return (
     <DropdownMenu open={openMenu} onOpenChange={setOpenMenu}>
@@ -84,6 +136,39 @@ export function ItemActions<T>({
             />
           }
         />
+
+        {/* Move to Course option - only for lectures */}
+        {itemType === "lecture" && moveTargetCourses.length > 0 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger
+                className="hover:cursor-pointer"
+                onSelect={(e) => e.preventDefault()}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <FolderOpen className="text-muted-foreground mr-2 h-4 w-4" />
+                <span>Move to Course</span>
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent>
+                {moveTargetCourses.map((course) => (
+                  <DropdownMenuItem
+                    key={course.courseId}
+                    className="hover:cursor-pointer"
+                    onSelect={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleMoveLecture(course.courseId, course.title);
+                    }}
+                  >
+                    {course.title}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
+          </>
+        )}
+
         {!isDefault && (
           <>
             <DropdownMenuSeparator />

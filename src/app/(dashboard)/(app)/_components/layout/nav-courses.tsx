@@ -43,6 +43,7 @@ export function NavCourses({
   renameCourse,
   handleUpdateLectureAccessedAt,
   deleteLecture,
+  availableCourses = [],
 }: {
   items: CourseWithLectures[];
   createUntitledCourse: () => Promise<
@@ -63,6 +64,7 @@ export function NavCourses({
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
   deleteLecture: (lectureId: string) => Promise<ActionResponse<void>>;
+  availableCourses?: Array<{ courseId: string; title: string }>;
 }) {
   const { isMobile, setOpenMobile } = useSidebar();
   const pathname = usePathname();
@@ -97,7 +99,7 @@ export function NavCourses({
           <span className="sr-only">Add course</span>
         </SidebarGroupAction>
       </SidebarGroupLabel>
-      <SidebarMenu className="max-h-64 overflow-y-auto">
+      <SidebarMenu className="max-h-64 overflow-x-hidden overflow-y-auto">
         {sortedItems.map((item) =>
           item.courseId && item.title ? (
             <SidebarMenuItem key={item.courseId}>
@@ -154,6 +156,8 @@ export function NavCourses({
                             handleUpdateLectureAccessedAt
                           }
                           deleteLecture={deleteLecture}
+                          currentCourseId={item.courseId}
+                          availableCourses={availableCourses}
                         />
                       ))
                     ) : (
