@@ -64,6 +64,7 @@ export function NavRecents({
             handleUpdateLectureAccessedAt={handleUpdateLectureAccessedAt}
             deleteLecture={deleteLecture}
             availableCourses={availableCourses}
+            currentCourseId={item.courseId}
           />
         ))}
       </SidebarMenu>

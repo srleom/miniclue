@@ -64,13 +64,22 @@ export function ItemActions<T>({
 }: ItemActionsProps<T>) {
   const [openMenu, setOpenMenu] = useState(false);
 
-  // Filter out current course from available courses for move option
-  const moveTargetCourses = availableCourses.filter((course) => {
-    // Ensure both values are strings and do a strict comparison
-    const courseId = String(course.courseId || "");
-    const currentId = String(currentCourseId || "");
-    return courseId !== currentId && courseId.length > 0;
-  });
+  // Show all courses but identify the current one for disabling
+  const moveTargetCourses = availableCourses
+    .map((course) => {
+      const courseId = String(course.courseId || "");
+      const currentId = String(currentCourseId || "");
+      return {
+        ...course,
+        isCurrentCourse: courseId === currentId,
+      };
+    })
+    .sort((a, b) => {
+      // Sort current course to the top
+      if (a.isCurrentCourse && !b.isCurrentCourse) return -1;
+      if (!a.isCurrentCourse && b.isCurrentCourse) return 1;
+      return 0;
+    });
 
   const handleMoveLecture = async (
     targetCourseId: string,
@@ -154,14 +163,22 @@ export function ItemActions<T>({
                 {moveTargetCourses.map((course) => (
                   <DropdownMenuItem
                     key={course.courseId}
-                    className="hover:cursor-pointer"
+                    className={`${
+                      course.isCurrentCourse
+                        ? "text-muted-foreground cursor-not-allowed opacity-50"
+                        : "hover:cursor-pointer"
+                    }`}
                     onSelect={(e) => e.preventDefault()}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleMoveLecture(course.courseId, course.title);
+                      if (!course.isCurrentCourse) {
+                        handleMoveLecture(course.courseId, course.title);
+                      }
                     }}
+                    disabled={course.isCurrentCourse}
                   >
                     {course.title}
+                    {course.isCurrentCourse && " (Current)"}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuSubContent>

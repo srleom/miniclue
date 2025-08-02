@@ -79,11 +79,11 @@ function DiscordDialog({ trigger, type }: DiscordDialogProps) {
         onCloseAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className="space-y-1">
-          <DialogTitle className="flex items-center gap-2 text-left text-base font-medium">
+          <DialogTitle className="flex items-center gap-2 text-start text-base font-medium">
             <Icon className="size-5 flex-shrink-0" />
             <span className="break-words">{title}</span>
           </DialogTitle>
-          <DialogDescription className="text-left text-sm leading-relaxed">
+          <DialogDescription className="text-start text-sm leading-relaxed">
             {description}
           </DialogDescription>
         </DialogHeader>
@@ -105,7 +105,7 @@ function DiscordDialog({ trigger, type }: DiscordDialogProps) {
               {buttonText}
             </Link>
           </Button>
-          <p className="text-muted-foreground text-left text-xs leading-relaxed">
+          <p className="text-muted-foreground text-start text-xs leading-relaxed">
             {footerText}
           </p>
         </div>

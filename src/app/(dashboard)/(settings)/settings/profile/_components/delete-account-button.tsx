@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 // components
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +29,7 @@ import { logger } from "@/lib/logger";
 
 export function DeleteAccountButton() {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [confirmationText, setConfirmationText] = useState("");
 
   const handleDeleteAccount = async () => {
     setIsDeleting(true);
@@ -54,8 +56,16 @@ export function DeleteAccountButton() {
     }
   };
 
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setConfirmationText("");
+    }
+  };
+
+  const isConfirmationValid = confirmationText === "DELETE";
+
   return (
-    <AlertDialog>
+    <AlertDialog onOpenChange={handleDialogOpenChange}>
       <AlertDialogTrigger asChild>
         <Button
           variant="destructive"
@@ -68,12 +78,34 @@ export function DeleteAccountButton() {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
+          <AlertDialogTitle className="text-start">
+            Are you absolutely sure?
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-start">
             This action cannot be undone. This will permanently delete your
             account and remove all your data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
+
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label
+              htmlFor="confirmation"
+              className="text-start text-sm font-medium"
+            >
+              Type &quot;DELETE&quot; to confirm
+            </label>
+            <Input
+              id="confirmation"
+              type="text"
+              value={confirmationText}
+              onChange={(e) => setConfirmationText(e.target.value)}
+              placeholder="DELETE"
+              className="mt-1 font-mono"
+            />
+          </div>
+        </div>
+
         <AlertDialogFooter>
           <AlertDialogCancel className="hover:cursor-pointer">
             Cancel
@@ -81,7 +113,7 @@ export function DeleteAccountButton() {
           <AlertDialogAction
             variant="destructive"
             onClick={handleDeleteAccount}
-            disabled={isDeleting}
+            disabled={isDeleting || !isConfirmationValid}
             className="hover:cursor-pointer"
           >
             {isDeleting ? "Deleting..." : "Delete Account"}

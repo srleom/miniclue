@@ -27,8 +27,8 @@ export default function NavLecture({
   isMobile,
   handleUpdateLectureAccessedAt,
   deleteLecture,
-  currentCourseId,
   availableCourses = [],
+  currentCourseId,
 }: {
   lecture: { lecture_id: string; title: string };
   isMobile: boolean;
@@ -36,8 +36,8 @@ export default function NavLecture({
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
   deleteLecture: (lectureId: string) => Promise<ActionResponse<void>>;
-  currentCourseId?: string;
   availableCourses?: Array<{ courseId: string; title: string }>;
+  currentCourseId?: string;
 }) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();

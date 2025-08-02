@@ -1694,6 +1694,7 @@ export interface components {
       name?: string;
     };
     "app_internal_api_v1_dto.UserRecentLectureResponseDTO": {
+      course_id?: string;
       lecture_id?: string;
       title?: string;
     };

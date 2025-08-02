@@ -47,7 +47,7 @@ export async function getUser(): Promise<
  * @param {number} offset - Offset for pagination (default: 0)
  * @returns {Promise<
  *   ActionResponse<
- *     { name: string; lectureId: string; url: string; totalCount: number }[]
+ *     { name: string; lectureId: string; url: string; courseId: string; totalCount: number }[]
  *   >
  * >}
  */
@@ -56,7 +56,13 @@ export async function getUserRecents(
   offset: number = 0,
 ): Promise<
   ActionResponse<
-    { name: string; lectureId: string; url: string; totalCount: number }[]
+    {
+      name: string;
+      lectureId: string;
+      url: string;
+      courseId: string;
+      totalCount: number;
+    }[]
   >
 > {
   const { api, error } = await createAuthenticatedApi();
@@ -89,6 +95,7 @@ export async function getUserRecents(
       name: r.title ?? "",
       lectureId: r.lecture_id!,
       url: `/lecture/${r.lecture_id!}`,
+      courseId: r.course_id!,
       totalCount,
     }),
   );

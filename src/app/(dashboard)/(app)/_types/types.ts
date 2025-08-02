@@ -11,5 +11,6 @@ export type NavRecentsItem = {
   name: string;
   url: string;
   lectureId: string;
+  courseId: string;
   totalCount?: number;
 };
