@@ -100,12 +100,10 @@ export function AppSidebar({
           items={[
             {
               title: "Support",
-              url: "#",
               icon: "LifeBuoy",
             },
             {
               title: "Feedback",
-              url: "#",
               icon: "Send",
             },
           ]}
