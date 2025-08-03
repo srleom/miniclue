@@ -31,7 +31,8 @@ export default async function DashboardLayout({
 }) {
   const cookieStore = await cookies();
   const sidebarCookie = cookieStore.get("sidebar_state")?.value;
-  const sidebarOpen = sidebarCookie === "true";
+  const sidebarOpen =
+    sidebarCookie === undefined ? true : sidebarCookie === "true";
 
   let navRecents: NavRecentsItem[] = [];
   let navCourses: CourseWithLectures[] = [];
