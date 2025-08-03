@@ -24,6 +24,25 @@ from app.utils.llm_db_utils import log_llm_call, compute_cost
 settings = Settings()
 
 
+async def _record_explanation_error(
+    conn: asyncpg.Connection,
+    lecture_id,
+    slide_id,
+    error_message: str,
+) -> None:
+    """Record explanation error details into the lectures table."""
+    error_info = {
+        "service": "explanation",
+        "slide_id": str(slide_id),
+        "error": str(error_message),
+    }
+    await conn.execute(
+        "UPDATE lectures SET explanation_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
+        json.dumps(error_info),
+        lecture_id,
+    )
+
+
 async def process_explanation_job(payload: ExplanationPayload):
     """
     Orchestrates the entire process of generating an explanation for a single slide.
@@ -81,18 +100,25 @@ async def process_explanation_job(payload: ExplanationPayload):
                 str(slide_id),
             )
         else:
-            result, metadata = await generate_explanation(
-                image_bytes,
-                slide_number,
-                total_slides,
-                prev_text,
-                next_text,
-                str(lecture_id),
-                str(slide_id),
-                customer_identifier,
-                name,
-                email,
-            )
+            try:
+                result, metadata = await generate_explanation(
+                    image_bytes,
+                    slide_number,
+                    total_slides,
+                    prev_text,
+                    next_text,
+                    str(lecture_id),
+                    str(slide_id),
+                    customer_identifier,
+                    name,
+                    email,
+                )
+            except ValueError as e:
+                logging.error(
+                    f"JSON decoding error for slide {slide_id}: {e}", exc_info=True
+                )
+                await _record_explanation_error(conn, lecture_id, slide_id, e)
+                return
         # Log LLM call for explanation
         try:
             usage = metadata.get("usage") or {}
@@ -144,16 +170,7 @@ async def process_explanation_job(payload: ExplanationPayload):
             exc_info=True,
         )
         if conn:
-            error_info = {
-                "service": "explanation",
-                "slide_id": str(slide_id),
-                "error": str(e),
-            }
-            await conn.execute(
-                "UPDATE lectures SET explanation_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
-                json.dumps(error_info),
-                lecture_id,
-            )
+            await _record_explanation_error(conn, lecture_id, slide_id, e)
         raise
     finally:
         await conn.close()

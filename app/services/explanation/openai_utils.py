@@ -127,6 +127,10 @@ Please provide your explanation based on the system prompt's instructions.
             data = json.loads(cleaned_content)
             result = ExplanationResult.model_validate(data)
         except json.JSONDecodeError:
+            logging.error(
+                f"Failed to parse JSON on first attempt. Raw AI response: {response_content}"
+            )
+            logging.debug(f"Cleaned content before sanitization: {cleaned_content}")
             # If parsing fails, it's often due to unescaped backslashes.
             # Attempt to fix this common error and retry parsing.
             logging.warning(
@@ -134,7 +138,7 @@ Please provide your explanation based on the system prompt's instructions.
             )
 
             # This regex finds backslashes that are NOT followed by a valid JSON escape character
-            # (", \, /, b, f, n, r, t, u) and properly escapes them.
+            # (", \\, /, b, f, n, r, t, u) and properly escapes them.
             sanitized_content = re.sub(r'\\([^"\\/bfnrtu])', r"\\\\\1", cleaned_content)
 
             try:
@@ -142,12 +146,56 @@ Please provide your explanation based on the system prompt's instructions.
                 result = ExplanationResult.model_validate(data)
             except (json.JSONDecodeError, ValidationError) as e:
                 logging.error(
-                    f"Still failed to parse JSON after sanitizing: {sanitized_content}",
+                    f"Still failed to parse JSON after sanitizing: {sanitized_content}. Error: {e}",
                     exc_info=True,
                 )
-                raise ValueError(
-                    f"Failed to decode JSON from AI response even after sanitizing: {e}"
-                ) from e
+                logging.error(f"Raw AI response: {response_content}")
+                logging.error(f"Cleaned content before sanitizing: {cleaned_content}")
+                logging.error(f"Sanitized content: {sanitized_content}")
+
+                # Retry: ask the AI to re-emit valid JSON
+                logging.warning("Retrying by asking AI to reformat as valid JSON")
+                retry_response = await posthog_gemini_client.chat.completions.create(
+                    model=settings.explanation_model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_message_content},
+                        {"role": "assistant", "content": response_content},
+                        {
+                            "role": "user",
+                            "content": "Your previous response was not valid JSON. Please reply with only the JSON object containing keys 'explanation', 'one_liner', and 'slide_purpose'.",
+                        },
+                    ],
+                    response_format={"type": "json_object"},
+                    temperature=0.0,
+                    max_tokens=512,
+                    posthog_distinct_id=customer_identifier,
+                    posthog_trace_id=lecture_id,
+                )
+                retry_content = retry_response.choices[0].message.content.strip()
+                try:
+                    data = json.loads(retry_content)
+                    result = ExplanationResult.model_validate(data)
+                    retry_metadata = {
+                        "model": retry_response.model,
+                        "usage": (
+                            retry_response.usage.model_dump()
+                            if retry_response.usage
+                            else None
+                        ),
+                        "finish_reason": retry_response.choices[0].finish_reason,
+                        "response_id": retry_response.id,
+                        "retry": True,
+                    }
+                    return result, retry_metadata
+                except Exception as e2:
+                    logging.error(
+                        f"Retry also failed to parse JSON: {retry_content}",
+                        exc_info=True,
+                    )
+                    raise ValueError(
+                        f"Failed to decode JSON even after retry: {e2}. Raw AI response: {response_content}"
+                    ) from e2
 
         metadata = {
             "model": response.model,
