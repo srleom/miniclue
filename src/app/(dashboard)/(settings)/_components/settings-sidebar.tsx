@@ -24,6 +24,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { NavSecondary } from "../../(app)/_components/layout/nav-secondary";
 
 export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const { setOpenMobile, isMobile } = useSidebar();
@@ -105,6 +106,19 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
+        <NavSecondary
+          items={[
+            {
+              title: "Support",
+              icon: "LifeBuoy",
+            },
+            {
+              title: "Feedback",
+              icon: "Send",
+            },
+          ]}
+          className="mt-auto"
+        />
       </SidebarContent>
       <SidebarFooter></SidebarFooter>
     </Sidebar>
