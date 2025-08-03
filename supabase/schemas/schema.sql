@@ -292,7 +292,18 @@ CREATE INDEX IF NOT EXISTS idx_usage_events_user_event_time
   ON usage_events(user_id, event_type, created_at);
 
 -------------------------------------------------------------------------------
--- 17. Row-Level Security (RLS) Policies
+-- 17. Waitlist Table
+-------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS waitlist (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  email      TEXT        NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
+
+-------------------------------------------------------------------------------
+-- 18. Row-Level Security (RLS) Policies
 -------------------------------------------------------------------------------
 
 -- Enable RLS for all relevant tables
@@ -311,6 +322,7 @@ ALTER TABLE public.llm_calls ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.usage_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.waitlist ENABLE ROW LEVEL SECURITY;
 
 -- 1. courses: Users can manage their own courses fully.
 CREATE POLICY "Allow all access to own courses" ON public.courses
@@ -403,8 +415,13 @@ CREATE POLICY "Deny all access to subscription_plans" ON public.subscription_pla
 CREATE POLICY "Deny all access to usage_events" ON public.usage_events
   FOR ALL USING (false) WITH CHECK (false);
 
+-- 17. Waitlist Table
+CREATE POLICY "Allow anyone to insert into waitlist" ON public.waitlist
+  FOR INSERT
+  WITH CHECK (true);
+
 -------------------------------------------------------------------------------
--- 17. Scheduled Subscription Renewal Job
+-- 19. Scheduled Subscription Renewal Job
 -------------------------------------------------------------------------------
 -- This block schedules a cron job to renew beta and free plans.
 -- It will run once daily at 3:00 AM UTC.
