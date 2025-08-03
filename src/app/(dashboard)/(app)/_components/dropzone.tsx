@@ -37,29 +37,120 @@ import { useRouter } from "next/navigation";
 import { isSubscriptionPastDue } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
+// server actions
+import {
+  uploadLecturesFromClient,
+  completeUploadFromClient,
+} from "@/app/(dashboard)/_actions/lecture-actions";
+import { createClient as createSupabaseClient } from "@/lib/supabase/client";
+
 type UserUsageData =
   components["schemas"]["app_internal_api_v1_dto.UserUsageResponseDTO"];
 
 type SubscriptionData =
   components["schemas"]["app_internal_api_v1_dto.SubscriptionResponseDTO"];
 
+// Client-side upload function
+async function uploadLecturesClient(
+  courseId: string,
+  files: File[],
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][]
+  >
+> {
+  try {
+    // Step 1: Get presigned URLs from server action
+    const filenames = files.map((file) => file.name);
+    const { data: uploadUrlsData, error: urlsError } =
+      await uploadLecturesFromClient(courseId, filenames);
+
+    if (urlsError || !uploadUrlsData?.uploads) {
+      return { error: urlsError || "Failed to get upload URLs" };
+    }
+
+    const uploads = uploadUrlsData.uploads;
+    const results: components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][] =
+      [];
+
+    // Step 2: Upload each file to S3 using presigned URLs
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const upload = uploads[i];
+
+      if (!file || !upload?.upload_url || !upload?.lecture_id) {
+        results.push({
+          lecture_id: upload?.lecture_id,
+          status: "error",
+          message: "Invalid file or upload URL or lecture ID",
+        });
+        continue;
+      }
+
+      // Use Supabase SDK to upload via signed token (handles CORS)
+      const supabase = createSupabaseClient();
+      // Extract bucket and key from the presigned URL
+      const url = new URL(upload.upload_url);
+      const pathParts = url.pathname.split("/");
+      const bucketIndex = pathParts.findIndex((p) => p === "s3") + 1;
+      // Assert bucket and key are defined
+      const bucketName: string = pathParts[bucketIndex]!;
+      const key: string = pathParts.slice(bucketIndex + 1).join("/");
+      // Generate signed upload token
+      const { data: signedData, error: tokenError } = await supabase.storage
+        .from(bucketName)
+        .createSignedUploadUrl(key, { upsert: false });
+      if (tokenError || !signedData?.token) {
+        results.push({
+          lecture_id: upload.lecture_id,
+          status: "error",
+          message: tokenError?.message || "Failed to get upload token",
+        });
+        continue;
+      }
+      // Upload using signed token
+      const { error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .uploadToSignedUrl(key, signedData.token!, file);
+      if (uploadError) {
+        results.push({
+          lecture_id: upload.lecture_id,
+          status: "error",
+          message: uploadError.message,
+        });
+        continue;
+      }
+
+      // Step 3: Complete the upload using server action
+      const { data: completeData, error: completeError } =
+        await completeUploadFromClient(upload.lecture_id);
+
+      if (completeError) {
+        results.push({
+          lecture_id: upload.lecture_id,
+          status: "error",
+          message: completeError,
+        });
+      } else {
+        results.push(completeData!);
+      }
+    }
+
+    return { data: results, error: undefined };
+  } catch (error) {
+    logger.error("Upload lectures error:", error);
+    return { error: "Failed to upload lectures" };
+  }
+}
+
 export function DropzoneComponent({
   isCoursePage = false,
   courseId,
-  uploadLectures,
   userUsage,
   subscription,
 }: {
   isCoursePage?: boolean;
   courseId?: string;
-  uploadLectures: (
-    courseId: string,
-    files: File[],
-  ) => Promise<
-    ActionResponse<
-      components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][]
-    >
-  >;
   userUsage?: UserUsageData;
   subscription?: SubscriptionData;
 }) {
@@ -119,7 +210,7 @@ export function DropzoneComponent({
         fileCount: files.length,
         courseId,
       });
-      result = await uploadLectures(courseId, files);
+      result = await uploadLecturesClient(courseId, files);
       setFiles([]);
     } catch (error) {
       logger.error("Upload failed with exception", { error, courseId });

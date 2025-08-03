@@ -3,7 +3,6 @@ import { DropzoneComponent } from "@/app/(dashboard)/(app)/_components/dropzone"
 import { Badge } from "@/components/ui/badge";
 
 // code
-import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
 import {
   getUserCourses,
   getUserUsage,
@@ -49,7 +48,6 @@ export default async function Page() {
         <DropzoneComponent
           isCoursePage={true}
           courseId={defaultCourse?.courseId}
-          uploadLectures={uploadLectures}
           userUsage={userUsage}
           subscription={subscription}
         />

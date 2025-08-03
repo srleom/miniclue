@@ -149,17 +149,16 @@ export async function completeUpload(
   return { data, error: undefined };
 }
 
-export async function uploadLectures(
+export async function uploadLecturesFromClient(
   courseId: string,
-  files: File[],
+  filenames: string[],
 ): Promise<
   ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][]
+    components["schemas"]["app_internal_api_v1_dto.LectureBatchUploadURLResponseDTO"]
   >
 > {
   try {
     // Step 1: Get presigned URLs for all files
-    const filenames = files.map((file) => file.name);
     const { data: uploadUrlsData, error: urlsError } = await getUploadUrls(
       courseId,
       filenames,
@@ -169,64 +168,21 @@ export async function uploadLectures(
       return { error: urlsError || "Failed to get upload URLs" };
     }
 
-    const uploads = uploadUrlsData.uploads;
-    const results: components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][] =
-      [];
-
-    // Step 2: Upload each file to S3
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const upload = uploads[i];
-
-      if (!file || !upload?.upload_url || !upload?.lecture_id) {
-        results.push({
-          lecture_id: upload?.lecture_id,
-          status: "error",
-          message: "Invalid file or upload URL or lecture ID",
-        });
-        continue;
-      }
-
-      // Upload file to S3
-      const { error: uploadError } = await uploadFileToS3(
-        file,
-        upload.upload_url,
-      );
-
-      if (uploadError) {
-        results.push({
-          lecture_id: upload.lecture_id,
-          status: "error",
-          message: uploadError,
-        });
-        continue;
-      }
-
-      // Step 3: Complete the upload
-      const { data: completeData, error: completeError } = await completeUpload(
-        upload.lecture_id,
-      );
-
-      if (completeError) {
-        results.push({
-          lecture_id: upload.lecture_id,
-          status: "error",
-          message: completeError,
-        });
-      } else {
-        results.push(completeData!);
-      }
-    }
-
-    // Revalidate cache
-    revalidateTag(`lectures:${courseId}`);
-    revalidateTag("recents");
-
-    return { data: results, error: undefined };
+    return { data: uploadUrlsData, error: undefined };
   } catch (error) {
-    logger.error("Upload lectures error:", error);
-    return { error: "Failed to upload lectures" };
+    logger.error("Upload lectures from client error:", error);
+    return { error: "Failed to get upload URLs" };
   }
+}
+
+export async function completeUploadFromClient(
+  lectureId: string,
+): Promise<
+  ActionResponse<
+    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"]
+  >
+> {
+  return await completeUpload(lectureId);
 }
 
 export async function getLecture(

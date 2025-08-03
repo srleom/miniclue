@@ -12,7 +12,6 @@ import {
   getCourseDetails,
   getCourseLectures,
 } from "@/app/(dashboard)/_actions/course-actions";
-import { uploadLectures } from "@/app/(dashboard)/_actions/lecture-actions";
 import {
   getUserUsage,
   getUserSubscription,
@@ -98,7 +97,6 @@ export default async function CoursePage({ params }: CoursePageProps) {
         <DropzoneComponent
           isCoursePage={true}
           courseId={courseId}
-          uploadLectures={uploadLectures}
           userUsage={userUsage}
           subscription={subscription}
         />
