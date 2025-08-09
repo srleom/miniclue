@@ -1759,6 +1759,7 @@ export interface components {
       never
     >;
     "app_internal_api_v1_dto.LectureUploadCompleteResponseDTO": {
+      course_id?: string;
       lecture_id?: string;
       message?: string;
       status?: string;

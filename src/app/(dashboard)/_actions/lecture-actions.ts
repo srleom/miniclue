@@ -95,6 +95,11 @@ export async function completeUpload(
     return { error: completeError };
   }
 
+  if (data?.course_id) {
+    revalidateTag(`lectures:${data.course_id}`);
+  }
+  revalidateTag("recents");
+
   return { data, error: undefined };
 }
 

@@ -48,7 +48,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const courseRes = await getCourseDetails(courseId);
   const { title: courseTitle, is_default: isDefault } =
     courseRes.data ?? ({} as { title?: string; is_default?: boolean });
-  const lecturesDTO = await getCourseLectures(courseId);
+  const lecturesDTO = await getCourseLectures(courseId, 10000, 0);
   const { data: userUsage, error: usageError } = await getUserUsage();
   const { data: subscription, error: subscriptionError } =
     await getUserSubscription();

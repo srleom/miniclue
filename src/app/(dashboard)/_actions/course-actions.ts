@@ -65,6 +65,8 @@ export async function deleteCourse(
 
 export async function getCourseLectures(
   courseId: string,
+  limit: number = 5,
+  offset: number = 0,
 ): Promise<
   ActionResponse<
     components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][]
@@ -76,7 +78,9 @@ export async function getCourseLectures(
   }
 
   const { data, error: fetchError } = await api.GET("/lectures", {
-    params: { query: { course_id: courseId } },
+    params: {
+      query: { course_id: courseId, limit, offset },
+    },
     next: { tags: [`lectures:${courseId}`], revalidate: 300 },
   });
 

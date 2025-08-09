@@ -45,7 +45,7 @@ export default async function DashboardLayout({
   const coursesRes = await getUserCourses();
   if (coursesRes.data) {
     const lecturePromises = coursesRes.data.map(async (course) => {
-      const result = await getCourseLectures(course.courseId);
+      const result = await getCourseLectures(course.courseId, 10000, 0);
       const lectures =
         result.data?.filter(
           (lecture): lecture is { lecture_id: string; title: string } =>
