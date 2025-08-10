@@ -32,9 +32,9 @@ class Settings(BaseSettings):
     posthog_host: str = "https://us.i.posthog.com"
     # Models
     embedding_model: str = "text-embedding-3-small"
-    image_analysis_model: str = "gemini-2.5-flash-lite-preview-06-17"
-    explanation_model: str = "gemini-2.5-flash-lite-preview-06-17"
-    summary_model: str = "gemini-2.5-flash-lite-preview-06-17"
+    image_analysis_model: str = "gpt-5-nano"
+    explanation_model: str = "gpt-4o-mini"
+    summary_model: str = "gpt-5-nano"
     # Mock LLM calls
     mock_llm_calls: bool = False
     # Server

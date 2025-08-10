@@ -60,9 +60,13 @@ async def process_summary_job(payload: SummaryPayload):
         # Log LLM call for summary
         try:
             usage = metadata.get("usage") or {}
-            prompt_tokens = usage.get("prompt_tokens", 0)
-            completion_tokens = usage.get("completion_tokens", 0)
+            # Handle both Chat Completions API (prompt_tokens/completion_tokens) and Responses API (input_tokens/output_tokens)
+            prompt_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
+            completion_tokens = usage.get(
+                "completion_tokens", usage.get("output_tokens", 0)
+            )
             total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
+
             cost = compute_cost(
                 settings.summary_model, prompt_tokens, completion_tokens
             )

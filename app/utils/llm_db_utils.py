@@ -10,9 +10,9 @@ RATE_CARD_PATH = os.path.join(os.path.dirname(__file__), "llm_token_costs.json")
 try:
     with open(RATE_CARD_PATH, "r", encoding="utf-8") as f:
         _RATE_CARD = json.load(f)
-except Exception:
+except Exception as e:
     logging.warning(
-        f"Could not load LLM rate card from {RATE_CARD_PATH}, defaulting to empty rates"
+        f"Could not load LLM rate card from {RATE_CARD_PATH}, defaulting to empty rates. Error: {e}"
     )
     _RATE_CARD = {}
 

@@ -80,8 +80,11 @@ async def process_embedding_job(payload: EmbeddingPayload):
         # Log LLM call for embedding using the returned metadata
         try:
             usage = metadata.get("usage", {}) if metadata else {}
-            prompt_tokens = usage.get("prompt_tokens", 0)
-            completion_tokens = usage.get("completion_tokens", 0)
+            # Handle both Chat Completions API (prompt_tokens/completion_tokens) and Responses API (input_tokens/output_tokens)
+            prompt_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
+            completion_tokens = usage.get(
+                "completion_tokens", usage.get("output_tokens", 0)
+            )
             total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
             cost = compute_cost(
                 settings.embedding_model, prompt_tokens, completion_tokens
