@@ -36,7 +36,7 @@ async def _record_explanation_error(
         "service": "explanation",
         "slide_id": str(slide_id),
         "error": sanitize_text(str(error_message)) or "",
-        "server_info": json.dumps({"server_pid": conn.get_server_pid()}),
+        "server_info": {"server_pid": conn.get_server_pid()},
     }
 
     # Get existing error details and append new error
@@ -45,19 +45,27 @@ async def _record_explanation_error(
         lecture_id,
     )
 
+    # Normalize existing_errors to a Python list
+    error_list = []
     if existing_errors:
-        # If existing errors exist, append to them
-        if isinstance(existing_errors, list):
-            error_list = existing_errors
-        else:
-            # If it's a single error object, convert to list
-            error_list = [existing_errors]
-        error_list.append(error_info)
-    else:
-        # If no existing errors, create new list
-        error_list = [error_info]
+        try:
+            if isinstance(existing_errors, str):
+                existing_obj = json.loads(existing_errors)
+            else:
+                existing_obj = existing_errors
+        except Exception:
+            existing_obj = None
 
-    # Ensure JSON is safe for JSONB
+        if isinstance(existing_obj, list):
+            error_list = existing_obj
+        elif isinstance(existing_obj, dict):
+            error_list = [existing_obj]
+        else:
+            error_list = []
+
+    error_list.append(error_info)
+
+    # Ensure JSON is safe for JSONB and store as text to cast to jsonb
     safe_error_list = sanitize_json(error_list)
     await conn.execute(
         "UPDATE lectures SET explanation_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
