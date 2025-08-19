@@ -24,13 +24,19 @@ import { zoomPlugin } from "@react-pdf-viewer/zoom";
 
 // components
 import { Button } from "@/components/ui/button";
-import SearchSidebar from "./search-sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // icons
 import {
+  ChevronDownIcon,
   DownloadIcon,
   MaximizeIcon,
-  SearchIcon,
   ZoomInIcon,
   ZoomOutIcon,
 } from "lucide-react";
@@ -76,7 +82,7 @@ export default function PdfViewer({
           ZoomOut,
         } = slots;
         return (
-          <div className="flex w-full items-center justify-between border-0 text-sm">
+          <div className="flex w-full items-center justify-between border-none text-sm">
             <div>
               <div className="flex items-center gap-1">
                 <CurrentPageInput /> / <NumberOfPages />
@@ -95,7 +101,70 @@ export default function PdfViewer({
                   </Button>
                 )}
               </ZoomOut>
-              <Zoom></Zoom>
+              <Zoom>
+                {(props) => (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="hover:bg-border hover:cursor-pointer"
+                      >
+                        {Math.round(props.scale * 100)}%
+                        <ChevronDownIcon
+                          strokeWidth={1.3}
+                          size={16}
+                          className="ml-1"
+                        />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          props.onZoom(SpecialZoomLevel.ActualSize)
+                        }
+                      >
+                        Actual size
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => props.onZoom(SpecialZoomLevel.PageFit)}
+                      >
+                        Page fit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => props.onZoom(SpecialZoomLevel.PageWidth)}
+                      >
+                        Page width
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={() => props.onZoom(0.5)}>
+                        50%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(0.75)}>
+                        75%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(1)}>
+                        100%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(1.25)}>
+                        125%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(1.5)}>
+                        150%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(2)}>
+                        200%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(3)}>
+                        300%
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => props.onZoom(4)}>
+                        400%
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </Zoom>
               <ZoomIn>
                 {(props) => (
                   <Button
@@ -143,20 +212,20 @@ export default function PdfViewer({
 
   const defaultLayoutPluginInstance = defaultLayoutPlugin({
     renderToolbar,
-    sidebarTabs: (defaultTabs) => [
-      defaultTabs[0]!,
-      {
-        content: (
-          <SearchSidebar
-            searchPluginInstance={
-              defaultLayoutPluginInstance.toolbarPluginInstance
-                .searchPluginInstance
-            }
-          />
-        ),
-        icon: <SearchIcon size={16} strokeWidth={1.2} />,
-        title: "Search",
-      },
+    sidebarTabs: () => [
+      // defaultTabs[0]!,
+      // {
+      //   content: (
+      //     <SearchSidebar
+      //       searchPluginInstance={
+      //         defaultLayoutPluginInstance.toolbarPluginInstance
+      //           .searchPluginInstance
+      //       }
+      //     />
+      //   ),
+      //   icon: <SearchIcon size={16} strokeWidth={1.2} />,
+      //   title: "Search",
+      // },
     ],
   });
 

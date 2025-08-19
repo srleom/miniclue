@@ -18,13 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: Staging
     permissions:
+      contents: read
       pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-          token: ${{ secrets.PAT }}
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -42,10 +40,10 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Staging Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Preview (PR)
         id: deploy

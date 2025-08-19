@@ -451,16 +451,16 @@ export default function LecturePage() {
                         <MessageCircleMore className="size-7 text-blue-600" />
                       </div>
                       <div className="space-y-2">
-                        <h2 className="text-xl font-semibold text-gray-900 md:text-2xl">
+                        <h2 className="text-xl font-semibold md:text-2xl">
                           Chat Feature Coming Soon
                         </h2>
-                        <p className="text-sm text-gray-600 md:max-w-lg">
+                        <p className="text-sm md:max-w-lg">
                           We&apos;re building an interactive chat feature that
                           will let you ask questions about this lecture and get
                           instant AI-powered responses.
                         </p>
                       </div>
-                      <div className="flex items-center justify-center space-x-2 text-xs text-gray-500">
+                      <div className="flex items-center justify-center space-x-2 text-xs">
                         <div className="h-2 w-2 animate-pulse rounded-full bg-blue-400"></div>
                         <span>In development</span>
                       </div>

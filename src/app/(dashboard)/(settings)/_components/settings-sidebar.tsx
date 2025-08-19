@@ -106,21 +106,10 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-        <NavSecondary
-          items={[
-            {
-              title: "Support",
-              icon: "LifeBuoy",
-            },
-            {
-              title: "Feedback",
-              icon: "Send",
-            },
-          ]}
-          className="mt-auto"
-        />
       </SidebarContent>
-      <SidebarFooter></SidebarFooter>
+      <SidebarFooter className="p-0">
+        <NavSecondary />
+      </SidebarFooter>
     </Sidebar>
   );
 }

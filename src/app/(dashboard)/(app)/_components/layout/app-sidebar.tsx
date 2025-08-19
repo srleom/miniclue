@@ -74,9 +74,9 @@ export function AppSidebar({
               <div className="flex items-center gap-2">
                 <Link
                   href="/"
-                  className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-md"
+                  className="bg-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-md"
                 >
-                  <Sparkle className="size-4" />
+                  <Sparkle className="text-primary-foreground size-4" />
                 </Link>
               </div>
             </SidebarMenuButton>
@@ -100,21 +100,10 @@ export function AppSidebar({
           deleteLecture={deleteLecture}
           availableCourses={availableCourses}
         />
-        <NavSecondary
-          items={[
-            {
-              title: "Support",
-              icon: "LifeBuoy",
-            },
-            {
-              title: "Feedback",
-              icon: "Send",
-            },
-          ]}
-          className="mt-auto"
-        />
       </SidebarContent>
-      <SidebarFooter></SidebarFooter>
+      <SidebarFooter className="p-0">
+        <NavSecondary />
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -1296,7 +1296,9 @@
   --rpv-default-layout__sidebar-content--opened-border-color: #292929;
   --rpv-default-layout__sidebar-content--opened-color: #fff;
 }
+
 .rpv-default-layout__container {
+  position: relative;
   border: 1px solid var(--rpv-default-layout__container-border-color);
   box-sizing: border-box;
   height: 100%;
@@ -1304,6 +1306,7 @@
   border-radius: 0.5rem;
   overflow: hidden;
 }
+
 .rpv-default-layout__toolbar {
   align-items: center;
   background-color: var(--muted);
@@ -1314,12 +1317,12 @@
   height: 2.5rem;
   width: 100%;
   z-index: 1;
+  border-bottom: 1px solid var(--rpv-default-layout__sidebar-border-color);
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
-  border-bottom: 1px solid var(--rpv-default-layout__sidebar-border-color);
+  overflow: hidden;
 }
+
 .rpv-default-layout__sidebar {
   display: flex;
   padding-top: 2.5rem;
