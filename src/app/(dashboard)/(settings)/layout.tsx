@@ -15,7 +15,7 @@ export default async function SettingsLayout({
     <div className="flex h-[100dvh] w-screen overflow-hidden">
       <SidebarProvider defaultOpen={true}>
         <SettingsSidebar />
-        <SidebarInset className="flex min-h-0 flex-1 flex-col">
+        <SidebarInset className="flex min-h-0 min-w-0 flex-1 flex-col">
           {children}
         </SidebarInset>
       </SidebarProvider>

@@ -68,7 +68,7 @@ export default async function DashboardLayout({
     })) ?? [];
 
   return (
-    <div className="flex h-[100dvh] overflow-hidden">
+    <div className="flex h-[100dvh] w-screen overflow-hidden">
       <SidebarProvider defaultOpen={sidebarOpen}>
         <AppSidebar
           navCourses={navCourses}
@@ -80,7 +80,7 @@ export default async function DashboardLayout({
           deleteLecture={deleteLecture}
           availableCourses={availableCourses}
         />
-        <SidebarInset className="flex min-h-0 flex-1 flex-col">
+        <SidebarInset className="flex min-h-0 min-w-0 flex-1 flex-col">
           {children}
         </SidebarInset>
       </SidebarProvider>
