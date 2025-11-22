@@ -34,7 +34,6 @@ import {
 import { useRouter } from "next/navigation";
 
 // lib
-import { isSubscriptionPastDue } from "@/lib/utils";
 import { logger } from "@/lib/logger";
 
 // server actions
@@ -43,12 +42,6 @@ import {
   completeUploadFromClient,
 } from "@/app/(dashboard)/_actions/lecture-actions";
 import { createClient as createSupabaseClient } from "@/lib/supabase/client";
-
-type UserUsageData =
-  components["schemas"]["app_internal_api_v1_dto.UserUsageResponseDTO"];
-
-type SubscriptionData =
-  components["schemas"]["app_internal_api_v1_dto.SubscriptionResponseDTO"];
 
 // Client-side upload function
 async function uploadLecturesClient(
@@ -146,13 +139,9 @@ async function uploadLecturesClient(
 export function DropzoneComponent({
   isCoursePage = false,
   courseId,
-  userUsage,
-  subscription,
 }: {
   isCoursePage?: boolean;
   courseId?: string;
-  userUsage?: UserUsageData;
-  subscription?: SubscriptionData;
 }) {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -163,26 +152,6 @@ export function DropzoneComponent({
   };
 
   const handleUpload = async () => {
-    // Check if subscription is past due before allowing uploads
-    if (isSubscriptionPastDue(subscription)) {
-      logger.warn("Upload blocked due to past due subscription");
-      toast.error(
-        "Your last payment failed. Please update your payment method to continue using MiniClue.",
-        {
-          action: {
-            label: "Update Payment",
-            onClick: () => router.push("/settings/subscription"),
-          },
-          actionButtonStyle: {
-            backgroundColor: "#fff",
-            color: "var(--primary)",
-            border: "1px solid var(--primary)",
-          },
-        },
-      );
-      return;
-    }
-
     if (!isCoursePage || !courseId) {
       logger.error("Upload failed: Course ID is missing", {
         isCoursePage,
@@ -292,18 +261,6 @@ export function DropzoneComponent({
     }
   };
 
-  // Format file size limit for display
-  const formatFileSizeLimit = (maxSizeMb: number) => {
-    if (maxSizeMb >= 1024) {
-      return `${(maxSizeMb / 1024).toFixed(1)}GB`;
-    }
-    return `${maxSizeMb}MB`;
-  };
-
-  // Get the file size limit from user usage or fallback to default
-  const maxFileSizeMb = userUsage?.max_size_mb || 10;
-  const fileSizeLimitText = formatFileSizeLimit(maxFileSizeMb);
-
   return (
     <Dropzone
       accept={{
@@ -323,9 +280,7 @@ export function DropzoneComponent({
                   : "Drop files here or click to upload"}
               </DropzoneTitle>
               <DropzoneDescription className="text-center">
-                {userUsage
-                  ? `You can upload PDF files up to ${fileSizeLimitText} in size.`
-                  : "You can upload PDF files up to 10MB in size."}
+                You can upload PDF files.
               </DropzoneDescription>
             </DropzoneGroup>
           </DropzoneGroup>

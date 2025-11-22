@@ -4,17 +4,10 @@
 import Link from "next/link";
 
 // icons
-import {
-  CircleUserRound,
-  CreditCard,
-  LoaderCircle,
-  LogOut,
-  Sparkles,
-} from "lucide-react";
+import { CircleUserRound, LogOut } from "lucide-react";
 
 // components
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,17 +24,10 @@ import {
 } from "@/components/ui/sidebar";
 
 // lib
-import { getInitials, isPaidUser, getPlanDisplayName } from "@/lib/utils";
-
-// types
-import type { components } from "@/types/api";
-
-type SubscriptionData =
-  components["schemas"]["app_internal_api_v1_dto.SubscriptionResponseDTO"];
+import { getInitials } from "@/lib/utils";
 
 export function NavUser({
   user,
-  subscription,
   handleLogout,
 }: {
   user: {
@@ -49,13 +35,8 @@ export function NavUser({
     email: string;
     avatar: string;
   };
-  subscription?: SubscriptionData;
   handleLogout: () => Promise<void>;
 }) {
-  // Determine if user is on a paid plan
-  const isPaid = isPaidUser(subscription);
-  const planDisplayName = getPlanDisplayName(subscription);
-
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -96,48 +77,17 @@ export function NavUser({
                   </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-start text-sm leading-tight">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate font-medium">{user.name}</span>
-                    <Badge variant="secondary" className="px-2 py-0 text-xs">
-                      {planDisplayName}
-                    </Badge>
-                  </div>
+                  <span className="truncate font-medium">{user.name}</span>
                   <span className="truncate text-xs">{user.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {process.env.NEXT_PUBLIC_SHOW_PRICING_PLANS === "true" &&
-              !isPaid && (
-                <>
-                  <DropdownMenuGroup>
-                    <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                      <Link href="/settings/subscription">
-                        <Sparkles />
-                        Upgrade to Pro
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
-                  <DropdownMenuSeparator />
-                </>
-              )}
             <DropdownMenuGroup>
               <DropdownMenuItem className="hover:cursor-pointer" asChild>
                 <Link href="/settings/profile">
                   <CircleUserRound />
                   Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                <Link href="/settings/subscription">
-                  <CreditCard />
-                  Subscription
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                <Link href="/settings/usage">
-                  <LoaderCircle />
-                  Usage
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

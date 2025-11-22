@@ -3,32 +3,17 @@ import { DropzoneComponent } from "@/app/(dashboard)/(app)/_components/dropzone"
 import { Badge } from "@/components/ui/badge";
 
 // code
-import {
-  getUserCourses,
-  getUserUsage,
-  getUserSubscription,
-} from "@/app/(dashboard)/_actions/user-actions";
+import { getUserCourses } from "@/app/(dashboard)/_actions/user-actions";
 
 // lib
 import { logger } from "@/lib/logger";
 
 export default async function Page() {
   const { data: courses, error } = await getUserCourses();
-  const { data: userUsage, error: usageError } = await getUserUsage();
-  const { data: subscription, error: subscriptionError } =
-    await getUserSubscription();
 
   if (error) {
     // Handle error case, maybe show a message to the user
     logger.error("Failed to load courses:", error);
-  }
-
-  if (usageError) {
-    logger.error("Failed to load user usage:", usageError);
-  }
-
-  if (subscriptionError) {
-    logger.error("Failed to load subscription:", subscriptionError);
   }
 
   const defaultCourse = courses?.find((c) => c.isDefault);
@@ -48,8 +33,6 @@ export default async function Page() {
         <DropzoneComponent
           isCoursePage={true}
           courseId={defaultCourse?.courseId}
-          userUsage={userUsage}
-          subscription={subscription}
         />
       </div>
     </div>

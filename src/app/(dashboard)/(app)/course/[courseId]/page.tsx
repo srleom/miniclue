@@ -12,11 +12,7 @@ import {
   getCourseDetails,
   getCourseLectures,
 } from "@/app/(dashboard)/_actions/course-actions";
-import {
-  getUserUsage,
-  getUserSubscription,
-  getUserCourses,
-} from "@/app/(dashboard)/_actions/user-actions";
+import { getUserCourses } from "@/app/(dashboard)/_actions/user-actions";
 
 // lib
 import { logger } from "@/lib/logger";
@@ -49,23 +45,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const { title: courseTitle, is_default: isDefault } =
     courseRes.data ?? ({} as { title?: string; is_default?: boolean });
   const lecturesDTO = await getCourseLectures(courseId, 10000, 0);
-  const { data: userUsage, error: usageError } = await getUserUsage();
-  const { data: subscription, error: subscriptionError } =
-    await getUserSubscription();
 
   // Get available courses for move functionality
   const { data: availableCourses, error: coursesError } =
     await getUserCourses();
   if (coursesError) {
     logger.error("Failed to load available courses:", coursesError);
-  }
-
-  if (usageError) {
-    logger.error("Failed to load user usage:", usageError);
-  }
-
-  if (subscriptionError) {
-    logger.error("Failed to load subscription:", subscriptionError);
   }
 
   const tableLectures: LectureResponseDTO[] =
@@ -92,12 +77,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
       />
 
       <div className="mb-12 w-full">
-        <DropzoneComponent
-          isCoursePage={true}
-          courseId={courseId}
-          userUsage={userUsage}
-          subscription={subscription}
-        />
+        <DropzoneComponent isCoursePage={true} courseId={courseId} />
       </div>
       <CourseTable
         data={tableLectures}

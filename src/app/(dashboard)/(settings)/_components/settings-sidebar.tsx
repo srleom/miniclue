@@ -5,12 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // icons
-import {
-  ChevronLeft,
-  CircleUserRound,
-  CreditCard,
-  LoaderCircle,
-} from "lucide-react";
+import { ChevronLeft, CircleUserRound } from "lucide-react";
 
 // components
 import {
@@ -67,40 +62,6 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
                 <Link href="/settings/profile" onClick={handleNavigation}>
                   <CircleUserRound />
                   Profile
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                size="default"
-                variant="default"
-                className={
-                  pathname === "/settings/subscription"
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : undefined
-                }
-              >
-                <Link href="/settings/subscription" onClick={handleNavigation}>
-                  <CreditCard />
-                  Subscription
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                size="default"
-                variant="default"
-                className={
-                  pathname === "/settings/usage"
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : undefined
-                }
-              >
-                <Link href="/settings/usage" onClick={handleNavigation}>
-                  <LoaderCircle />
-                  Usage
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
