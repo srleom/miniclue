@@ -30,14 +30,13 @@ function check_deps() {
 # --- Script Start ---
 check_deps
 
-ENV=${1}
-if [ -z "$ENV" ]; then
+# Save command-line argument before sourcing .env (which may contain ENV variable)
+DEPLOY_ENV=${1}
+if [ -z "$DEPLOY_ENV" ]; then
   echo "ERROR: Environment not specified."
   echo "Usage: $0 <staging|production>"
   exit 1
 fi
-
-echo "Starting Pub/Sub setup for environment: $ENV"
 
 # Load environment variables from .env file
 if [ -f .env ]; then
@@ -48,31 +47,37 @@ else
   echo "Warning: .env file not found. Relying on exported environment variables."
 fi
 
+# Restore the command-line argument (overrides any ENV from .env)
+ENV=$DEPLOY_ENV
+
+echo "Starting Pub/Sub setup for environment: $ENV"
+
 # --- Environment-Specific Setup ---
 PROJECT_FLAG=""
 GCLOUD_OPTS=""
-API_BASE_URL=""
+PYTHON_BASE_URL=""
+GATEWAY_BASE_URL=""
 
 case "$ENV" in
 "staging")
-  if [ -z "$GCP_PROJECT_ID_STAGING" ] || [ -z "$API_BASE_URL_STAGING" ]; then
-    echo "ERROR: GCP_PROJECT_ID_STAGING and API_BASE_URL_STAGING must be set."
+  if [ -z "$GCP_PROJECT_ID_STAGING" ] || [ -z "$PYTHON_BASE_URL_STAGING" ] || [ -z "$API_BASE_URL_STAGING" ]; then
+    echo "ERROR: GCP_PROJECT_ID_STAGING, PYTHON_BASE_URL_STAGING, and API_BASE_URL_STAGING must be set."
     exit 1
   fi
   PROJECT_FLAG="--project=$GCP_PROJECT_ID_STAGING"
-  API_BASE_URL=$API_BASE_URL_STAGING
-  PYTHON_API_URL="$API_BASE_URL/v1/pubsub"
-  GATEWAY_API_URL="$API_BASE_URL/v1/pubsub/dlq"
+  PYTHON_BASE_URL=$PYTHON_BASE_URL_STAGING
+  GATEWAY_BASE_URL=$API_BASE_URL_STAGING
+  GATEWAY_API_URL="$GATEWAY_BASE_URL/v1/dlq"
   ;;
 "production")
-  if [ -z "$GCP_PROJECT_ID_PROD" ] || [ -z "$API_BASE_URL_PROD" ]; then
-    echo "ERROR: GCP_PROJECT_ID_PROD and API_BASE_URL_PROD must be set."
+  if [ -z "$GCP_PROJECT_ID_PROD" ] || [ -z "$PYTHON_BASE_URL_PROD" ] || [ -z "$API_BASE_URL_PROD" ]; then
+    echo "ERROR: GCP_PROJECT_ID_PROD, PYTHON_BASE_URL_PROD, and API_BASE_URL_PROD must be set."
     exit 1
   fi
   PROJECT_FLAG="--project=$GCP_PROJECT_ID_PROD"
-  API_BASE_URL=$API_BASE_URL_PROD
-  PYTHON_API_URL="$API_BASE_URL/v1/pubsub"
-  GATEWAY_API_URL="$API_BASE_URL/v1/pubsub/dlq"
+  PYTHON_BASE_URL=$PYTHON_BASE_URL_PROD
+  GATEWAY_BASE_URL=$API_BASE_URL_PROD
+  GATEWAY_API_URL="$GATEWAY_BASE_URL/v1/dlq"
   ;;
 *)
   echo "ERROR: Invalid environment '$ENV'. Must be one of: staging, production."
@@ -90,7 +95,7 @@ for TOPIC_NAME in "${TOPICS[@]}"; do
   MAIN_TOPIC="${TOPIC_NAME}"
   MAIN_SUB="${TOPIC_NAME}-sub${SUB_SUFFIX}"
   DLQ_SUB="${TOPIC_NAME}-dlq-sub${SUB_SUFFIX}"
-  PUSH_ENDPOINT="${PYTHON_API_URL}/${TOPIC_NAME}"
+  PUSH_ENDPOINT="${PYTHON_BASE_URL}/${TOPIC_NAME}"
 
   echo -e "\n--- Ensuring resources for topic: $MAIN_TOPIC (Env: $ENV) ---"
 
