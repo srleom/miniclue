@@ -248,7 +248,7 @@ export default function PdfViewer({
             searchPluginInstance,
             pageNavigationPluginInstance,
           ]}
-          defaultScale={SpecialZoomLevel.PageFit}
+          defaultScale={SpecialZoomLevel.PageWidth}
           scrollMode={ScrollMode.Vertical}
         />
       </div>
