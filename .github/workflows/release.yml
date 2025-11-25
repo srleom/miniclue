@@ -45,7 +45,7 @@ jobs:
           service: miniclue-ai-prod
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-ai:${{ github.ref_name }}
           region: ${{ secrets.GCP_REGION }}
-          flags: "--allow-unauthenticated"
+          flags: "--allow-unauthenticated --service-account=${{ secrets.CLOUD_RUN_SERVICE_ACCOUNT_EMAIL }}"
           env_vars: |
             ENV=production
             APP_ENV=production

@@ -57,7 +57,7 @@ jobs:
           service: miniclue-ai-stg
           image: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-ai:${{ github.sha }}
           region: ${{ secrets.GCP_REGION }}
-          flags: "--allow-unauthenticated"
+          flags: "--allow-unauthenticated --service-account=${{ secrets.CLOUD_RUN_SERVICE_ACCOUNT_EMAIL }}"
           env_vars: |
             ENV=staging
             APP_ENV=staging
