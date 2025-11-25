@@ -287,13 +287,16 @@ func (h *UserHandler) getRecentLecturesWithCount(w http.ResponseWriter, r *http.
 	}
 }
 
-// handleAPIKey handles API key storage (POST only)
+// handleAPIKey handles API key operations (POST for storage, DELETE for removal)
 func (h *UserHandler) handleAPIKey(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+	switch r.Method {
+	case http.MethodPost:
+		h.storeAPIKey(w, r)
+	case http.MethodDelete:
+		h.deleteAPIKey(w, r)
+	default:
 		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
 	}
-	h.storeAPIKey(w, r)
 }
 
 // storeAPIKey godoc
@@ -336,6 +339,54 @@ func (h *UserHandler) storeAPIKey(w http.ResponseWriter, r *http.Request) {
 	resp := dto.APIKeyResponseDTO{
 		Provider:       req.Provider,
 		HasProvidedKey: true,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
+	}
+}
+
+// deleteAPIKey godoc
+// @Summary Delete user's API key
+// @Description Deletes the user's API key from Google Cloud Secret Manager and updates the user profile flag.
+// @Tags users
+// @Produce json
+// @Param provider query string true "API provider (openai or gemini)"
+// @Success 200 {object} dto.APIKeyResponseDTO
+// @Failure 400 {string} string "Invalid provider parameter"
+// @Failure 401 {string} string "Unauthorized: User ID not found in context"
+// @Failure 500 {string} string "Failed to delete API key"
+// @Router /users/me/api-key [delete]
+func (h *UserHandler) deleteAPIKey(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value(middleware.UserContextKey).(string)
+	if !ok || userId == "" {
+		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
+	provider := r.URL.Query().Get("provider")
+	if provider == "" {
+		http.Error(w, "Provider parameter is required", http.StatusBadRequest)
+		return
+	}
+
+	if provider != "openai" && provider != "gemini" {
+		http.Error(w, "Invalid provider. Must be 'openai' or 'gemini'", http.StatusBadRequest)
+		return
+	}
+
+	err := h.userService.DeleteAPIKey(r.Context(), userId, provider)
+	if err != nil {
+		h.logger.Error().Err(err).Str("user_id", userId).Str("provider", provider).Msg("Failed to delete API key")
+		http.Error(w, "Failed to delete API key: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp := dto.APIKeyResponseDTO{
+		Provider:       provider,
+		HasProvidedKey: false,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

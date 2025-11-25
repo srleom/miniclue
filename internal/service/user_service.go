@@ -22,6 +22,7 @@ type UserService interface {
 	GetRecentLecturesWithCount(ctx context.Context, userID string, limit, offset int) ([]model.Lecture, int, error)
 	GetCourses(ctx context.Context, userID string) ([]model.Course, error)
 	StoreAPIKey(ctx context.Context, userID, provider, apiKey string) error
+	DeleteAPIKey(ctx context.Context, userID, provider string) error
 }
 
 type userService struct {
@@ -127,6 +128,28 @@ func (s *userService) StoreAPIKey(ctx context.Context, userID, provider, apiKey 
 
 	// Update the flag in database
 	err = s.userRepo.UpdateAPIKeyFlag(ctx, userID, provider, true)
+	if err != nil {
+		s.userLogger.Error().Err(err).Str("user_id", userID).Str("provider", provider).Msg("Failed to update API key flag in database")
+		return err
+	}
+
+	return nil
+}
+
+func (s *userService) DeleteAPIKey(ctx context.Context, userID, provider string) error {
+	if provider == "" {
+		return errors.New("provider cannot be empty")
+	}
+
+	// Delete from Secret Manager
+	err := s.secretManagerSvc.DeleteUserAPIKey(ctx, userID, provider)
+	if err != nil {
+		s.userLogger.Error().Err(err).Str("user_id", userID).Str("provider", provider).Msg("Failed to delete API key from Secret Manager")
+		return err
+	}
+
+	// Update the flag in database to false
+	err = s.userRepo.UpdateAPIKeyFlag(ctx, userID, provider, false)
 	if err != nil {
 		s.userLogger.Error().Err(err).Str("user_id", userID).Str("provider", provider).Msg("Failed to update API key flag in database")
 		return err

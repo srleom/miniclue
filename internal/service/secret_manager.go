@@ -14,6 +14,7 @@ import (
 type SecretManagerService interface {
 	StoreUserAPIKey(ctx context.Context, userID, provider, apiKey string) error
 	GetUserAPIKey(ctx context.Context, userID, provider string) (string, error)
+	DeleteUserAPIKey(ctx context.Context, userID, provider string) error
 }
 
 type secretManagerService struct {
@@ -101,4 +102,20 @@ func (s *secretManagerService) GetUserAPIKey(ctx context.Context, userID, provid
 	}
 
 	return string(result.Payload.Data), nil
+}
+
+func (s *secretManagerService) DeleteUserAPIKey(ctx context.Context, userID, provider string) error {
+	secretName := fmt.Sprintf("user-%s-%s-key", userID, provider)
+	secretPath := fmt.Sprintf("projects/%s/secrets/%s", s.projectID, secretName)
+
+	req := &secretmanagerpb.DeleteSecretRequest{
+		Name: secretPath,
+	}
+
+	err := s.client.DeleteSecret(ctx, req)
+	if err != nil {
+		return fmt.Errorf("failed to delete secret: %w", err)
+	}
+
+	return nil
 }

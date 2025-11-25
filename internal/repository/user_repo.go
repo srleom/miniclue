@@ -64,9 +64,9 @@ func (r *userRepo) UpdateAPIKeyFlag(ctx context.Context, userID string, provider
 		return fmt.Errorf("marshaling boolean value: %w", err)
 	}
 
-	// Use jsonb_set with explicit array type casting to ensure proper key storage
-	// The path array must be explicitly cast to text[] to avoid quote issues
-	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1::text], $2::jsonb, true), updated_at = NOW() WHERE user_id = $3`
+	// Use ARRAY[] constructor to pass the path as a proper text array
+	// jsonb_set expects a text[] array, not a string representation
+	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1], $2::jsonb, true), updated_at = NOW() WHERE user_id = $3`
 	_, err = r.pool.Exec(ctx, query, provider, valueJSON, userID)
 	if err != nil {
 		return fmt.Errorf("updating API key flag for user %s, provider %s: %w", userID, provider, err)
