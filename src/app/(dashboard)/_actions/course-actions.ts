@@ -36,7 +36,7 @@ export async function createUntitledCourse(): Promise<
     return { error: courseError };
   }
 
-  revalidateTag("courses");
+  revalidateTag("courses", "max");
   return { error: undefined };
 }
 
@@ -57,8 +57,8 @@ export async function deleteCourse(
     return { error: deleteError };
   }
 
-  revalidateTag("courses");
-  revalidateTag("recents");
+  revalidateTag("courses", "max");
+  revalidateTag("recents", "max");
   redirect("/");
   return { error: undefined };
 }
@@ -141,7 +141,7 @@ export async function updateCourse(
     return { error: updateError };
   }
 
-  revalidateTag("courses");
-  revalidateTag(`course:${courseId}`);
+  revalidateTag("courses", "max");
+  revalidateTag(`course:${courseId}`, "max");
   return { data, error: undefined };
 }

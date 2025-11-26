@@ -34,7 +34,7 @@ export async function handleUpdateLectureAccessedAt(
     return { error: lectureError };
   }
 
-  revalidateTag("recents");
+  revalidateTag("recents", "max");
 
   return { error: undefined };
 }
@@ -96,9 +96,9 @@ export async function completeUpload(
   }
 
   if (data?.course_id) {
-    revalidateTag(`lectures:${data.course_id}`);
+    revalidateTag(`lectures:${data.course_id}`, "max");
   }
-  revalidateTag("recents");
+  revalidateTag("recents", "max");
 
   return { data, error: undefined };
 }
@@ -221,8 +221,8 @@ export async function deleteLecture(
     return { error: "Failed to delete lecture." };
   }
 
-  revalidateTag(`lectures:${lecture.course_id}`);
-  revalidateTag("recents");
+  revalidateTag(`lectures:${lecture.course_id}`, "max");
+  revalidateTag("recents", "max");
   redirect(`/course/${lecture.course_id}`);
 }
 
@@ -307,10 +307,10 @@ export async function updateLecture(
 
   // Revalidate lecture list and detail
   if (data?.course_id) {
-    revalidateTag(`lectures:${data.course_id}`);
+    revalidateTag(`lectures:${data.course_id}`, "max");
   }
-  revalidateTag(`lecture:${lectureId}`);
-  revalidateTag("recents");
+  revalidateTag(`lecture:${lectureId}`, "max");
+  revalidateTag("recents", "max");
   return { data, error: undefined };
 }
 
@@ -370,13 +370,13 @@ export async function moveLecture(
 
   // Revalidate lecture lists for both old and new courses
   if (oldCourseId) {
-    revalidateTag(`lectures:${oldCourseId}`);
+    revalidateTag(`lectures:${oldCourseId}`, "max");
   }
-  revalidateTag(`lectures:${newCourseId}`);
-  revalidateTag("recents");
+  revalidateTag(`lectures:${newCourseId}`, "max");
+  revalidateTag("recents", "max");
 
   // Revalidate the specific lecture detail page
-  revalidateTag(`lecture:${lectureId}`);
+  revalidateTag(`lecture:${lectureId}`, "max");
 
   return { data, error: undefined };
 }

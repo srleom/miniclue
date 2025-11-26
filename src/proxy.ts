@@ -4,7 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 // code
 import { updateSession } from "@/lib/supabase/middleware";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/relay-xYmY/")) {

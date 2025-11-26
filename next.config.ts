@@ -12,6 +12,7 @@ const nextConfig: NextConfig = {
     "require-in-the-middle",
     "canvas",
   ],
+  turbopack: {},
   webpack: (config, { isServer }) => {
     // Always treat `canvas` as external on the server
     config.externals = [...(config.externals || []), { canvas: "canvas" }];

@@ -4,9 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "format": "prettier --write .",
     "test:ts": "tsc --noEmit",
     "openapi:convert": "swagger2openapi http://localhost:8080/swagger/swagger.json --outfile docs/swagger.json --yaml=false --patch",
@@ -50,15 +50,15 @@
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.511.0",
     "motion": "^12.15.0",
-    "next": "15.3.2",
+    "next": "16.0.4",
     "next-themes": "^0.4.6",
     "openapi-fetch": "^0.14.0",
     "pdfjs-dist": "3.4.120",
     "posthog-js": "^1.257.2",
     "posthog-node": "^5.6.0",
     "pretty-bytes": "^7.0.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.57.0",
     "react-markdown": "^10.1.0",
@@ -71,15 +71,15 @@
     "zod": "^3.25.57"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/eslint-plugin-query": "^5.81.2",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.2.7",
+    "@types/react-dom": "19.2.3",
     "eslint": "^9",
-    "eslint-config-next": "15.3.2",
+    "eslint-config-next": "16.0.4",
+    "eslint-config-prettier": "^10.1.8",
     "import-in-the-middle": "^1.14.2",
     "node-loader": "^2.1.0",
     "null-loader": "^4.0.1",
@@ -95,5 +95,11 @@
   "optionalDependencies": {
     "canvas": "^3.1.2"
   },
-  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac",
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.7",
+      "@types/react-dom": "19.2.3"
+    }
+  }
 }

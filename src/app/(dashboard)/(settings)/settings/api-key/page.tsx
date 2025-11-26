@@ -51,7 +51,7 @@ export default function APIKeySettingsPage() {
       fallback={
         <div className="mx-auto mt-4 flex w-full flex-col items-center md:mt-16 lg:w-3xl">
           <div className="flex w-full flex-col gap-6">
-            <h1 className="text-2xl font-medium">API Keys</h1>
+            <h1 className="text-2xl font-semibold">API Keys</h1>
             <div className="flex items-center">
               <p className="text-muted-foreground">Loading...</p>
             </div>

@@ -45,7 +45,7 @@ export async function storeAPIKey(
   }
 
   // Revalidate user profile cache to reflect the updated API key status
-  revalidateTag("user-profile");
+  revalidateTag("user-profile", "max");
   // Also revalidate the API key settings page to ensure it shows updated status
   revalidatePath("/settings/api-key");
 
@@ -81,7 +81,7 @@ export async function deleteAPIKey(
   }
 
   // Revalidate user profile cache to reflect the updated API key status
-  revalidateTag("user-profile");
+  revalidateTag("user-profile", "max");
   // Also revalidate the API key settings page to ensure it shows updated status
   revalidatePath("/settings/api-key");
 

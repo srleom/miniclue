@@ -179,7 +179,7 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
     }
 
     // Revalidate any cached user data
-    revalidateTag("user-profile");
+    revalidateTag("user-profile", "max");
 
     // Redirect to login page after successful deletion
     // This will throw NEXT_REDIRECT which is expected behavior
