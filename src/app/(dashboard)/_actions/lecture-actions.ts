@@ -1,7 +1,7 @@
 "use server";
 
 // next
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 // types
@@ -35,7 +35,6 @@ export async function handleUpdateLectureAccessedAt(
   }
 
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
 
   return { error: undefined };
 }
@@ -100,7 +99,6 @@ export async function completeUpload(
     revalidateTag(`lectures:${data.course_id}`, "max");
   }
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
 
   return { data, error: undefined };
 }
@@ -225,7 +223,6 @@ export async function deleteLecture(
 
   revalidateTag(`lectures:${lecture.course_id}`, "max");
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
   redirect(`/course/${lecture.course_id}`);
 }
 
@@ -314,7 +311,6 @@ export async function updateLecture(
   }
   revalidateTag(`lecture:${lectureId}`, "max");
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
   return { data, error: undefined };
 }
 
@@ -378,7 +374,6 @@ export async function moveLecture(
   }
   revalidateTag(`lectures:${newCourseId}`, "max");
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
 
   // Revalidate the specific lecture detail page
   revalidateTag(`lecture:${lectureId}`, "max");

@@ -677,6 +677,501 @@ export interface paths {
     };
     trace?: never;
   };
+  "/lectures/{lectureId}/chats": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List chats for a lecture
+     * @description Retrieves all chats for a specific lecture with pagination support.
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of chats to return */
+          limit?: number;
+          /** @description Number of chats to skip */
+          offset?: number;
+        };
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"][];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to list chats */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    /**
+     * Create a new chat
+     * @description Creates a new chat conversation for a lecture. The chat title is optional and defaults to "New Chat".
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Chat creation request */
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatCreateDTO"];
+        };
+      };
+      responses: {
+        /** @description Created */
+        201: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to create chat */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/lectures/{lectureId}/chats/{chatId}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get a chat
+     * @description Retrieves a specific chat by its ID.
+     */
+    get: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+          /** @description Chat ID */
+          chatId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Chat not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to get chat */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    /**
+     * Delete a chat
+     * @description Deletes a chat and all its associated messages.
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+          /** @description Chat ID */
+          chatId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "*/*": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "*/*": string;
+          };
+        };
+        /** @description Chat not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "*/*": string;
+          };
+        };
+        /** @description Failed to delete chat */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "*/*": string;
+          };
+        };
+      };
+    };
+    options?: never;
+    head?: never;
+    /**
+     * Update a chat
+     * @description Updates a chat's title.
+     */
+    patch: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+          /** @description Chat ID */
+          chatId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Chat update request */
+      requestBody?: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatUpdateDTO"];
+        };
+      };
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+          };
+        };
+        /** @description Invalid JSON payload or validation failed */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Chat not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to update chat */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    trace?: never;
+  };
+  "/lectures/{lectureId}/chats/{chatId}/messages": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List messages in a chat
+     * @description Retrieves all messages for a specific chat. Messages are returned in chronological order (oldest first).
+     */
+    get: {
+      parameters: {
+        query?: {
+          /** @description Maximum number of messages to return */
+          limit?: number;
+        };
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+          /** @description Chat ID */
+          chatId: string;
+        };
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description OK */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": components["schemas"]["app_internal_api_v1_dto.MessageResponseDTO"][];
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Chat not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to list messages */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/lectures/{lectureId}/chats/{chatId}/stream": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Stream chat response
+     * @description Sends a user message and streams the AI assistant's response using Server-Sent Events (SSE). The user message is saved immediately, and the assistant response is saved after streaming completes. The model parameter specifies which LLM model to use for the response.
+     */
+    post: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path: {
+          /** @description Lecture ID */
+          lectureId: string;
+          /** @description Chat ID */
+          chatId: string;
+        };
+        cookie?: never;
+      };
+      /** @description Chat stream request with message parts and model */
+      requestBody: {
+        content: {
+          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatStreamRequestDTO"];
+        };
+      };
+      responses: {
+        /** @description Server-Sent Events stream */
+        200: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/event-stream": string;
+          };
+        };
+        /** @description Invalid JSON payload, validation failed, or API key required */
+        400: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/event-stream": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/event-stream": string;
+          };
+        };
+        /** @description Chat or lecture not found */
+        404: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/event-stream": string;
+          };
+        };
+        /** @description Failed to stream chat response */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "text/event-stream": string;
+          };
+        };
+      };
+    };
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/lectures/{lectureId}/explanations": {
     parameters: {
       query?: never;
@@ -1499,6 +1994,24 @@ export interface components {
       has_provided_key?: boolean;
       provider?: string;
     };
+    "app_internal_api_v1_dto.ChatCreateDTO": {
+      title?: string;
+    };
+    "app_internal_api_v1_dto.ChatResponseDTO": {
+      created_at?: string;
+      id?: string;
+      lecture_id?: string;
+      title?: string;
+      updated_at?: string;
+      user_id?: string;
+    };
+    "app_internal_api_v1_dto.ChatStreamRequestDTO": {
+      model: string;
+      parts: components["schemas"]["app_internal_api_v1_dto.MessagePartDTO"][];
+    };
+    "app_internal_api_v1_dto.ChatUpdateDTO": {
+      title?: string;
+    };
     "app_internal_api_v1_dto.CourseCreateDTO": {
       description?: string;
       is_default?: boolean;
@@ -1578,6 +2091,17 @@ export interface components {
     "app_internal_api_v1_dto.LectureUploadURLResponseDTO": {
       lecture_id?: string;
       upload_url?: string;
+    };
+    "app_internal_api_v1_dto.MessagePartDTO": {
+      text?: string;
+      type?: string;
+    };
+    "app_internal_api_v1_dto.MessageResponseDTO": {
+      chat_id?: string;
+      created_at?: string;
+      id?: string;
+      parts?: components["schemas"]["app_internal_api_v1_dto.MessagePartDTO"][];
+      role?: string;
     };
     "app_internal_api_v1_dto.PubSubMessage": {
       attributes?: {

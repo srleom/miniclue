@@ -1,5 +1,6 @@
 // third-party
 import { type ClassValue, clsx } from "clsx";
+import { nanoid } from "nanoid";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -23,3 +24,11 @@ export const formatDate = (dateString?: string): string => {
     day: "numeric",
   });
 };
+
+export function generateUUID(): string {
+  return nanoid();
+}
+
+export function sanitizeText(text: string): string {
+  return text.replace("<has_function_call>", "");
+}

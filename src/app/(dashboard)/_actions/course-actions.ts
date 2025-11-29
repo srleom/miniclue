@@ -1,7 +1,7 @@
 "use server";
 
 // next
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
 // types
@@ -37,7 +37,6 @@ export async function createUntitledCourse(): Promise<
   }
 
   revalidateTag("courses", "max");
-  revalidatePath("/", "layout");
   return { error: undefined };
 }
 
@@ -60,7 +59,6 @@ export async function deleteCourse(
 
   revalidateTag("courses", "max");
   revalidateTag("recents", "max");
-  revalidatePath("/", "layout");
   redirect("/");
   return { error: undefined };
 }
@@ -145,6 +143,5 @@ export async function updateCourse(
 
   revalidateTag("courses", "max");
   revalidateTag(`course:${courseId}`, "max");
-  revalidatePath("/", "layout");
   return { data, error: undefined };
 }
