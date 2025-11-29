@@ -51,17 +51,18 @@ func main() {
 	}
 
 	// 3. Create HTTP server
+	// WriteTimeout is set to 5 minutes to accommodate long-running streaming responses
+	// (e.g., AI chat streaming which involves query rewriting, RAG retrieval, and LLM streaming)
 	srv := &http.Server{
 		Addr:         ":" + port,
 		Handler:      r,
 		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 5 * time.Minute,
 		IdleTimeout:  60 * time.Second,
 	}
 
 	// 4. Start server in a goroutine
 	go func() {
-		logger.Info().Msgf("🚀 Server starting on port %s", port)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logger.Fatal().Msgf("Listen: %s\n", err)
 		}
@@ -71,12 +72,10 @@ func main() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	logger.Info().Msg("Shutdown signal received, exiting...")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logger.Fatal().Msgf("Server forced to shutdown: %v", err)
 	}
-	logger.Info().Msg("Server shut down gracefully")
 }
