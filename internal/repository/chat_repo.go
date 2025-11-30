@@ -165,11 +165,11 @@ func (r *chatRepo) CreateMessage(ctx context.Context, chatID, role string, parts
 
 	query := `
 		INSERT INTO messages (chat_id, role, parts)
-		VALUES ($1, $2, $3::jsonb)
+		VALUES ($1, $2, $3)
 		RETURNING id, chat_id, role, parts, created_at
 	`
 	var message model.Message
-	err = r.pool.QueryRow(ctx, query, chatID, role, partsJSON).Scan(
+	err = r.pool.QueryRow(ctx, query, chatID, role, string(partsJSON)).Scan(
 		&message.ID,
 		&message.ChatID,
 		&message.Role,
