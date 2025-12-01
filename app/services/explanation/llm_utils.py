@@ -134,6 +134,7 @@ async def generate_explanation(
                 metadata={
                     "user_id": customer_identifier,
                     "$ai_trace_id": lecture_id,
+                    "$ai_span_name": "lecture_explanation",
                     **posthog_properties,
                 },
             ),
@@ -166,6 +167,7 @@ async def generate_explanation(
                 metadata={
                     "user_id": customer_identifier,
                     "$ai_trace_id": lecture_id,
+                    "$ai_span_name": "lecture_explanation",
                     **retry_properties,
                 },
             ),

@@ -118,6 +118,7 @@ async def generate_summary(
             metadata={
                 "user_id": customer_identifier,
                 "$ai_trace_id": lecture_id,
+                "$ai_span_name": "lecture_summary",
                 **posthog_properties,
             },
         )

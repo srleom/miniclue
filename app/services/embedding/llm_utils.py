@@ -11,13 +11,19 @@ from app.utils.secret_manager import InvalidAPIKeyError
 settings = Settings()
 
 
-def _create_posthog_properties(lecture_id: str, texts_count: int) -> dict:
+def _create_posthog_properties(
+    lecture_id: str | None, chat_id: str | None, texts_count: int
+) -> dict:
     """Creates PostHog properties dictionary for tracking."""
-    return {
+    properties = {
         "service": "embedding",
-        "lecture_id": lecture_id,
         "texts_count": texts_count,
     }
+    if lecture_id:
+        properties["lecture_id"] = lecture_id
+    if chat_id:
+        properties["chat_id"] = chat_id
+    return properties
 
 
 def _extract_metadata(response) -> Dict[str, Any]:
@@ -50,14 +56,20 @@ def _is_authentication_error(error: Exception) -> bool:
 
 
 async def generate_embeddings(
-    texts: List[str], lecture_or_chat_id: str, user_id: str, user_api_key: str
+    texts: List[str],
+    lecture_id: str | None = None,
+    chat_id: str | None = None,
+    *,
+    user_id: str,
+    user_api_key: str,
 ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
     """
     Generate embedding vectors for a batch of text chunks.
 
     Args:
         texts: List of text strings to generate embeddings for.
-        lecture_or_chat_id: Unique identifier for the lecture or chat.
+        lecture_id: Optional unique identifier for the lecture.
+        chat_id: Optional unique identifier for the chat.
         user_id: Unique identifier for the user.
         user_api_key: User's API key for the LLM provider.
 
@@ -71,7 +83,10 @@ async def generate_embeddings(
     if not texts:
         return [], {}
 
-    posthog_properties = _create_posthog_properties(lecture_or_chat_id, len(texts))
+    trace_id = lecture_id or chat_id
+    span_name = "lecture_embedding" if lecture_id else "chat_embedding"
+
+    posthog_properties = _create_posthog_properties(lecture_id, chat_id, len(texts))
 
     litellm.success_callback = ["posthog"]
 
@@ -82,7 +97,8 @@ async def generate_embeddings(
             api_key=user_api_key,
             metadata={
                 "user_id": user_id,
-                "$ai_trace_id": lecture_or_chat_id,
+                "$ai_trace_id": trace_id,
+                "$ai_span_name": span_name,
                 **posthog_properties,
             },
         )

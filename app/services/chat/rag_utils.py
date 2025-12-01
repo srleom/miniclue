@@ -19,7 +19,7 @@ async def generate_query_embedding(
     """
     results, _ = await llm_utils.generate_embeddings(
         texts=[text],
-        lecture_or_chat_id=chat_id,
+        chat_id=chat_id,
         user_id=user_id,
         user_api_key=user_api_key,
     )

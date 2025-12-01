@@ -136,6 +136,7 @@ async def stream_chat_response(
             metadata={
                 "user_id": user_id,
                 "$ai_trace_id": chat_id,
+                "$ai_span_name": "chat_response",
                 **posthog_properties,
             },
         )
@@ -229,6 +230,7 @@ async def generate_chat_title(
             metadata={
                 "user_id": user_id,
                 "$ai_trace_id": chat_id,
+                "$ai_span_name": "chat_title",
                 **posthog_properties,
             },
         )

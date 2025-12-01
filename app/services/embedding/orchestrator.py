@@ -88,10 +88,10 @@ async def process_embedding_job(payload: EmbeddingPayload):
 
         # 5. Generate embeddings in a batch, capturing metadata
         embedding_results, metadata = await llm_utils.generate_embeddings(
-            enriched_texts,
-            str(lecture_id),
-            payload.customer_identifier,
-            user_api_key,
+            texts=enriched_texts,
+            lecture_id=str(lecture_id),
+            user_id=payload.customer_identifier,
+            user_api_key=user_api_key,
         )
 
         # 5. Prepare data for batch database insertion, ensuring result count matches inputs
@@ -102,6 +102,8 @@ async def process_embedding_job(payload: EmbeddingPayload):
             )
             logging.error(msg)
             raise RuntimeError(msg)
+        # Convert common metadata to JSON string for storage
+        metadata_json = json.dumps(metadata) if metadata else "{}"
         embeddings_to_insert = []
         # Pair up each chunk with its corresponding result (skipping unmatched)
         for chunk, result in zip(chunks, embedding_results):
@@ -112,7 +114,7 @@ async def process_embedding_job(payload: EmbeddingPayload):
                     "lecture_id": lecture_id,
                     "slide_number": chunk["slide_number"],
                     "vector": result["vector"],
-                    "metadata": result["metadata"],
+                    "metadata": metadata_json,
                 }
             )
         # Warn for any chunks without a result

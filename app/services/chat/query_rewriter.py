@@ -108,6 +108,7 @@ Instructions:
             metadata={
                 "user_id": user_id,
                 "$ai_trace_id": chat_id,
+                "$ai_span_name": "chat_query_rewriter",
                 **posthog_properties,
             },
         )

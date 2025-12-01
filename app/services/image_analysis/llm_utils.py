@@ -145,6 +145,7 @@ async def analyze_image(
                 metadata={
                     "user_id": customer_identifier,
                     "$ai_trace_id": lecture_id,
+                    "$ai_span_name": "lecture_image_analysis",
                     **posthog_properties,
                 },
             ),
@@ -177,6 +178,7 @@ async def analyze_image(
                 metadata={
                     "user_id": customer_identifier,
                     "$ai_trace_id": lecture_id,
+                    "$ai_span_name": "lecture_image_analysis",
                     **retry_properties,
                 },
             ),
