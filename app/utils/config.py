@@ -27,16 +27,14 @@ class Settings(BaseSettings):
     gemini_api_base_url: str = "https://generativelanguage.googleapis.com/v1beta"
     # PostHog Configuration
     posthog_api_key: str = ""
-    posthog_host: str = "https://us.i.posthog.com"
+    posthog_api_url: str = "https://us.i.posthog.com"
     # Models
     embedding_model: str = "text-embedding-3-small"
-    image_analysis_model: str = "gpt-5-nano"
+    image_analysis_model: str = "gpt-4.1-nano"
     explanation_model: str = "gpt-4o-mini"
-    summary_model: str = "gpt-5-nano"
+    summary_model: str = "gpt-4.1-nano"
     # RAG
     rag_top_k: int = 5
-    # Mock LLM calls
-    mock_llm_calls: bool = False
     # Server
     host: str = "127.0.0.1"
     port: int = 8000

@@ -12,21 +12,15 @@ settings = Settings()
 
 
 async def generate_query_embedding(
-    text: str, user_api_key: str, customer_identifier: str
+    text: str, user_api_key: str, user_id: str, chat_id: str
 ) -> List[float]:
     """
     Create embedding for user query.
     """
-    if settings.mock_llm_calls:
-        # Return mock embedding
-        import random
-
-        return [random.uniform(-1, 1) for _ in range(1536)]
-
     results, _ = await llm_utils.generate_embeddings(
         texts=[text],
-        lecture_id="",  # Not needed for query embedding
-        customer_identifier=customer_identifier,
+        lecture_or_chat_id=chat_id,
+        user_id=user_id,
         user_api_key=user_api_key,
     )
 
@@ -42,9 +36,10 @@ async def generate_query_embedding(
 async def retrieve_relevant_chunks(
     conn: asyncpg.Connection,
     lecture_id: UUID,
+    chat_id: str,
     query_text: str,
     user_api_key: str,
-    user_id: UUID,
+    user_id: str,
     top_k: int = 5,
 ) -> List[Dict[str, Any]]:
     """
@@ -53,7 +48,7 @@ async def retrieve_relevant_chunks(
     """
     # Generate query embedding
     query_embedding = await generate_query_embedding(
-        query_text, user_api_key, str(user_id)
+        query_text, user_api_key, user_id, chat_id
     )
 
     # Query similar embeddings

@@ -7,7 +7,6 @@ import boto3
 from app.services.image_analysis import db_utils, llm_utils, s3_utils, pubsub_utils
 from app.utils.config import Settings
 from app.schemas.image_analysis import ImageAnalysisPayload
-from app.utils.llm_db_utils import log_llm_call, compute_cost
 from app.utils.secret_manager import (
     get_user_api_key,
     SecretNotFoundError,
@@ -85,49 +84,15 @@ async def process_image_analysis_job(
 
         # 5. Analyze image with OpenAI
         # Perform image analysis and capture metadata
-        if settings.mock_llm_calls:
-            analysis_result, metadata = llm_utils.mock_analyze_image(
-                image_bytes,
-                str(lecture_id),
-                str(slide_image_id),
-            )
-        else:
-            analysis_result, metadata = await llm_utils.analyze_image(
-                image_bytes=image_bytes,
-                lecture_id=str(lecture_id),
-                slide_image_id=str(slide_image_id),
-                customer_identifier=customer_identifier,
-                name=name,
-                email=email,
-                user_api_key=user_api_key,
-            )
-        # Log LLM call for image analysis
-        try:
-            # Extract token usage from metadata
-            usage = metadata.get("usage", {}) if metadata else {}
-            # Handle both Chat Completions API (prompt_tokens/completion_tokens) and Responses API (input_tokens/output_tokens)
-            prompt_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
-            completion_tokens = usage.get(
-                "completion_tokens", usage.get("output_tokens", 0)
-            )
-            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
-            cost = compute_cost(
-                settings.image_analysis_model, prompt_tokens, completion_tokens
-            )
-            # Pass computed cost, no metadata for now, and None for slide_id
-            await log_llm_call(
-                conn,
-                lecture_id,
-                None,
-                "image_analysis",
-                settings.image_analysis_model,
-                prompt_tokens,
-                completion_tokens,
-                total_tokens,
-                cost,
-            )
-        except Exception:
-            logging.error("Failed to log LLM call for image analysis", exc_info=True)
+        analysis_result, metadata = await llm_utils.analyze_image(
+            image_bytes=image_bytes,
+            lecture_id=str(lecture_id),
+            slide_image_id=str(slide_image_id),
+            customer_identifier=customer_identifier,
+            name=name,
+            email=email,
+            user_api_key=user_api_key,
+        )
 
         # Use a transaction for the final updates to ensure atomicity
         async with conn.transaction():

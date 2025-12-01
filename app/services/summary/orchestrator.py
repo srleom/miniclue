@@ -3,7 +3,6 @@ import asyncpg
 from app.schemas.summary import SummaryPayload
 from app.services.summary import db_utils, llm_utils
 from app.utils.config import Settings
-from app.utils.llm_db_utils import log_llm_call, compute_cost
 from app.utils.secret_manager import (
     get_user_api_key,
     SecretNotFoundError,
@@ -65,47 +64,14 @@ async def process_summary_job(payload: SummaryPayload):
             raise InvalidAPIKeyError(f"Failed to access API key: {str(e)}")
 
         # 6. Call the AI model to synthesize the explanations into a summary
-        if settings.mock_llm_calls:
-            summary_content, metadata = llm_utils.mock_generate_summary(
-                explanations,
-                str(lecture_id),
-            )
-        else:
-            summary_content, metadata = await llm_utils.generate_summary(
-                explanations,
-                str(lecture_id),
-                payload.customer_identifier,
-                user_api_key,
-                payload.name,
-                payload.email,
-            )
-        # Log LLM call for summary
-        try:
-            usage = metadata.get("usage") or {}
-            # Handle both Chat Completions API (prompt_tokens/completion_tokens) and Responses API (input_tokens/output_tokens)
-            prompt_tokens = usage.get("prompt_tokens", usage.get("input_tokens", 0))
-            completion_tokens = usage.get(
-                "completion_tokens", usage.get("output_tokens", 0)
-            )
-            total_tokens = usage.get("total_tokens", prompt_tokens + completion_tokens)
-
-            cost = compute_cost(
-                settings.summary_model, prompt_tokens, completion_tokens
-            )
-            await log_llm_call(
-                conn,
-                lecture_id,
-                None,
-                "summary",
-                settings.summary_model,
-                prompt_tokens,
-                completion_tokens,
-                total_tokens,
-                cost,
-                metadata,
-            )
-        except Exception:
-            logging.error("Failed to log LLM call for summary", exc_info=True)
+        summary_content, metadata = await llm_utils.generate_summary(
+            explanations,
+            str(lecture_id),
+            payload.customer_identifier,
+            user_api_key,
+            payload.name,
+            payload.email,
+        )
 
         # 6. Atomically save summary, and check for rendezvous
         embeddings_are_complete = False
