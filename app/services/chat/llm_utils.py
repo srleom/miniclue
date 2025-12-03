@@ -1,11 +1,11 @@
 import asyncio
 import logging
 from typing import AsyncGenerator, List, Dict, Any
-import litellm
 
 from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
 from app.utils.llm_utils import extract_text_from_response
+from app.utils.posthog_client import get_openai_client
 
 # Constants
 TITLE_MAX_LENGTH = 80
@@ -27,10 +27,20 @@ def _is_authentication_error(error: Exception) -> bool:
 
 def _extract_metadata(response) -> dict:
     """Extracts metadata from LLM response."""
+    usage = None
+    if hasattr(response, "usage") and response.usage:
+        if hasattr(response.usage, "model_dump"):
+            usage = response.usage.model_dump()
+        else:
+            usage = {
+                "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
+                "completion_tokens": getattr(response.usage, "completion_tokens", None),
+                "total_tokens": getattr(response.usage, "total_tokens", None),
+            }
     return {
-        "model": response.model,
-        "usage": response.usage.model_dump() if response.usage else None,
-        "response_id": response.id,
+        "model": getattr(response, "model", ""),
+        "usage": usage,
+        "response_id": getattr(response, "id", ""),
     }
 
 
@@ -41,7 +51,6 @@ def _create_chat_posthog_properties(
 ) -> dict:
     """Creates PostHog properties dictionary for chat tracking."""
     return {
-        "service": "chat",
         "lecture_id": lecture_id,
         "chat_id": chat_id,
         "context_chunks_count": context_chunks_count,
@@ -54,7 +63,6 @@ def _create_title_posthog_properties(
 ) -> dict:
     """Creates PostHog properties dictionary for title generation tracking."""
     return {
-        "service": "chat-title",
         "lecture_id": lecture_id,
         "chat_id": chat_id,
     }
@@ -71,7 +79,7 @@ async def stream_chat_response(
     message_history: List[Dict[str, Any]] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
-    Stream chat response using OpenAI Responses API streaming.
+    Stream chat response using OpenAI Chat Completions API streaming.
     Builds prompt with lecture context from RAG chunks and message history.
     Yields text chunks as they arrive.
 
@@ -106,61 +114,44 @@ async def stream_chat_response(
 --- END LECTURE CONTEXT ---
 """
 
-    # Build input messages for responses API
-    input_messages = []
+    # Build messages array for chat.completions API
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     # Add message history directly to the list
     if message_history:
         # Append the last 5 turns directly as history
         # The current message_history list is assumed to be ordered oldest to newest.
         for msg in message_history:
-            input_messages.append({"role": msg["role"], "content": msg["text"]})
+            messages.append({"role": msg["role"], "content": msg["text"]})
 
     # Add the current user query as the final message
-    input_messages.append({"role": "user", "content": query})
-
-    litellm.success_callback = ["posthog"]
+    messages.append({"role": "user", "content": query})
 
     posthog_properties = _create_chat_posthog_properties(
         lecture_id, chat_id, len(context_chunks)
     )
 
-    stream = None
+    client = get_openai_client(user_api_key)
+
     try:
-        stream = await litellm.aresponses(
+        stream = await client.chat.completions.create(
             model=model,
-            instructions=SYSTEM_PROMPT,
-            input=input_messages,
+            messages=messages,
             stream=True,
-            api_key=user_api_key,
-            metadata={
-                "user_id": user_id,
-                "$ai_trace_id": chat_id,
+            posthog_distinct_id=user_id,
+            posthog_trace_id=chat_id,
+            posthog_properties={
                 "$ai_span_name": "chat_response",
                 **posthog_properties,
             },
         )
 
-        async for event in stream:
-            # Handle streaming events from responses API
-            # The responses API uses semantic events with a type attribute
-            # Look for output_text.delta events which contain text chunks
-            if hasattr(event, "type"):
-                event_type = getattr(event, "type", None)
-                if event_type == "response.output_text.delta":
-                    # Extract delta text from the event
-                    if hasattr(event, "delta") and event.delta:
-                        yield event.delta
-                    elif hasattr(event, "text") and event.text:
-                        yield event.text
-                elif event_type == "response.output_text.done":
-                    # Stream completed
-                    break
-            # Fallback: check for common attributes directly (for compatibility)
-            elif hasattr(event, "delta") and event.delta:
-                yield event.delta
-            elif hasattr(event, "text") and event.text:
-                yield event.text
+        async for chunk in stream:
+            # Handle streaming events from chat.completions API
+            if chunk.choices and len(chunk.choices) > 0:
+                delta = chunk.choices[0].delta
+                if hasattr(delta, "content") and delta.content:
+                    yield delta.content
 
     except asyncio.CancelledError:
         logging.warning(
@@ -213,23 +204,24 @@ async def generate_chat_title(
     # Combine user question and assistant response for context
     conversation_context = f"User: {user_message}\n\nAssistant: {assistant_message[:ASSISTANT_MESSAGE_PREVIEW_LENGTH]}"
 
-    input_messages = [{"role": "user", "content": conversation_context}]
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": conversation_context},
+    ]
 
     posthog_properties = _create_title_posthog_properties(lecture_id, chat_id)
 
-    litellm.success_callback = ["posthog"]
+    client = get_openai_client(user_api_key)
 
     try:
-        response = await litellm.aresponses(
+        response = await client.chat.completions.create(
             model=TITLE_MODEL,
-            instructions=SYSTEM_PROMPT,
-            input=input_messages,
+            messages=messages,
             max_tokens=TITLE_MAX_TOKENS,
             temperature=TITLE_TEMPERATURE,
-            api_key=user_api_key,
-            metadata={
-                "user_id": user_id,
-                "$ai_trace_id": chat_id,
+            posthog_distinct_id=user_id,
+            posthog_trace_id=chat_id,
+            posthog_properties={
                 "$ai_span_name": "chat_title",
                 **posthog_properties,
             },

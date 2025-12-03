@@ -1,11 +1,10 @@
 import json
 import logging
 from typing import List, Dict, Any, Tuple
-import litellm
-
 
 from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
+from app.utils.posthog_client import get_openai_client
 
 # Initialize settings
 settings = Settings()
@@ -16,7 +15,6 @@ def _create_posthog_properties(
 ) -> dict:
     """Creates PostHog properties dictionary for tracking."""
     properties = {
-        "service": "embedding",
         "texts_count": texts_count,
     }
     if lecture_id:
@@ -28,20 +26,17 @@ def _create_posthog_properties(
 
 def _extract_metadata(response) -> Dict[str, Any]:
     """Extracts metadata from embeddings response."""
-    # Handle both dict and object responses from LiteLLM
-    if isinstance(response, dict):
-        model = response.get("model", "")
-        usage = response.get("usage", {})
-        if hasattr(usage, "model_dump"):
-            usage = usage.model_dump()
-    else:
-        model = getattr(response, "model", "")
-        usage_obj = getattr(response, "usage", None)
-        usage = (
-            usage_obj.model_dump()
-            if usage_obj and hasattr(usage_obj, "model_dump")
-            else {}
-        )
+    model = getattr(response, "model", "")
+    usage_obj = getattr(response, "usage", None)
+    usage = {}
+    if usage_obj:
+        if hasattr(usage_obj, "model_dump"):
+            usage = usage_obj.model_dump()
+        else:
+            usage = {
+                "prompt_tokens": getattr(usage_obj, "prompt_tokens", None),
+                "total_tokens": getattr(usage_obj, "total_tokens", None),
+            }
     return {
         "model": model,
         "usage": usage,
@@ -88,16 +83,15 @@ async def generate_embeddings(
 
     posthog_properties = _create_posthog_properties(lecture_id, chat_id, len(texts))
 
-    litellm.success_callback = ["posthog"]
+    client = get_openai_client(user_api_key)
 
     try:
-        response = await litellm.aembedding(
+        response = await client.embeddings.create(
             model=settings.embedding_model,
             input=texts,
-            api_key=user_api_key,
-            metadata={
-                "user_id": user_id,
-                "$ai_trace_id": trace_id,
+            posthog_distinct_id=user_id,
+            posthog_trace_id=trace_id,
+            posthog_properties={
                 "$ai_span_name": span_name,
                 **posthog_properties,
             },
@@ -105,21 +99,14 @@ async def generate_embeddings(
 
         common_metadata = _extract_metadata(response)
         results: List[Dict[str, Any]] = []
-        # Handle both dict and object responses from LiteLLM
-        if isinstance(response, dict):
-            data_list = response.get("data", [])
-        else:
-            data_list = getattr(response, "data", [])
+        data_list = getattr(response, "data", [])
 
         for data_item in data_list:
-            # Handle both dict and object access patterns
-            if isinstance(data_item, dict):
-                embedding = data_item.get("embedding", [])
-            else:
-                embedding = getattr(data_item, "embedding", [])
+            embedding = getattr(data_item, "embedding", [])
             vector_str = json.dumps(embedding)
             # Store an empty object for per-item metadata to avoid redundancy
             results.append({"vector": vector_str, "metadata": json.dumps({})})
+
         return results, common_metadata
     except Exception as e:
         if _is_authentication_error(e):

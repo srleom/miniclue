@@ -1,11 +1,10 @@
 import logging
 from typing import Optional
 
-import litellm
-
 from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
 from app.utils.llm_utils import extract_text_from_response
+from app.utils.posthog_client import get_openai_client
 
 # Constants
 PROMPT_FILE_PATH = "app/services/summary/prompt.md"
@@ -49,7 +48,6 @@ def _create_posthog_properties(
 ) -> dict:
     """Creates PostHog properties dictionary for tracking."""
     return {
-        "service": "summary",
         "lecture_id": lecture_id,
         "explanations_count": explanations_count,
         "customer_name": name,
@@ -59,10 +57,20 @@ def _create_posthog_properties(
 
 def _extract_metadata(response) -> dict:
     """Extracts metadata from LLM response."""
+    usage = None
+    if hasattr(response, "usage") and response.usage:
+        if hasattr(response.usage, "model_dump"):
+            usage = response.usage.model_dump()
+        else:
+            usage = {
+                "prompt_tokens": getattr(response.usage, "prompt_tokens", None),
+                "completion_tokens": getattr(response.usage, "completion_tokens", None),
+                "total_tokens": getattr(response.usage, "total_tokens", None),
+            }
     return {
-        "model": response.model,
-        "usage": response.usage.model_dump() if response.usage else None,
-        "response_id": response.id,
+        "model": getattr(response, "model", ""),
+        "usage": usage,
+        "response_id": getattr(response, "id", ""),
     }
 
 
@@ -107,17 +115,20 @@ async def generate_summary(
         lecture_id, len(explanations), name, email
     )
 
-    litellm.success_callback = ["posthog"]
+    client = get_openai_client(user_api_key)
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_content},
+    ]
 
     try:
-        response = await litellm.aresponses(
+        response = await client.chat.completions.create(
             model=settings.summary_model,
-            instructions=system_prompt,
-            input=[{"role": "user", "content": user_content}],
-            api_key=user_api_key,
-            metadata={
-                "user_id": customer_identifier,
-                "$ai_trace_id": lecture_id,
+            messages=messages,
+            posthog_distinct_id=customer_identifier,
+            posthog_trace_id=lecture_id,
+            posthog_properties={
                 "$ai_span_name": "lecture_summary",
                 **posthog_properties,
             },

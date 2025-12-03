@@ -1,40 +1,38 @@
-"""Utility functions for working with LiteLLM APIs (Responses API, Embeddings API, etc.)."""
+"""Utility functions for working with OpenAI SDK APIs (Chat Completions API, Embeddings API, etc.)."""
 
 
 def extract_text_from_response(response) -> str:
     """
-    Extract text content from a LiteLLM Responses API response.
+    Extract text content from an OpenAI Chat Completions API response.
 
-    The Responses API structure is:
+    The Chat Completions API structure is:
     {
-        "output": [{
-            "type": "message",
-            "content": [{
-                "type": "output_text",
-                "text": "..."
-            }]
+        "choices": [{
+            "message": {
+                "content": "..."
+            }
         }]
     }
 
     Args:
-        response: The response object from litellm.aresponses() or litellm.responses()
+        response: The response object from OpenAI SDK chat.completions.create()
 
     Returns:
         The extracted text string, or empty string if not found
     """
-    if not response.output or len(response.output) == 0:
-        return ""
-
-    output_item = response.output[0]
     if (
-        not hasattr(output_item, "content")
-        or not output_item.content
-        or len(output_item.content) == 0
+        not hasattr(response, "choices")
+        or not response.choices
+        or len(response.choices) == 0
     ):
         return ""
 
-    content_item = output_item.content[0]
-    if not hasattr(content_item, "text"):
+    choice = response.choices[0]
+    if not hasattr(choice, "message"):
         return ""
 
-    return content_item.text
+    message = choice.message
+    if not hasattr(message, "content") or not message.content:
+        return ""
+
+    return message.content

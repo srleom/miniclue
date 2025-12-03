@@ -1,26 +1,24 @@
 import base64
-import json
 import logging
 import asyncio
+import time
 from typing import Optional
-
-import litellm
 from pydantic import ValidationError
 
 from app.schemas.explanation import ExplanationResult
 from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
-from app.utils.llm_utils import extract_text_from_response
+from app.utils.posthog_client import get_openai_client, get_posthog_client
 
 
 # Constants
 INITIAL_REQUEST_TIMEOUT = 60.0
 RETRY_REQUEST_TIMEOUT = 30.0
 LLM_TEMPERATURE = 0.7
-RETRY_PROMPT = "Return a valid JSON object matching the 'ExplanationResult' schema."
 FALLBACK_ERROR_MESSAGE = (
     "Unable to generate explanation due to technical difficulties. Please try again."
 )
+MAX_RETRIES = 2
 
 # Initialize settings
 settings = Settings()
@@ -50,16 +48,14 @@ def _create_posthog_properties(
     return properties
 
 
-def _extract_metadata(response, is_fallback: bool = False) -> dict:
+def _extract_metadata(response) -> dict:
     """Extracts metadata from LLM response."""
-    metadata = {
-        "model": response.model,
-        "usage": response.usage.model_dump() if response.usage else None,
-        "response_id": response.id,
+    usage = getattr(response, "usage", None)
+    return {
+        "model": getattr(response, "model", ""),
+        "usage": usage.model_dump() if usage and hasattr(usage, "model_dump") else None,
+        "response_id": getattr(response, "id", ""),
     }
-    if is_fallback:
-        metadata["fallback"] = True
-    return metadata
 
 
 def _create_fallback_response() -> ExplanationResult:
@@ -75,6 +71,54 @@ def _is_authentication_error(error: Exception) -> bool:
     error_str = str(error).lower()
     auth_indicators = ["authentication", "unauthorized", "invalid api key", "401"]
     return any(indicator in error_str for indicator in auth_indicators)
+
+
+def _capture_posthog_event(
+    customer_identifier: str,
+    lecture_id: str,
+    response,
+    messages: list,
+    latency: float,
+    posthog_properties: dict,
+) -> None:
+    """Captures PostHog AI generation event."""
+    posthog_client = get_posthog_client()
+    if not posthog_client:
+        return
+
+    try:
+        usage = getattr(response, "usage", None)
+        input_tokens = getattr(usage, "prompt_tokens", None) if usage else None
+        output_tokens = getattr(usage, "completion_tokens", None) if usage else None
+
+        output_choices = []
+        if hasattr(response, "choices") and response.choices:
+            for choice in response.choices:
+                choice_dict = {"role": "assistant"}
+                if hasattr(choice, "message") and choice.message:
+                    content = getattr(choice.message, "content", None)
+                    if content:
+                        choice_dict["content"] = [{"type": "text", "text": content}]
+                output_choices.append(choice_dict)
+
+        posthog_client.capture(
+            distinct_id=customer_identifier,
+            event="$ai_generation",
+            properties={
+                "$ai_trace_id": lecture_id,
+                "$ai_span_name": "lecture_explanation",
+                "$ai_model": getattr(response, "model", settings.explanation_model),
+                "$ai_provider": "openai",
+                "$ai_input": messages,
+                "$ai_input_tokens": input_tokens,
+                "$ai_output_choices": output_choices,
+                "$ai_output_tokens": output_tokens,
+                "$ai_latency": latency,
+                **posthog_properties,
+            },
+        )
+    except Exception as e:
+        logging.warning(f"Failed to capture PostHog event: {e}")
 
 
 async def generate_explanation(
@@ -111,93 +155,66 @@ async def generate_explanation(
         ValidationError: If the response cannot be validated.
     """
     base64_image = base64.b64encode(slide_image_bytes).decode("utf-8")
+    image_url = f"data:image/png;base64,{base64_image}"
 
-    user_message_content = [
-        {"type": "input_image", "image_url": f"data:image/png;base64,{base64_image}"},
-        {"type": "input_text", "text": "Explain"},
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": image_url}},
+                {"type": "text", "text": "Explain"},
+            ],
+        }
     ]
 
     posthog_properties = _create_posthog_properties(
         lecture_id, slide_id, slide_number, total_slides, name, email
     )
 
-    litellm.success_callback = ["posthog"]
+    client = get_openai_client(user_api_key)
 
-    try:
-        response = await asyncio.wait_for(
-            litellm.aresponses(
-                model=settings.explanation_model,
-                input=[{"role": "user", "content": user_message_content}],
-                text_format=ExplanationResult,
-                temperature=LLM_TEMPERATURE,
-                api_key=user_api_key,
-                metadata={
-                    "user_id": customer_identifier,
-                    "$ai_trace_id": lecture_id,
-                    "$ai_span_name": "lecture_explanation",
-                    **posthog_properties,
-                },
-            ),
-            timeout=INITIAL_REQUEST_TIMEOUT,
-        )
+    for _ in range(MAX_RETRIES):
+        try:
+            start_time = time.time()
+            response = await asyncio.wait_for(
+                client.chat.completions.parse(
+                    model=settings.explanation_model,
+                    messages=messages,
+                    temperature=LLM_TEMPERATURE,
+                    response_format=ExplanationResult,
+                ),
+                timeout=INITIAL_REQUEST_TIMEOUT,
+            )
+            latency = time.time() - start_time
 
-        # Extract and parse structured output
-        response_text = extract_text_from_response(response)
-        if response_text:
-            try:
-                result = ExplanationResult.model_validate_json(response_text)
-                return result, _extract_metadata(response)
-            except (json.JSONDecodeError, ValidationError):
-                logging.warning(
-                    "Failed to parse initial response as structured output. Retrying..."
-                )
+            result = response.choices[0].message.parsed
+            metadata = _extract_metadata(response)
+            _capture_posthog_event(
+                customer_identifier,
+                lecture_id,
+                response,
+                messages,
+                latency,
+                posthog_properties,
+            )
+            return result, metadata
 
-        # Retry with explicit schema request
-        retry_properties = _create_posthog_properties(
-            lecture_id, slide_id, slide_number, total_slides, name, email, is_retry=True
-        )
+        except asyncio.TimeoutError:
+            logging.error("Timeout occurred while calling the AI model")
+            raise ValueError("AI model request timed out")
+        except ValidationError as e:
+            logging.error(f"Failed to validate AI response into Pydantic model: {e}")
+            raise
+        except Exception as e:
+            if _is_authentication_error(e):
+                logging.error(f"OpenAI authentication error (invalid API key): {e}")
+                raise InvalidAPIKeyError(f"Invalid API key: {str(e)}") from e
+            logging.error(f"An unexpected error occurred while calling OpenAI: {e}")
+            raise
 
-        retry_response = await asyncio.wait_for(
-            litellm.aresponses(
-                model=settings.explanation_model,
-                input=[{"role": "user", "content": RETRY_PROMPT}],
-                text_format=ExplanationResult,
-                previous_response_id=response.id,
-                api_key=user_api_key,
-                metadata={
-                    "user_id": customer_identifier,
-                    "$ai_trace_id": lecture_id,
-                    "$ai_span_name": "lecture_explanation",
-                    **retry_properties,
-                },
-            ),
-            timeout=RETRY_REQUEST_TIMEOUT,
-        )
-
-        # Extract and parse structured output from retry
-        retry_text = extract_text_from_response(retry_response)
-        if retry_text:
-            try:
-                result = ExplanationResult.model_validate_json(retry_text)
-                return result, _extract_metadata(retry_response)
-            except (json.JSONDecodeError, ValidationError):
-                logging.warning("Failed to parse retry response as structured output.")
-
-        # Both attempts failed - return fallback
-        logging.error("Retry failed to produce structured output. Returning fallback.")
-        return _create_fallback_response(), _extract_metadata(
-            retry_response, is_fallback=True
-        )
-
-    except asyncio.TimeoutError:
-        logging.error("Timeout occurred while calling the AI model")
-        raise ValueError("AI model request timed out")
-    except ValidationError as e:
-        logging.error(f"Failed to validate AI response into Pydantic model: {e}")
-        raise
-    except Exception as e:
-        if _is_authentication_error(e):
-            logging.error(f"OpenAI authentication error (invalid API key): {e}")
-            raise InvalidAPIKeyError(f"Invalid API key: {str(e)}") from e
-        logging.error(f"An unexpected error occurred while calling OpenAI: {e}")
-        raise
+    # Both attempts failed - return fallback
+    logging.error(
+        "All retries failed to produce structured output. Returning fallback."
+    )
+    fallback_metadata = {"is_fallback": True}
+    return _create_fallback_response(), fallback_metadata

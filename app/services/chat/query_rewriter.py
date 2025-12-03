@@ -4,7 +4,7 @@ from typing import List, Dict, Any
 from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
 from app.utils.llm_utils import extract_text_from_response
-import litellm
+from app.utils.posthog_client import get_openai_client
 
 # Constants
 QUERY_REWRITER_MODEL = "gpt-4.1-nano"
@@ -45,7 +45,7 @@ async def rewrite_query(
     chat_id: str,
 ) -> str:
     """
-    Rewrite the user's query based on conversation history using Responses API.
+    Rewrite the user's query based on conversation history using Chat Completions API.
     Extracts last 3 turns (6 messages) from the provided history.
 
     Args:
@@ -77,7 +77,7 @@ Instructions:
         else message_history
     )
 
-    # Build input messages for responses API
+    # Build messages array for chat.completions API
     input_messages = []
 
     # Add last turns directly to the list
@@ -97,17 +97,17 @@ Instructions:
         lecture_id, chat_id, history_turns
     )
 
-    litellm.success_callback = ["posthog"]
+    client = get_openai_client(user_api_key)
+
+    messages = [{"role": "system", "content": REWRITING_SYSTEM_PROMPT}] + input_messages
 
     try:
-        response = await litellm.aresponses(
+        response = await client.chat.completions.create(
             model=QUERY_REWRITER_MODEL,
-            instructions=REWRITING_SYSTEM_PROMPT,
-            input=input_messages,
-            api_key=user_api_key,
-            metadata={
-                "user_id": user_id,
-                "$ai_trace_id": chat_id,
+            messages=messages,
+            posthog_distinct_id=user_id,
+            posthog_trace_id=chat_id,
+            posthog_properties={
                 "$ai_span_name": "chat_query_rewriter",
                 **posthog_properties,
             },
