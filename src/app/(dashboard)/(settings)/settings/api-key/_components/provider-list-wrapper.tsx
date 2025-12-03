@@ -7,7 +7,8 @@ import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // components
-import { ProviderList, type Provider } from "./provider-list";
+import { ProviderList } from "./provider-list";
+import type { Provider } from "@/lib/chat/models";
 
 interface ProviderListWrapperProps {
   initialStatus: Record<Provider, boolean>;
