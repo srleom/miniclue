@@ -23,6 +23,9 @@ async function APIKeyContent() {
   const apiKeysStatus = {
     openai: user?.api_keys_provided?.openai ?? false,
     gemini: user?.api_keys_provided?.gemini ?? false,
+    anthropic: user?.api_keys_provided?.anthropic ?? false,
+    xai: user?.api_keys_provided?.xai ?? false,
+    deepseek: user?.api_keys_provided?.deepseek ?? false,
   };
 
   return (

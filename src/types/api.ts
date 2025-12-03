@@ -1748,8 +1748,8 @@ export interface paths {
     get?: never;
     put?: never;
     /**
-     * Store user's OpenAI API key
-     * @description Stores the user's OpenAI API key securely in Google Cloud Secret Manager and updates the user profile flag.
+     * Store user's API key
+     * @description Stores the user's API key securely in Google Cloud Secret Manager and updates the user profile flag. Supports providers: openai, gemini, anthropic, xai, and deepseek.
      */
     post: {
       parameters: {
@@ -1758,7 +1758,7 @@ export interface paths {
         path?: never;
         cookie?: never;
       };
-      /** @description API key request */
+      /** @description API key request with provider (openai, gemini, anthropic, xai, or deepseek) */
       requestBody: {
         content: {
           "application/json": components["schemas"]["app_internal_api_v1_dto.APIKeyRequestDTO"];
@@ -1810,7 +1810,7 @@ export interface paths {
     delete: {
       parameters: {
         query: {
-          /** @description API provider (openai or gemini) */
+          /** @description API provider (openai, gemini, anthropic, xai, or deepseek) */
           provider: string;
         };
         header?: never;
@@ -1988,7 +1988,7 @@ export interface components {
     "app_internal_api_v1_dto.APIKeyRequestDTO": {
       api_key: string;
       /** @enum {string} */
-      provider: "openai" | "gemini";
+      provider: "openai" | "gemini" | "anthropic" | "xai" | "deepseek";
     };
     "app_internal_api_v1_dto.APIKeyResponseDTO": {
       has_provided_key?: boolean;

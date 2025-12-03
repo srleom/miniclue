@@ -12,15 +12,16 @@ import {
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
 import { logger } from "@/lib/logger";
+import type { Provider } from "@/lib/chat/models";
 
 /**
  * Stores the user's API key securely.
- * @param {"openai" | "gemini"} provider - The API provider
+ * @param {Provider} provider - The API provider
  * @param {string} apiKey - The API key to store
  * @returns {Promise<ActionResponse<components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]>>}
  */
 export async function storeAPIKey(
-  provider: "openai" | "gemini",
+  provider: Provider,
   apiKey: string,
 ): Promise<
   ActionResponse<
@@ -34,7 +35,7 @@ export async function storeAPIKey(
 
   const { data, error: fetchError } = await api.POST("/users/me/api-key", {
     body: {
-      provider: provider as "openai" | "gemini",
+      provider: provider,
       api_key: apiKey,
     },
   });
@@ -54,11 +55,11 @@ export async function storeAPIKey(
 
 /**
  * Deletes the user's API key securely.
- * @param {"openai" | "gemini"} provider - The API provider
+ * @param {Provider} provider - The API provider
  * @returns {Promise<ActionResponse<components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]>>}
  */
 export async function deleteAPIKey(
-  provider: "openai" | "gemini",
+  provider: Provider,
 ): Promise<
   ActionResponse<
     components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]
@@ -71,7 +72,7 @@ export async function deleteAPIKey(
 
   const { data, error: fetchError } = await api.DELETE("/users/me/api-key", {
     params: {
-      query: { provider: provider as "openai" | "gemini" },
+      query: { provider: provider },
     },
   });
 

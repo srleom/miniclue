@@ -1,28 +1,38 @@
-export const DEFAULT_CHAT_MODEL = "gpt-4.1-mini";
+export const DEFAULT_CHAT_MODEL = "gpt-4o-mini";
 
 export const chatModels: { id: string; name: string }[] = [
   {
-    id: "gpt-4.1",
-    name: "GPT-4.1",
+    id: "gpt-4o-mini",
+    name: "GPT-4o mini",
   },
   {
-    id: "gpt-4.1-mini",
-    name: "GPT-4.1 mini",
+    id: "gemini-2.5-flash-lite",
+    name: "Gemini 2.5 Flash Lite",
   },
   {
-    id: "gpt-4.1-nano",
-    name: "GPT-4.1 nano",
+    id: "claude-3-5-sonnet",
+    name: "Claude 3.5 Sonnet",
   },
   {
-    id: "gpt-5.1",
-    name: "GPT-5.1",
+    id: "grok-4-1-fast-non-reasoning",
+    name: "Grok 4.1 Fast Non-Reasoning",
   },
   {
-    id: "gpt-5-mini",
-    name: "GPT-5 mini",
-  },
-  {
-    id: "gpt-5-nano",
-    name: "GPT-5 nano",
+    id: "deepseek-chat",
+    name: "DeepSeek-V3.2 (Non-thinking Mode)",
   },
 ];
+
+export type Provider = "openai" | "gemini" | "anthropic" | "xai" | "deepseek";
+
+const MODEL_TO_PROVIDER_MAP: Record<string, Provider> = {
+  "gpt-4o-mini": "openai",
+  "gemini-2.5-flash-lite": "gemini",
+  "claude-3-5-sonnet": "anthropic",
+  "grok-4-1-fast-non-reasoning": "xai",
+  "deepseek-chat": "deepseek",
+};
+
+export function getProviderForModel(modelId: string): Provider | null {
+  return MODEL_TO_PROVIDER_MAP[modelId] ?? null;
+}
