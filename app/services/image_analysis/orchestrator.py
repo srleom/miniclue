@@ -108,9 +108,10 @@ async def process_image_analysis_job(
             )
 
             # 6. Increment counter and check if last job
-            processed_count, total_count = (
-                await db_utils.increment_processed_images_count(conn, lecture_id)
-            )
+            (
+                processed_count,
+                total_count,
+            ) = await db_utils.increment_processed_images_count(conn, lecture_id)
 
         # 7. Trigger embedding job if all images are processed
         if total_count > 0 and processed_count == total_count:

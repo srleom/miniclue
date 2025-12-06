@@ -151,7 +151,6 @@ async def get_message_history(
         raise
 
     if not rows:
-
         return []
 
     # Extract text from parts JSONB and build message list
@@ -166,7 +165,7 @@ async def get_message_history(
                 parts = json.loads(parts_raw)
             except json.JSONDecodeError as e:
                 logging.warning(
-                    f"[get_message_history] Failed to parse parts JSON for row {idx+1}: {e}, parts={parts_raw}"
+                    f"[get_message_history] Failed to parse parts JSON for row {idx + 1}: {e}, parts={parts_raw}"
                 )
                 skipped_count += 1
                 continue

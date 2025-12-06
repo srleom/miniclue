@@ -63,9 +63,9 @@ async def process_embedding_job(payload: EmbeddingPayload):
             texts_to_join = [chunk["text"]]
             for image in image_info_by_slide[chunk["slide_id"]]:
                 if image["ocr_text"]:
-                    texts_to_join.append(f'OCR Text: {image["ocr_text"]}')
+                    texts_to_join.append(f"OCR Text: {image['ocr_text']}")
                 if image["alt_text"]:
-                    texts_to_join.append(f'Alt Text: {image["alt_text"]}')
+                    texts_to_join.append(f"Alt Text: {image['alt_text']}")
 
             enriched_text = " ".join(texts_to_join).strip()
             enriched_texts.append(enriched_text)
