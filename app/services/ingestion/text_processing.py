@@ -1,11 +1,10 @@
-import tiktoken
-
-
 def chunk_text_by_tokens(
     text: str,
     chunk_size: int = 1000,
     overlap: int = 200,
 ) -> list[tuple[str, int]]:
+    import tiktoken
+
     encoder = tiktoken.get_encoding("cl100k_base")
     all_tokens = encoder.encode(text)
     chunks: list[tuple[str, int]] = []

@@ -1,7 +1,4 @@
 import logging
-from google.cloud import secretmanager
-from google.api_core import exceptions
-
 from app.utils.config import Settings
 
 settings = Settings()
@@ -45,6 +42,9 @@ def get_user_api_key(user_id: str, provider: str = "openai") -> str:
         SecretNotFoundError: If the secret doesn't exist
         SecretAccessError: If there's an error accessing the secret
     """
+    from google.cloud import secretmanager
+    from google.api_core import exceptions
+
     project_id = settings.gcp_project_id
     if not project_id:
         raise SecretAccessError("GCP project ID is not configured")

@@ -3,7 +3,6 @@ import asyncio
 import logging
 import time
 from io import BytesIO
-from PIL import Image
 from typing import Optional
 from pydantic import ValidationError
 
@@ -153,6 +152,8 @@ async def analyze_image(
         FileNotFoundError: If the prompt file is not found.
     """
     system_prompt = _load_system_prompt()
+
+    from PIL import Image
 
     image = Image.open(BytesIO(image_bytes))
     image_mime_type = f"image/{image.format.lower() or 'png'}"

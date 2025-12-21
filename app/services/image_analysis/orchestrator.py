@@ -2,7 +2,6 @@ import logging
 import json
 
 import asyncpg
-import boto3
 
 from app.services.image_analysis import db_utils, llm_utils, s3_utils, pubsub_utils
 from app.utils.config import Settings
@@ -33,6 +32,8 @@ async def process_image_analysis_job(
     customer_identifier = payload.customer_identifier
     name = payload.name
     email = payload.email
+
+    import boto3
 
     # Initialize resources
     conn = None

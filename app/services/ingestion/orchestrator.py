@@ -3,8 +3,6 @@ from typing import Dict
 from app.schemas.ingestion import IngestionPayload
 
 import asyncpg
-import boto3
-import pymupdf
 import json
 
 from app.services.ingestion.db_utils import (
@@ -55,6 +53,9 @@ async def ingest(
 
     conn = None
     doc = None
+    import boto3
+    import pymupdf
+
     s3_client = None
     try:
         s3_client = boto3.client(

@@ -1,16 +1,18 @@
+from __future__ import annotations
+
 import io
 import logging
 from uuid import UUID
-from typing import Dict, List
+from typing import Dict, List, TYPE_CHECKING
 
-import imagehash
-import pymupdf
-from PIL import Image
 import asyncpg
 
 from app.services.ingestion.db_utils import insert_slide_image
 from app.services.ingestion.s3_utils import upload_image
 from app.utils.config import Settings
+
+if TYPE_CHECKING:
+    import pymupdf
 
 settings = Settings()
 
@@ -27,6 +29,10 @@ async def render_and_upload_slide_image(
     Renders a full-resolution image of a slide, uploads it to S3,
     and saves its metadata to the database.
     """
+    import imagehash
+    import pymupdf
+    from PIL import Image
+
     slide_number = page_index + 1
     page = doc.load_page(page_index)
     storage_path = ""
@@ -78,6 +84,9 @@ async def process_slide_sub_images(
     Extracts all sub-images from a slide, uploads new ones, records them in the
     database, and returns a list of analysis jobs to be published for new images.
     """
+    import imagehash
+    from PIL import Image
+
     page = doc.load_page(page_index)
     slide_number = page_index + 1
     images = page.get_images(full=True)

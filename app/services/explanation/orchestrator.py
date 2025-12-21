@@ -1,6 +1,5 @@
 import logging
 import asyncpg
-import boto3
 import json
 
 from app.schemas.explanation import ExplanationPayload, ExplanationResult
@@ -89,6 +88,8 @@ async def process_explanation_job(payload: ExplanationPayload):
     customer_identifier = payload.customer_identifier
     name = payload.name
     email = payload.email
+
+    import boto3
 
     # Initialize resources
     conn = None

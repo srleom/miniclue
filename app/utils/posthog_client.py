@@ -1,12 +1,17 @@
 """Posthog client utility for OpenAI LLM analytics."""
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
-from posthog import Posthog
-from posthog.ai.openai import AsyncOpenAI
+from typing import Optional, TYPE_CHECKING
+
 
 from app.utils.config import Settings
 from app.utils.model_provider_mapping import Provider
+
+if TYPE_CHECKING:
+    from posthog import Posthog
+    from posthog.ai.openai import AsyncOpenAI
 
 # Initialize settings
 settings = Settings()
@@ -27,6 +32,8 @@ def get_posthog_client() -> Optional[Posthog]:
             return None
 
         try:
+            from posthog import Posthog
+
             _posthog_client = Posthog(
                 project_api_key=settings.posthog_api_key,
                 host=settings.posthog_api_url,
@@ -73,6 +80,8 @@ def get_openai_client(api_key: str, base_url: str | None = None) -> AsyncOpenAI:
 
     if base_url is None:
         base_url = settings.openai_api_base_url
+
+    from posthog.ai.openai import AsyncOpenAI
 
     return AsyncOpenAI(
         api_key=api_key,
