@@ -1,3 +1,10 @@
+"""
+DEPRECATED: This service is no longer actively used.
+Explanation generation (Step 5 in data flow) has been removed from the lecture feature.
+The code is kept for potential future reactivation. This service previously generated
+slide-by-slide explanations and published summary jobs.
+"""
+
 import logging
 import asyncpg
 import json
@@ -13,7 +20,6 @@ from app.services.explanation.llm_utils import (
     generate_explanation,
 )
 from app.services.explanation.s3_utils import download_slide_image
-from app.services.explanation.pubsub_utils import publish_summary_job
 from app.utils.config import Settings
 from app.utils.sanitize import sanitize_json, sanitize_text
 from app.utils.secret_manager import (
@@ -202,12 +208,14 @@ async def process_explanation_job(payload: ExplanationPayload):
         is_complete = await increment_progress_and_check_completion(conn, lecture_id)
 
         if is_complete:
-            publish_summary_job(
-                lecture_id,
-                customer_identifier,
-                name,
-                email,
-            )
+            # DEPRECATED: Summary generation is no longer part of the data flow
+            # publish_summary_job(
+            #     lecture_id,
+            #     customer_identifier,
+            #     name,
+            #     email,
+            # )
+            pass
 
     except Exception as e:
         logging.error(

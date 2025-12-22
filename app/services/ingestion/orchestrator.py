@@ -11,7 +11,6 @@ from app.services.ingestion.db_utils import (
     set_lecture_parsing,
     update_lecture_sub_image_count,
     update_lecture_status,
-    get_slides_with_images_for_lecture,
     verify_lecture_exists,
 )
 from app.services.ingestion.image_processing import (
@@ -22,7 +21,6 @@ from app.services.ingestion.s3_utils import download_pdf
 from app.services.ingestion.text_processing import chunk_text_by_tokens
 from app.services.ingestion.pubsub_utils import (
     publish_embedding_job,
-    publish_explanation_job,
     publish_image_analysis_job,
 )
 from app.utils.config import Settings
@@ -128,28 +126,32 @@ async def ingest(
         total_sub_images = len(processed_images_map)
         await update_lecture_sub_image_count(conn, lecture_id, total_sub_images)
 
-        # Set status to 'explaining' BEFORE publishing jobs to prevent race conditions
-        await update_lecture_status(conn, lecture_id, "explaining")
+        # DEPRECATED: Explanation generation has been removed from the data flow
+        # We now set status to 'processing' while embeddings/images are being handled
+        await update_lecture_status(conn, lecture_id, "processing")
 
+        # DEPRECATED: Explanation job publishing has been removed (Step 5 in data flow)
+        # Users will only receive chat functionality without slide-by-slide explanations
+        # Keeping this code commented for potential future reactivation
         # Dispatch explanation jobs for every slide
-        slides_for_jobs = await get_slides_with_images_for_lecture(conn, lecture_id)
-        for slide_record in slides_for_jobs:
-            slide_image_path = slide_record["slide_image_path"]
-            if slide_image_path:
-                publish_explanation_job(
-                    lecture_id=lecture_id,
-                    slide_id=slide_record["id"],
-                    slide_number=slide_record["slide_number"],
-                    total_slides=total_slides,
-                    slide_image_path=slide_image_path,
-                    customer_identifier=customer_identifier,
-                    name=name,
-                    email=email,
-                )
-            else:
-                logging.warning(
-                    f"Could not find full slide image for slide_id {slide_record['id']}. Skipping explanation job."
-                )
+        # slides_for_jobs = await get_slides_with_images_for_lecture(conn, lecture_id)
+        # for slide_record in slides_for_jobs:
+        #     slide_image_path = slide_record["slide_image_path"]
+        #     if slide_image_path:
+        #         publish_explanation_job(
+        #             lecture_id=lecture_id,
+        #             slide_id=slide_record["id"],
+        #             slide_number=slide_record["slide_number"],
+        #             total_slides=total_slides,
+        #             slide_image_path=slide_image_path,
+        #             customer_identifier=customer_identifier,
+        #             name=name,
+        #             email=email,
+        #         )
+        #     else:
+        #         logging.warning(
+        #             f"Could not find full slide image for slide_id {slide_record['id']}. Skipping explanation job."
+        #         )
 
         if total_sub_images > 0:
             for job in image_analysis_jobs:

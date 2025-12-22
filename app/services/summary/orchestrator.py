@@ -1,3 +1,9 @@
+"""
+DEPRECATED: This service is no longer actively used.
+Summary generation (Step 6 in data flow) has been removed from the lecture feature.
+The code is kept for potential future reactivation.
+"""
+
 import logging
 import asyncpg
 from app.schemas.summary import SummaryPayload

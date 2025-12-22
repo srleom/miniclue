@@ -1,3 +1,9 @@
+"""
+DEPRECATED: This endpoint is no longer actively used.
+Explanation generation (Step 5 in data flow) has been removed from the lecture feature.
+The code is kept for potential future reactivation.
+"""
+
 import logging
 
 from fastapi import APIRouter, HTTPException, status, Depends

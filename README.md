@@ -8,10 +8,19 @@ A FastAPI microservice to handle AI‐driven lecture pipeline jobs (ingestion, i
 2. Clone the repository.
 3. Create a `.env` file in the project root with the environment variables listed below.
 4. Install dependencies:
+
    ```
    poetry install
    ```
-5. Run the server:
+
+5. Activate venv
+
+   ```
+   eval $(poetry env activate)
+   ```
+
+6. Run the server:
+
    ```
    poetry run start
    ```
