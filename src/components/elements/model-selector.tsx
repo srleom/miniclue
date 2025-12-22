@@ -6,11 +6,13 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
 } from "@/components/ui/select";
 import { chatModels } from "@/lib/chat/models";
 import { cn } from "@/lib/utils";
-import { CpuIcon } from "lucide-react";
+import { CpuIcon, PlusIcon } from "lucide-react";
+import Link from "next/link";
 
 function PureModelSelectorCompact({
   selectedModelId,
@@ -84,7 +86,7 @@ function PureModelSelectorCompact({
           </span>
         </div>
       </SelectTrigger>
-      <SelectContent className="p-0">
+      <SelectContent>
         <div className="flex flex-col gap-px">
           {availableModels.map((model) => (
             <SelectItem key={model.id} value={model.id}>
@@ -92,6 +94,14 @@ function PureModelSelectorCompact({
             </SelectItem>
           ))}
         </div>
+        <SelectSeparator />
+        <Link
+          href="/settings/models"
+          className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-xs font-medium transition-colors"
+        >
+          <PlusIcon size={14} />
+          <span>Add models</span>
+        </Link>
       </SelectContent>
     </Select>
   );

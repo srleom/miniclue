@@ -8,12 +8,14 @@ type ChatHeaderProps = {
   onNewChat: () => void;
   historyTrigger: React.ReactNode;
   className?: string;
+  disabled?: boolean;
 };
 
 export function ChatHeader({
   onNewChat,
   historyTrigger,
   className,
+  disabled,
 }: ChatHeaderProps) {
   return (
     <div className={cn("flex items-center justify-end", className)}>
@@ -23,6 +25,7 @@ export function ChatHeader({
           size="icon"
           variant="ghost"
           className="gap-2"
+          disabled={disabled}
         >
           <Plus className="size-4" />
         </Button>

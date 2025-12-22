@@ -2,7 +2,7 @@
 
 // next
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 // icons
 import { ChevronLeft, CircleUserRound, Key, Cpu } from "lucide-react";
@@ -22,6 +22,7 @@ import {
 import { NavSecondary } from "../../(app)/_components/layout/nav-secondary";
 
 export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
+  const router = useRouter();
   const { setOpenMobile, isMobile } = useSidebar();
   const pathname = usePathname();
 
@@ -37,7 +38,14 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="default" variant="default" asChild>
-              <Link href="/" onClick={handleNavigation}>
+              <Link
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.back();
+                  handleNavigation();
+                }}
+              >
                 <ChevronLeft />
                 Back to app
               </Link>
@@ -59,7 +67,11 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     : undefined
                 }
               >
-                <Link href="/settings/profile" onClick={handleNavigation}>
+                <Link
+                  href="/settings/profile"
+                  onClick={handleNavigation}
+                  replace
+                >
                   <CircleUserRound />
                   Profile
                 </Link>
@@ -76,7 +88,11 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     : undefined
                 }
               >
-                <Link href="/settings/api-key" onClick={handleNavigation}>
+                <Link
+                  href="/settings/api-key"
+                  onClick={handleNavigation}
+                  replace
+                >
                   <Key />
                   API Keys
                 </Link>
@@ -93,7 +109,11 @@ export function SettingsSidebar(props: React.ComponentProps<typeof Sidebar>) {
                     : undefined
                 }
               >
-                <Link href="/settings/models" onClick={handleNavigation}>
+                <Link
+                  href="/settings/models"
+                  onClick={handleNavigation}
+                  replace
+                >
                   <Cpu />
                   Models
                 </Link>

@@ -21,6 +21,7 @@ type ChatInputProps = {
   selectedModelId: string;
   onModelChange: (modelId: string) => void;
   availableModels?: { id: string; name: string }[];
+  disabled?: boolean;
 };
 
 function PureChatInput({
@@ -32,6 +33,7 @@ function PureChatInput({
   selectedModelId,
   onModelChange,
   availableModels,
+  disabled,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -110,6 +112,7 @@ function PureChatInput({
           ref={textareaRef}
           rows={1}
           value={input}
+          disabled={disabled}
         />
       </div>
       <div className="mt-2 flex items-center justify-between pt-2">
@@ -140,7 +143,7 @@ function PureChatInput({
               "bg-primary text-primary-foreground hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground size-8 rounded-full transition-colors duration-200",
             )}
             data-testid="send-button"
-            disabled={!input.trim()}
+            disabled={!input.trim() || disabled}
             type="submit"
           >
             <ArrowUpIcon size={14} />

@@ -178,25 +178,18 @@ export default function LecturePage() {
                 value="chat"
                 className="mt-3 flex min-h-0 flex-1 flex-col"
               >
-                {isLoadingChats || isLoadingMessages ? (
-                  <Card className="flex h-full w-full overflow-y-auto rounded-lg py-8 shadow-none">
-                    <CardContent className="flex h-full flex-col items-center justify-center px-6 md:px-10">
-                      <LottieAnimation />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <ChatComponent
-                    chatId={currentChatId}
-                    chats={chats}
-                    initialMessages={
-                      currentChatId ? chatMessages[currentChatId] || [] : []
-                    }
-                    isLoadingChats={isLoadingChats}
-                    lectureId={lectureId}
-                    onChatChange={handleChatChange}
-                    onChatsChange={handleChatsChange}
-                  />
-                )}
+                <ChatComponent
+                  chatId={currentChatId}
+                  chats={chats}
+                  initialMessages={
+                    currentChatId ? chatMessages[currentChatId] || [] : []
+                  }
+                  isLoadingChats={isLoadingChats}
+                  lectureId={lectureId}
+                  onChatChange={handleChatChange}
+                  onChatsChange={handleChatsChange}
+                  disabled={isLoadingChats || isLoadingMessages}
+                />
               </TabsContent>
             </Tabs>
           </ResizablePanel>

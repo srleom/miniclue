@@ -37,6 +37,7 @@ type ChatComponentProps = {
   chats: Chat[];
   onChatsChange: (chats: Chat[]) => void | Promise<void>;
   isLoadingChats?: boolean;
+  disabled?: boolean;
 };
 
 export function ChatComponent({
@@ -47,6 +48,7 @@ export function ChatComponent({
   chats,
   onChatsChange,
   isLoadingChats,
+  disabled,
 }: ChatComponentProps) {
   const [currentModelId, setCurrentModelId] = React.useState(() => {
     const cookieModel = getCookie("chat-model");
@@ -56,32 +58,38 @@ export function ChatComponent({
   const [availableModels, setAvailableModels] = React.useState<
     { id: string; name: string; enabled: boolean }[]
   >([]);
+  const [isLoadingModels, setIsLoadingModels] = React.useState(true);
 
   // Fetch user's model availability
   React.useEffect(() => {
     const fetchModels = async () => {
-      const { data, error } = await getUserModels();
+      setIsLoadingModels(true);
+      try {
+        const { data, error } = await getUserModels();
 
-      if (error || !data) {
-        logger.error("Failed to fetch models for chat", {
-          error,
-        });
-        return;
+        if (error || !data) {
+          logger.error("Failed to fetch models for chat", {
+            error,
+          });
+          return;
+        }
+
+        const models =
+          data.providers?.flatMap(
+            (p) =>
+              p.models
+                ?.map((m) => ({
+                  id: m.id ?? "",
+                  name: m.name ?? m.id ?? "",
+                  enabled: Boolean(m.enabled),
+                }))
+                .filter((m) => m.id !== "") ?? [],
+          ) ?? [];
+
+        setAvailableModels(models);
+      } finally {
+        setIsLoadingModels(false);
       }
-
-      const models =
-        data.providers?.flatMap(
-          (p) =>
-            p.models
-              ?.map((m) => ({
-                id: m.id ?? "",
-                name: m.name ?? m.id ?? "",
-                enabled: Boolean(m.enabled),
-              }))
-              .filter((m) => m.id !== "") ?? [],
-        ) ?? [];
-
-      setAvailableModels(models);
     };
 
     fetchModels();
@@ -104,6 +112,7 @@ export function ChatComponent({
   }, [enabledModels, currentModelId]);
 
   const hasAvailableModels = enabledModels.length > 0;
+  const isEffectivelyDisabled = disabled || isLoadingModels;
 
   // Use ref to ensure transport always uses the latest model
   const currentModelIdRef = React.useRef(currentModelId);
@@ -336,7 +345,7 @@ export function ChatComponent({
   }
 
   // Show message if no models are available
-  if (!hasAvailableModels) {
+  if (!isLoadingModels && !hasAvailableModels) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-6">
         <div className="flex max-w-md flex-col items-center space-y-6 text-center">
@@ -367,6 +376,7 @@ export function ChatComponent({
     <div className="flex h-full flex-col overflow-hidden">
       <ChatHeader
         onNewChat={handleNewChat}
+        disabled={isEffectivelyDisabled}
         historyTrigger={
           <ChatHistory
             currentChatId={chatId}
@@ -376,7 +386,12 @@ export function ChatComponent({
             chats={chats}
           >
             <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="gap-2">
+              <Button
+                size="icon"
+                variant="ghost"
+                className="gap-2"
+                disabled={isEffectivelyDisabled}
+              >
                 <History className="size-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -392,6 +407,7 @@ export function ChatComponent({
         selectedModelId={currentModelId}
         setMessages={setMessages}
         status={status}
+        isLoading={isEffectivelyDisabled}
       />
 
       <div className="bg-background sticky bottom-0 z-10 flex w-full gap-2 pb-3 md:pb-4">
@@ -405,6 +421,7 @@ export function ChatComponent({
           status={status}
           stop={stop}
           availableModels={enabledModels}
+          disabled={isEffectivelyDisabled}
         />
       </div>
     </div>

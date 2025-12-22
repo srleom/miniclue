@@ -6,6 +6,7 @@ import type { ChatMessage } from "@/types/chat";
 import { useMessages } from "@/hooks/use-chat-messages";
 import { Conversation, ConversationContent } from "./conversation";
 import { PreviewMessage } from "./message";
+import LottieAnimation from "@/app/(dashboard)/(app)/lecture/[lectureId]/_components/lottie-animation";
 
 type MessagesProps = {
   chatId: string;
@@ -17,6 +18,7 @@ type MessagesProps = {
   regenerate: () => void;
   isReadonly: boolean;
   selectedModelId: string;
+  isLoading?: boolean;
 };
 
 function PureMessages({
@@ -26,6 +28,7 @@ function PureMessages({
   setMessages,
   regenerate,
   isReadonly,
+  isLoading,
 }: MessagesProps) {
   const {
     containerRef: messagesContainerRef,
@@ -59,37 +62,41 @@ function PureMessages({
     >
       <Conversation className="mx-auto flex h-full min-w-0 flex-col gap-4 md:gap-6">
         <ConversationContent className="flex h-full flex-col gap-4 py-4 md:gap-6">
-          {messages.length === 0 && status !== "submitted" && (
+          {isLoading ? (
             <div className="flex h-full flex-col items-center justify-center py-12">
-              <div className="space-y-2 text-center">
-                <h2 className="text-3xl font-semibold">Hello there!</h2>
-                <p className="text-muted-foreground">
-                  Ask me anything about the lecture.
-                </p>
-              </div>
+              <LottieAnimation />
             </div>
+          ) : (
+            <>
+              {messages.length === 0 && status !== "submitted" && (
+                <div className="flex h-full flex-col items-center justify-center py-12">
+                  <div className="space-y-2 text-center">
+                    <h2 className="text-3xl font-semibold">Hello there!</h2>
+                    <p className="text-muted-foreground">
+                      Ask me anything about the lecture.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((message, index) => (
+                <PreviewMessage
+                  chatId={chatId}
+                  isLoading={
+                    status === "streaming" && messages.length - 1 === index
+                  }
+                  isReadonly={isReadonly}
+                  key={message.id}
+                  message={message}
+                  regenerate={regenerate}
+                  requiresScrollPadding={
+                    hasSentMessage && index === messages.length - 1
+                  }
+                  setMessages={setMessages}
+                />
+              ))}
+            </>
           )}
-
-          {messages.map((message, index) => (
-            <PreviewMessage
-              chatId={chatId}
-              isLoading={
-                status === "streaming" && messages.length - 1 === index
-              }
-              isReadonly={isReadonly}
-              key={message.id}
-              message={message}
-              regenerate={regenerate}
-              requiresScrollPadding={
-                hasSentMessage && index === messages.length - 1
-              }
-              setMessages={setMessages}
-            />
-          ))}
-
-          {/* <AnimatePresence mode="wait">
-            {status === "submitted" && <ThinkingMessage key="thinking" />}
-          </AnimatePresence> */}
 
           <div
             className="min-h-[24px] min-w-[24px] shrink-0"
