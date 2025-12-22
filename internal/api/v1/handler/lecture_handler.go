@@ -374,8 +374,8 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 }
 
 // getLectureSummary godoc
-// @Summary Get lecture summary
-// @Description Retrieves a lecture's summary by its ID.
+// @Summary Get lecture summary (DEPRECATED)
+// @Description DEPRECATED: This endpoint is no longer actively generating new summaries. Summary generation (Step 6 in data flow) has been removed. This endpoint may still return legacy data from existing lectures but will return empty content for newly uploaded lectures.
 // @Tags lectures
 // @Produce json
 // @Param lectureId path string true "Lecture ID"
@@ -384,6 +384,7 @@ func (h *LectureHandler) listLectures(w http.ResponseWriter, r *http.Request) {
 // @Failure 404 {string} string "Lecture not found"
 // @Failure 500 {string} string "Failed to retrieve summary"
 // @Router /lectures/{lectureId}/summary [get]
+// @Deprecated
 func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
@@ -424,8 +425,8 @@ func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Reques
 }
 
 // listLectureExplanations godoc
-// @Summary List lecture explanations
-// @Description Retrieves explanations for a lecture with pagination
+// @Summary List lecture explanations (DEPRECATED)
+// @Description DEPRECATED: This endpoint is no longer actively generating new explanations. Explanation generation (Step 5 in data flow) has been removed. This endpoint may still return legacy data from existing lectures but will return empty arrays for newly uploaded lectures.
 // @Tags lectures
 // @Produce json
 // @Param lectureId path string true "Lecture ID"
@@ -436,6 +437,7 @@ func (h *LectureHandler) getLectureSummary(w http.ResponseWriter, r *http.Reques
 // @Failure 404 {string} string "Lecture not found"
 // @Failure 500 {string} string "Failed to retrieve explanations"
 // @Router /lectures/{lectureId}/explanations [get]
+// @Deprecated
 func (h *LectureHandler) listLectureExplanations(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {

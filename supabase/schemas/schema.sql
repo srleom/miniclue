@@ -43,8 +43,9 @@ CREATE TYPE lecture_status AS ENUM (
   'uploading',
   'pending_processing',
   'parsing',
-  'explaining',
-  'summarising',
+  'processing',    -- Added for the streamlined chat-only flow
+  'explaining',    -- DEPRECATED: Slide-by-slide explanation track removed
+  'summarising',   -- DEPRECATED: Lecture summary track removed
   'complete',
   'failed'
 );
@@ -57,15 +58,15 @@ CREATE TABLE IF NOT EXISTS lectures (
   storage_path              TEXT            NOT NULL DEFAULT '',
   status                    lecture_status  NOT NULL DEFAULT 'uploading',
 
-  -- Error details for each processing track
-  explanation_error_details JSONB           DEFAULT NULL,
+  -- Error details
+  explanation_error_details JSONB           DEFAULT NULL, -- DEPRECATED
   search_error_details      JSONB           DEFAULT NULL,
 
-  -- Explanation track progress
+  -- DEPRECATED: Explanation track progress (kept for legacy records)
   total_slides              INT             NOT NULL DEFAULT 0,
   processed_slides          INT             NOT NULL DEFAULT 0,
 
-  -- Search-Enrichment track progress and rendezvous flag
+  -- Processing progress and completion flag
   total_sub_images          INT             NOT NULL DEFAULT 0,
   processed_sub_images      INT             NOT NULL DEFAULT 0,
   embeddings_complete       BOOLEAN         NOT NULL DEFAULT FALSE,
