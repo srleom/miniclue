@@ -27,42 +27,8 @@ import { ApiKeyDialog } from "./api-key-dialog";
 // actions
 import { deleteAPIKey } from "../_actions/api-key-actions";
 import type { Provider } from "@/lib/chat/models";
-import { providerDisplayNames, providerLogos } from "./provider-constants";
+import { providerDisplayNames, providers } from "./provider-constants";
 import { cn } from "@/lib/utils";
-
-interface ProviderInfo {
-  id: Provider;
-  name: string;
-  logo: React.ReactNode;
-}
-
-const providers: ProviderInfo[] = [
-  {
-    id: "openai",
-    name: providerDisplayNames.openai,
-    logo: providerLogos.openai,
-  },
-  {
-    id: "gemini",
-    name: providerDisplayNames.gemini,
-    logo: providerLogos.gemini,
-  },
-  {
-    id: "anthropic",
-    name: providerDisplayNames.anthropic,
-    logo: providerLogos.anthropic,
-  },
-  {
-    id: "xai",
-    name: providerDisplayNames.xai,
-    logo: providerLogos.xai,
-  },
-  {
-    id: "deepseek",
-    name: providerDisplayNames.deepseek,
-    logo: providerLogos.deepseek,
-  },
-];
 
 interface ProviderListProps {
   apiKeysStatus: Record<Provider, boolean>;
@@ -140,7 +106,7 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
             <div
               key={provider.id}
               className={cn(
-                "bg-card hover:bg-accent/50 flex items-center justify-between rounded-lg border p-4 transition-colors",
+                "bg-card hover:bg-accent/50 flex min-h-[68px] items-center justify-between rounded-lg border p-4 text-sm transition-colors",
                 isRequired &&
                   !hasKey &&
                   "border-destructive/50 ring-destructive/20 shadow-sm ring-1",

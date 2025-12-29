@@ -2,15 +2,22 @@
 import { Suspense } from "react";
 
 // actions
-import { getUserModels } from "@/app/(dashboard)/_actions/user-actions";
+import {
+  getUserModels,
+  getUser,
+} from "@/app/(dashboard)/_actions/user-actions";
 import type { components } from "@/types/api";
 
 // components
 import { ModelsList } from "./_components/models-list";
 import { ModelsHeader } from "./_components/models-header";
+import { providers as allProviders } from "@/app/(dashboard)/(settings)/settings/api-key/_components/provider-constants";
 
 async function ModelsContent() {
-  const { data, error } = await getUserModels();
+  const [{ data, error }, { data: user }] = await Promise.all([
+    getUserModels(),
+    getUser(),
+  ]);
 
   if (error) {
     return (
@@ -24,22 +31,38 @@ async function ModelsContent() {
   type ProviderKey =
     components["schemas"]["app_internal_api_v1_dto.ModelPreferenceRequestDTO"]["provider"];
 
-  const providers =
-    data?.providers
-      ?.flatMap((p) => {
-        if (!p?.provider) return [];
-        const provider = p.provider as ProviderKey;
-        const models =
-          p.models
-            ?.map((m) => ({
-              id: m.id ?? "",
-              name: m.name ?? m.id ?? "",
-              enabled: Boolean(m.enabled),
-            }))
-            .filter((m) => m.id !== "") ?? [];
-        return [{ provider, models }];
-      })
-      .filter((p) => p.models.length > 0) ?? [];
+  const apiKeysStatus = {
+    openai: user?.api_keys_provided?.openai ?? false,
+    gemini: user?.api_keys_provided?.gemini ?? false,
+    anthropic: user?.api_keys_provided?.anthropic ?? false,
+    xai: user?.api_keys_provided?.xai ?? false,
+    deepseek: user?.api_keys_provided?.deepseek ?? false,
+  };
+
+  const providersWithModels =
+    data?.providers?.map((p) => {
+      const provider = p.provider as ProviderKey;
+      const models =
+        p.models
+          ?.map((m) => ({
+            id: m.id ?? "",
+            name: m.name ?? m.id ?? "",
+            enabled: Boolean(m.enabled),
+          }))
+          .filter((m) => m.id !== "") ?? [];
+      return { provider, models };
+    }) ?? [];
+
+  const providers = allProviders.map((p) => {
+    const providerWithModels = providersWithModels.find(
+      (pm) => pm.provider === p.id,
+    );
+    return {
+      provider: p.id as ProviderKey,
+      models: providerWithModels?.models ?? [],
+      hasKey: apiKeysStatus[p.id as keyof typeof apiKeysStatus] ?? false,
+    };
+  });
 
   return (
     <div className="mx-auto mt-4 flex w-full flex-col items-center md:mt-16 lg:w-3xl">

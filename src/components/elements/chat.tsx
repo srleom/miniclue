@@ -18,7 +18,7 @@ import type { LectureStatus } from "@/hooks/use-lecture-status";
 import { getUserModels } from "@/app/(dashboard)/_actions/user-actions";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { History, MessageSquare, Cpu } from "lucide-react";
+import { History, MessageSquare, Cpu, Key } from "lucide-react";
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -62,6 +62,7 @@ export function ChatComponent({
     { id: string; name: string; enabled: boolean }[]
   >([]);
   const [isLoadingModels, setIsLoadingModels] = React.useState(true);
+  const [hasOpenAIKey, setHasOpenAIKey] = React.useState<boolean | null>(null);
 
   // Fetch user's model availability
   React.useEffect(() => {
@@ -76,6 +77,10 @@ export function ChatComponent({
           });
           return;
         }
+
+        const hasOpenAI =
+          data.providers?.some((p) => p.provider === "openai") ?? false;
+        setHasOpenAIKey(hasOpenAI);
 
         const models =
           data.providers?.flatMap(
@@ -341,6 +346,35 @@ export function ChatComponent({
           <Button onClick={handleNewChat} size="lg">
             <MessageSquare className="size-4" />
             New chat
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if OpenAI key is not provided
+  if (!isLoadingModels && hasOpenAIKey === false) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center p-6">
+        <div className="flex max-w-md flex-col items-center space-y-6 text-center">
+          <div className="bg-muted flex size-16 items-center justify-center rounded-full">
+            <Key className="text-muted-foreground size-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold tracking-tight">
+              OpenAI API key required
+            </h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              MiniClue requires an OpenAI API key to process lectures and
+              provide intelligent answers. Please add your key in settings to
+              start chatting.
+            </p>
+          </div>
+          <Button asChild size="lg">
+            <Link href="/settings/api-key">
+              <Key className="size-4" />
+              Add API key
+            </Link>
           </Button>
         </div>
       </div>

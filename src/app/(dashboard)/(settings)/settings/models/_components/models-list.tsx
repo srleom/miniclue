@@ -1,8 +1,16 @@
 "use client";
 
 // react
-import { useCallback, useMemo, useState, useTransition } from "react";
-import Link from "next/link";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
+
+// next
+import { useRouter } from "next/navigation";
 
 // third-party
 import { toast } from "sonner";
@@ -19,15 +27,18 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
-
+import { ApiKeyDialog } from "@/app/(dashboard)/(settings)/settings/api-key/_components/api-key-dialog";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 // icons
-import { ChevronDown, Cpu } from "lucide-react";
+import { ChevronDown, Cpu, Plus } from "lucide-react";
 
 // code
 import {
   providerDisplayNames,
   providerLogos,
 } from "@/app/(dashboard)/(settings)/settings/api-key/_components/provider-constants";
+import type { Provider } from "@/lib/chat/models";
 
 type ProviderKey =
   components["schemas"]["app_internal_api_v1_dto.ModelPreferenceRequestDTO"]["provider"];
@@ -35,6 +46,7 @@ type ProviderKey =
 type ProviderModels = {
   provider: ProviderKey;
   models: { id: string; name: string; enabled: boolean }[];
+  hasKey: boolean;
 };
 
 type ModelsListProps = {
@@ -42,9 +54,32 @@ type ModelsListProps = {
 };
 
 export function ModelsList({ providers }: ModelsListProps) {
+  const router = useRouter();
   const [state, setState] = useState<ProviderModels[]>(providers);
+
+  useEffect(() => {
+    setState(providers);
+  }, [providers]);
+
   const [pendingKey, setPendingKey] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    null,
+  );
+  const [isApiKeyDialogOpen, setIsApiKeyDialogOpen] = useState(false);
+
+  const handleAddApiKey = (provider: ProviderKey) => {
+    setSelectedProvider(provider as Provider);
+    setIsApiKeyDialogOpen(true);
+  };
+
+  const handleApiKeySuccess = () => {
+    setIsApiKeyDialogOpen(false);
+    setSelectedProvider(null);
+    router.refresh();
+    toast.success("API key added!");
+  };
 
   const hasProviders = state.length > 0;
 
@@ -111,25 +146,73 @@ export function ModelsList({ providers }: ModelsListProps) {
           ] ?? provider.provider;
         const logo = providerLogos[
           provider.provider as keyof typeof providerLogos
-        ] ?? <Cpu className="h-4 w-4" />;
+        ] ?? <Cpu className="size-6" />;
 
         const activeCount = provider.models.filter((m) => m.enabled).length;
         const totalCount = provider.models.length;
         const hasActiveModels = activeCount > 0;
+        const isRequired = provider.provider === "openai";
+
+        if (!provider.hasKey) {
+          return (
+            <div
+              key={provider.provider}
+              className={cn(
+                "bg-card border-border/60 hover:bg-accent/50 flex min-h-[68px] items-center justify-between rounded-lg border p-4 text-sm transition-colors",
+                isRequired &&
+                  "border-destructive/50 ring-destructive/20 shadow-sm ring-1",
+              )}
+            >
+              <div className="flex items-center gap-3">
+                {logo}
+                <div className="flex items-center gap-2 font-medium">
+                  {displayName}
+                  {isRequired && (
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] font-bold tracking-wider uppercase"
+                    >
+                      Required
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddApiKey(provider.provider)}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add API Key
+              </Button>
+            </div>
+          );
+        }
 
         return (
           <Collapsible
             key={provider.provider}
-            className="bg-card border-border/60 hover:border-border/80 rounded-lg border p-4 transition-colors"
+            className="bg-card border-border/60 rounded-lg border transition-colors"
           >
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex w-full items-center justify-between px-0 py-0 text-left"
+                className="hover:bg-accent/50 flex min-h-[68px] w-full items-center justify-between p-4 text-left transition-colors"
               >
                 <span className="flex items-center gap-3">
                   {logo}
-                  <span className="font-medium">{displayName}</span>
+                  <div className="flex items-center gap-2 font-medium">
+                    {displayName}
+                    {isRequired && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-bold tracking-wider uppercase"
+                      >
+                        Required
+                      </Badge>
+                    )}
+                  </div>
                 </span>
                 <span
                   className={`flex items-center gap-2 text-sm ${
@@ -141,33 +224,39 @@ export function ModelsList({ providers }: ModelsListProps) {
                 </span>
               </Button>
             </CollapsibleTrigger>
-            <CollapsibleContent className="mt-4 space-y-3">
-              {provider.models.map((model) => {
-                const toggleId = `${provider.provider}:${model.id}`;
-                const disabled = isPending && pendingKey === toggleId;
-                return (
-                  <div
-                    key={model.id}
-                    className="hover:bg-muted flex items-center justify-between rounded-md px-2 py-0.5"
-                  >
-                    <div className="space-y-0.5">
-                      <p className="text-sm leading-none font-medium">
-                        {model.name}
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        {model.id}
-                      </p>
+            <CollapsibleContent className="space-y-3 px-4 pb-4">
+              {provider.models.length > 0 ? (
+                provider.models.map((model) => {
+                  const toggleId = `${provider.provider}:${model.id}`;
+                  const disabled = isPending && pendingKey === toggleId;
+                  return (
+                    <div
+                      key={model.id}
+                      className="hover:bg-muted flex items-center justify-between rounded-md px-2 py-0.5"
+                    >
+                      <div className="space-y-0.5">
+                        <p className="text-sm leading-none font-medium">
+                          {model.name}
+                        </p>
+                        <p className="text-muted-foreground text-xs">
+                          {model.id}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={model.enabled}
+                        onCheckedChange={(checked) =>
+                          handleToggle(provider.provider, model.id, checked)
+                        }
+                        disabled={disabled}
+                      />
                     </div>
-                    <Switch
-                      checked={model.enabled}
-                      onCheckedChange={(checked) =>
-                        handleToggle(provider.provider, model.id, checked)
-                      }
-                      disabled={disabled}
-                    />
-                  </div>
-                );
-              })}
+                  );
+                })
+              ) : (
+                <div className="text-muted-foreground py-2 text-center text-sm">
+                  No models available for this provider.
+                </div>
+              )}
             </CollapsibleContent>
           </Collapsible>
         );
@@ -180,12 +269,24 @@ export function ModelsList({ providers }: ModelsListProps) {
       <div className="rounded-lg border border-dashed p-6 text-center">
         <p className="text-sm font-medium">No providers available</p>
         <p className="text-muted-foreground text-sm">
-          Add an API key in the <Link href="/settings/api-key">API Keys</Link>{" "}
-          section to enable models here.
+          Something went wrong. Please try again later.
         </p>
       </div>
     );
   }
 
-  return <div className="space-y-3">{providerCards}</div>;
+  return (
+    <div className="space-y-3">
+      {providerCards}
+      {selectedProvider && (
+        <ApiKeyDialog
+          provider={selectedProvider}
+          open={isApiKeyDialogOpen}
+          onOpenChange={setIsApiKeyDialogOpen}
+          onSuccess={handleApiKeySuccess}
+          hasKey={false}
+        />
+      )}
+    </div>
+  );
 }
