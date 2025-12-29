@@ -29,7 +29,7 @@ async function ModelsContent() {
   }
 
   type ProviderKey =
-    components["schemas"]["app_internal_api_v1_dto.ModelPreferenceRequestDTO"]["provider"];
+    components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"];
 
   const apiKeysStatus = {
     openai: user?.api_keys_provided?.openai ?? false,

@@ -47,19 +47,13 @@ export function NavCourses({
 }: {
   items: CourseWithLectures[];
   createUntitledCourse: () => Promise<
-    ActionResponse<
-      components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
-    >
+    ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
   >;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,
     title: string,
-  ) => Promise<
-    ActionResponse<
-      components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
-    >
-  >;
+  ) => Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>>;
   handleUpdateLectureAccessedAt: (
     lectureId: string,
   ) => Promise<ActionResponse<void>>;

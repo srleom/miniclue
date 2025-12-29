@@ -18,16 +18,12 @@ import type { Provider } from "@/lib/chat/models";
  * Stores the user's API key securely.
  * @param {Provider} provider - The API provider
  * @param {string} apiKey - The API key to store
- * @returns {Promise<ActionResponse<components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]>>}
+ * @returns {Promise<ActionResponse<components["schemas"]["dto.APIKeyResponseDTO"]>>}
  */
 export async function storeAPIKey(
   provider: Provider,
   apiKey: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.APIKeyResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -56,15 +52,11 @@ export async function storeAPIKey(
 /**
  * Deletes the user's API key securely.
  * @param {Provider} provider - The API provider
- * @returns {Promise<ActionResponse<components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]>>}
+ * @returns {Promise<ActionResponse<components["schemas"]["dto.APIKeyResponseDTO"]>>}
  */
 export async function deleteAPIKey(
   provider: Provider,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.APIKeyResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };

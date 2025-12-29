@@ -16,11 +16,7 @@ import { logger } from "@/lib/logger";
 export async function createChat(
   lectureId: string,
   title?: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.ChatResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -46,11 +42,7 @@ export async function getChats(
   lectureId: string,
   limit: number = 50,
   offset: number = 0,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"][]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.ChatResponseDTO"][]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -75,11 +67,7 @@ export async function getChats(
 export async function getChat(
   lectureId: string,
   chatId: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.ChatResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -104,11 +92,7 @@ export async function getMessages(
   lectureId: string,
   chatId: string,
   limit: number = 100,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.MessageResponseDTO"][]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.MessageResponseDTO"][]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -158,11 +142,7 @@ export async function updateChatTitle(
   lectureId: string,
   chatId: string,
   title: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.ChatResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };

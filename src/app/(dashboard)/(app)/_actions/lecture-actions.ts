@@ -44,9 +44,7 @@ export async function getUploadUrls(
   courseId: string,
   filenames: string[],
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureBatchUploadURLResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.LectureBatchUploadURLResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -74,9 +72,7 @@ export async function getUploadUrls(
 export async function completeUpload(
   lectureId: string,
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.LectureUploadCompleteResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -109,9 +105,7 @@ export async function uploadLecturesFromClient(
   courseId: string,
   filenames: string[],
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureBatchUploadURLResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.LectureBatchUploadURLResponseDTO"]>
 > {
   try {
     // Step 1: Get presigned URLs for all files
@@ -134,20 +128,14 @@ export async function uploadLecturesFromClient(
 export async function completeUploadFromClient(
   lectureId: string,
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.LectureUploadCompleteResponseDTO"]>
 > {
   return await completeUpload(lectureId);
 }
 
 export async function getLecture(
   lectureId: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -175,9 +163,7 @@ export async function getLecture(
 export async function getExplanations(
   lectureId: string,
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][]
-  >
+  ActionResponse<components["schemas"]["dto.LectureExplanationResponseDTO"][]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -237,11 +223,7 @@ export async function deleteLecture(
 
 export async function getSignedPdfUrl(
   lectureId: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.SignedURLResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -269,9 +251,7 @@ export async function getSignedPdfUrl(
 export async function getSummary(
   lectureId: string,
 ): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.LectureSummaryResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -297,11 +277,7 @@ export async function getSummary(
 export async function updateLecture(
   lectureId: string,
   title: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -333,11 +309,7 @@ export async function updateLecture(
 export async function moveLecture(
   lectureId: string,
   newCourseId: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
   // Validate inputs
   if (!lectureId || lectureId.trim() === "") {
     logger.error("Invalid lecture ID:", lectureId);

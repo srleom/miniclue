@@ -27,7 +27,7 @@ export interface paths {
       /** @description Course creation request */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.CourseCreateDTO"];
+          "application/json": components["schemas"]["dto.CourseCreateDTO"];
         };
       };
       responses: {
@@ -37,7 +37,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+            "application/json": components["schemas"]["dto.CourseResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -104,7 +104,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+            "application/json": components["schemas"]["dto.CourseResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -211,7 +211,7 @@ export interface paths {
       /** @description Course update request */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.CourseUpdateDTO"];
+          "application/json": components["schemas"]["dto.CourseUpdateDTO"];
         };
       };
       responses: {
@@ -221,7 +221,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"];
+            "application/json": components["schemas"]["dto.CourseResponseDTO"];
           };
         };
         /** @description Invalid JSON payload, validation failed, or title cannot be empty */
@@ -287,7 +287,7 @@ export interface paths {
       /** @description Dead-letter queue Pub/Sub push payload */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.PubSubPushRequest"];
+          "application/json": components["schemas"]["dto.PubSubPushRequest"];
         };
       };
       responses: {
@@ -359,7 +359,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][];
+            "application/json": components["schemas"]["dto.LectureResponseDTO"][];
           };
         };
         /** @description Missing or invalid course_id */
@@ -422,7 +422,7 @@ export interface paths {
       /** @description Upload URL request */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadURLRequestDTO"];
+          "application/json": components["schemas"]["dto.LectureUploadURLRequestDTO"];
         };
       };
       responses: {
@@ -432,7 +432,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureBatchUploadURLResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureBatchUploadURLResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -517,7 +517,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -624,7 +624,7 @@ export interface paths {
       /** @description Lecture update data */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUpdateDTO"];
+          "application/json": components["schemas"]["dto.LectureUpdateDTO"];
         };
       };
       responses: {
@@ -634,7 +634,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureResponseDTO"];
           };
         };
         /** @description Invalid JSON payload, title cannot be empty, or course_id cannot be empty */
@@ -711,7 +711,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"][];
+            "application/json": components["schemas"]["dto.ChatResponseDTO"][];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -761,7 +761,7 @@ export interface paths {
       /** @description Chat creation request */
       requestBody?: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatCreateDTO"];
+          "application/json": components["schemas"]["dto.ChatCreateDTO"];
         };
       };
       responses: {
@@ -771,7 +771,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+            "application/json": components["schemas"]["dto.ChatResponseDTO"];
           };
         };
         /** @description Invalid JSON payload */
@@ -849,7 +849,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+            "application/json": components["schemas"]["dto.ChatResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -960,7 +960,7 @@ export interface paths {
       /** @description Chat update request */
       requestBody?: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatUpdateDTO"];
+          "application/json": components["schemas"]["dto.ChatUpdateDTO"];
         };
       };
       responses: {
@@ -970,7 +970,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ChatResponseDTO"];
+            "application/json": components["schemas"]["dto.ChatResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -1047,7 +1047,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.MessageResponseDTO"][];
+            "application/json": components["schemas"]["dto.MessageResponseDTO"][];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1115,7 +1115,7 @@ export interface paths {
       /** @description Chat stream request with message parts and model */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.ChatStreamRequestDTO"];
+          "application/json": components["schemas"]["dto.ChatStreamRequestDTO"];
         };
       };
       responses: {
@@ -1207,7 +1207,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureExplanationResponseDTO"][];
+            "application/json": components["schemas"]["dto.LectureExplanationResponseDTO"][];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1273,7 +1273,7 @@ export interface paths {
       /** @description Note create data */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteCreateDTO"];
+          "application/json": components["schemas"]["dto.LectureNoteCreateDTO"];
         };
       };
       responses: {
@@ -1283,7 +1283,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureNoteResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -1344,7 +1344,7 @@ export interface paths {
       /** @description Note update data */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteUpdateDTO"];
+          "application/json": components["schemas"]["dto.LectureNoteUpdateDTO"];
         };
       };
       responses: {
@@ -1354,7 +1354,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureNoteResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureNoteResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -1427,7 +1427,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureSummaryResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureSummaryResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1493,7 +1493,7 @@ export interface paths {
       /** @description Upload complete request */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteRequestDTO"];
+          "application/json": components["schemas"]["dto.LectureUploadCompleteRequestDTO"];
         };
       };
       responses: {
@@ -1503,7 +1503,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"];
+            "application/json": components["schemas"]["dto.LectureUploadCompleteResponseDTO"];
           };
         };
         /** @description Invalid JSON payload */
@@ -1579,7 +1579,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.SignedURLResponseDTO"];
+            "application/json": components["schemas"]["dto.SignedURLResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1645,7 +1645,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
+            "application/json": components["schemas"]["dto.UserResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1692,7 +1692,7 @@ export interface paths {
       /** @description User creation request */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.UserCreateDTO"];
+          "application/json": components["schemas"]["dto.UserCreateDTO"];
         };
       };
       responses: {
@@ -1702,7 +1702,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"];
+            "application/json": components["schemas"]["dto.UserResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -1763,7 +1763,7 @@ export interface paths {
       /** @description API key request with provider (openai, gemini, anthropic, xai, or deepseek) */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.APIKeyRequestDTO"];
+          "application/json": components["schemas"]["dto.APIKeyRequestDTO"];
         };
       };
       responses: {
@@ -1773,7 +1773,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"];
+            "application/json": components["schemas"]["dto.APIKeyResponseDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -1827,7 +1827,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.APIKeyResponseDTO"];
+            "application/json": components["schemas"]["dto.APIKeyResponseDTO"];
           };
         };
         /** @description Invalid provider parameter */
@@ -1890,7 +1890,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserCourseResponseDTO"][];
+            "application/json": components["schemas"]["dto.UserCourseResponseDTO"][];
           };
         };
         /** @description Unauthorized: user ID not found in context */
@@ -1947,7 +1947,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ModelsResponseDTO"];
+            "application/json": components["schemas"]["dto.ModelsResponseDTO"];
           };
         };
         /** @description Unauthorized: User ID not found in context */
@@ -1993,7 +1993,7 @@ export interface paths {
       /** @description Model preference update */
       requestBody: {
         content: {
-          "application/json": components["schemas"]["app_internal_api_v1_dto.ModelPreferenceRequestDTO"];
+          "application/json": components["schemas"]["dto.ModelPreferenceRequestDTO"];
         };
       };
       responses: {
@@ -2003,7 +2003,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.ModelToggleDTO"];
+            "application/json": components["schemas"]["dto.ModelToggleDTO"];
           };
         };
         /** @description Invalid JSON payload or validation failed */
@@ -2082,7 +2082,7 @@ export interface paths {
             [name: string]: unknown;
           };
           content: {
-            "application/json": components["schemas"]["app_internal_api_v1_dto.UserRecentLecturesResponseDTO"];
+            "application/json": components["schemas"]["dto.UserRecentLecturesResponseDTO"];
           };
         };
         /** @description Unauthorized: user ID not found in context */
@@ -2117,19 +2117,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
   schemas: {
-    "app_internal_api_v1_dto.APIKeyRequestDTO": {
+    "dto.APIKeyRequestDTO": {
       api_key: string;
       /** @enum {string} */
       provider: "openai" | "gemini" | "anthropic" | "xai" | "deepseek";
     };
-    "app_internal_api_v1_dto.APIKeyResponseDTO": {
+    "dto.APIKeyResponseDTO": {
       has_provided_key?: boolean;
       provider?: string;
     };
-    "app_internal_api_v1_dto.ChatCreateDTO": {
+    "dto.ChatCreateDTO": {
       title?: string;
     };
-    "app_internal_api_v1_dto.ChatResponseDTO": {
+    "dto.ChatResponseDTO": {
       created_at?: string;
       id?: string;
       lecture_id?: string;
@@ -2137,19 +2137,19 @@ export interface components {
       updated_at?: string;
       user_id?: string;
     };
-    "app_internal_api_v1_dto.ChatStreamRequestDTO": {
+    "dto.ChatStreamRequestDTO": {
       model: string;
-      parts: components["schemas"]["app_internal_api_v1_dto.MessagePartDTO"][];
+      parts: components["schemas"]["dto.MessagePartDTO"][];
     };
-    "app_internal_api_v1_dto.ChatUpdateDTO": {
+    "dto.ChatUpdateDTO": {
       title?: string;
     };
-    "app_internal_api_v1_dto.CourseCreateDTO": {
+    "dto.CourseCreateDTO": {
       description?: string;
       is_default?: boolean;
       title: string;
     };
-    "app_internal_api_v1_dto.CourseResponseDTO": {
+    "dto.CourseResponseDTO": {
       course_id?: string;
       created_at?: string;
       description?: string;
@@ -2158,15 +2158,15 @@ export interface components {
       updated_at?: string;
       user_id?: string;
     };
-    "app_internal_api_v1_dto.CourseUpdateDTO": {
+    "dto.CourseUpdateDTO": {
       description?: string;
       is_default?: boolean;
       title?: string;
     };
-    "app_internal_api_v1_dto.LectureBatchUploadURLResponseDTO": {
-      uploads?: components["schemas"]["app_internal_api_v1_dto.LectureUploadURLResponseDTO"][];
+    "dto.LectureBatchUploadURLResponseDTO": {
+      uploads?: components["schemas"]["dto.LectureUploadURLResponseDTO"][];
     };
-    "app_internal_api_v1_dto.LectureExplanationResponseDTO": {
+    "dto.LectureExplanationResponseDTO": {
       content?: string;
       created_at?: string;
       id?: string;
@@ -2174,20 +2174,20 @@ export interface components {
       slide_number?: number;
       updated_at?: string;
     };
-    "app_internal_api_v1_dto.LectureNoteCreateDTO": {
+    "dto.LectureNoteCreateDTO": {
       content: string;
     };
-    "app_internal_api_v1_dto.LectureNoteResponseDTO": {
+    "dto.LectureNoteResponseDTO": {
       content?: string;
       created_at?: string;
       id?: string;
       lecture_id?: string;
       updated_at?: string;
     };
-    "app_internal_api_v1_dto.LectureNoteUpdateDTO": {
+    "dto.LectureNoteUpdateDTO": {
       content: string;
     };
-    "app_internal_api_v1_dto.LectureResponseDTO": {
+    "dto.LectureResponseDTO": {
       accessed_at?: string;
       course_id?: string;
       created_at?: string;
@@ -2197,63 +2197,60 @@ export interface components {
       title?: string;
       updated_at?: string;
     };
-    "app_internal_api_v1_dto.LectureSummaryResponseDTO": {
+    "dto.LectureSummaryResponseDTO": {
       content?: string;
       lecture_id?: string;
     };
-    "app_internal_api_v1_dto.LectureUpdateDTO": {
+    "dto.LectureUpdateDTO": {
       accessed_at?: string;
       course_id?: string;
       title?: string;
     };
-    "app_internal_api_v1_dto.LectureUploadCompleteRequestDTO": Record<
-      string,
-      never
-    >;
-    "app_internal_api_v1_dto.LectureUploadCompleteResponseDTO": {
+    "dto.LectureUploadCompleteRequestDTO": Record<string, never>;
+    "dto.LectureUploadCompleteResponseDTO": {
       course_id?: string;
       lecture_id?: string;
       message?: string;
       status?: string;
     };
-    "app_internal_api_v1_dto.LectureUploadURLRequestDTO": {
+    "dto.LectureUploadURLRequestDTO": {
       course_id: string;
       filenames: string[];
     };
-    "app_internal_api_v1_dto.LectureUploadURLResponseDTO": {
+    "dto.LectureUploadURLResponseDTO": {
       lecture_id?: string;
       upload_url?: string;
     };
-    "app_internal_api_v1_dto.MessagePartDTO": {
+    "dto.MessagePartDTO": {
       text?: string;
       type?: string;
     };
-    "app_internal_api_v1_dto.MessageResponseDTO": {
+    "dto.MessageResponseDTO": {
       chat_id?: string;
       created_at?: string;
       id?: string;
-      parts?: components["schemas"]["app_internal_api_v1_dto.MessagePartDTO"][];
+      parts?: components["schemas"]["dto.MessagePartDTO"][];
       role?: string;
     };
-    "app_internal_api_v1_dto.ModelPreferenceRequestDTO": {
+    "dto.ModelPreferenceRequestDTO": {
       enabled?: boolean;
       model: string;
       /** @enum {string} */
       provider: "openai" | "gemini" | "anthropic" | "xai" | "deepseek";
     };
-    "app_internal_api_v1_dto.ModelToggleDTO": {
+    "dto.ModelToggleDTO": {
       enabled?: boolean;
       id?: string;
       name?: string;
     };
-    "app_internal_api_v1_dto.ModelsResponseDTO": {
-      providers?: components["schemas"]["app_internal_api_v1_dto.ProviderModelsDTO"][];
+    "dto.ModelsResponseDTO": {
+      providers?: components["schemas"]["dto.ProviderModelsDTO"][];
     };
-    "app_internal_api_v1_dto.ProviderModelsDTO": {
-      models?: components["schemas"]["app_internal_api_v1_dto.ModelToggleDTO"][];
+    "dto.ProviderModelsDTO": {
+      models?: components["schemas"]["dto.ModelToggleDTO"][];
       provider?: string;
     };
-    "app_internal_api_v1_dto.PubSubMessage": {
+    "dto.PubSubMessage": {
       attributes?: {
         [key: string]: string;
       };
@@ -2261,35 +2258,35 @@ export interface components {
       data?: string;
       messageId?: string;
     };
-    "app_internal_api_v1_dto.PubSubPushRequest": {
-      message?: components["schemas"]["app_internal_api_v1_dto.PubSubMessage"];
+    "dto.PubSubPushRequest": {
+      message?: components["schemas"]["dto.PubSubMessage"];
       subscription?: string;
     };
-    "app_internal_api_v1_dto.SignedURLResponseDTO": {
+    "dto.SignedURLResponseDTO": {
       url?: string;
     };
-    "app_internal_api_v1_dto.UserCourseResponseDTO": {
+    "dto.UserCourseResponseDTO": {
       course_id?: string;
       description?: string;
       is_default?: boolean;
       title?: string;
       updated_at?: string;
     };
-    "app_internal_api_v1_dto.UserCreateDTO": {
+    "dto.UserCreateDTO": {
       avatar_url?: string;
       email?: string;
       name?: string;
     };
-    "app_internal_api_v1_dto.UserRecentLectureResponseDTO": {
+    "dto.UserRecentLectureResponseDTO": {
       course_id?: string;
       lecture_id?: string;
       title?: string;
     };
-    "app_internal_api_v1_dto.UserRecentLecturesResponseDTO": {
-      lectures?: components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"][];
+    "dto.UserRecentLecturesResponseDTO": {
+      lectures?: components["schemas"]["dto.UserRecentLectureResponseDTO"][];
       total_count?: number;
     };
-    "app_internal_api_v1_dto.UserResponseDTO": {
+    "dto.UserResponseDTO": {
       api_keys_provided?: {
         [key: string]: boolean;
       };

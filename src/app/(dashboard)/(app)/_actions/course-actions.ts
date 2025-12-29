@@ -15,9 +15,7 @@ import {
 import { logger } from "@/lib/logger";
 
 export async function createUntitledCourse(): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -69,11 +67,7 @@ export async function getCourseLectures(
   courseId: string,
   limit: number = 5,
   offset: number = 0,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"][]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"][]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -96,11 +90,7 @@ export async function getCourseLectures(
 
 export async function getCourseDetails(
   courseId: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
@@ -123,11 +113,7 @@ export async function updateCourse(
   courseId: string,
   title: string,
   description?: string,
-): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.CourseResponseDTO"]
-  >
-> {
+): Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };

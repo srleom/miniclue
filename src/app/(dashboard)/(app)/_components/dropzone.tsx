@@ -51,7 +51,7 @@ async function uploadLecturesClient(
   files: File[],
 ): Promise<
   ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][]
+    components["schemas"]["dto.LectureUploadCompleteResponseDTO"][]
   >
 > {
   try {
@@ -65,7 +65,7 @@ async function uploadLecturesClient(
     }
 
     const uploads = uploadUrlsData.uploads;
-    const results: components["schemas"]["app_internal_api_v1_dto.LectureUploadCompleteResponseDTO"][] =
+    const results: components["schemas"]["dto.LectureUploadCompleteResponseDTO"][] =
       [];
 
     // Step 2: Upload each file to S3 using presigned URLs

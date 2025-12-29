@@ -26,7 +26,7 @@ import {
 } from "@/app/(dashboard)/(app)/_actions/lecture-actions";
 
 export type LectureResponseDTO =
-  components["schemas"]["app_internal_api_v1_dto.LectureResponseDTO"];
+  components["schemas"]["dto.LectureResponseDTO"];
 
 interface ColumnsProps {
   currentCourseId: string;

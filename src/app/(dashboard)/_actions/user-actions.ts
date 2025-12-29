@@ -17,12 +17,10 @@ import { logger } from "@/lib/logger";
 
 /**
  * Gets the authenticated user's profile info.
- * @returns {Promise<ActionResponse<components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"]>>}
+ * @returns {Promise<ActionResponse<components["schemas"]["dto.UserResponseDTO"]>>}
  */
 export async function getUser(): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.UserResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.UserResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -89,9 +87,7 @@ export async function getUserRecents(
   const totalCount = data?.total_count ?? 0;
 
   const navRecents = recentsData.map(
-    (
-      r: components["schemas"]["app_internal_api_v1_dto.UserRecentLectureResponseDTO"],
-    ) => ({
+    (r: components["schemas"]["dto.UserRecentLectureResponseDTO"]) => ({
       name: r.title ?? "",
       lectureId: r.lecture_id!,
       url: `/lecture/${r.lecture_id!}`,
@@ -133,9 +129,7 @@ export async function getUserCourses(): Promise<
 
   const coursesData = data ?? [];
   const navCourses = coursesData.map(
-    (
-      c: components["schemas"]["app_internal_api_v1_dto.UserCourseResponseDTO"],
-    ) => ({
+    (c: components["schemas"]["dto.UserCourseResponseDTO"]) => ({
       title: c.title ?? "",
       url: `/course/${c.course_id!}`,
       courseId: c.course_id!,
@@ -200,9 +194,7 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
  * List available models and enabled state for the current user.
  */
 export async function getUserModels(): Promise<
-  ActionResponse<
-    components["schemas"]["app_internal_api_v1_dto.ModelsResponseDTO"]
-  >
+  ActionResponse<components["schemas"]["dto.ModelsResponseDTO"]>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -230,7 +222,7 @@ export async function getUserModels(): Promise<
  * Toggle a model on or off for the current user.
  */
 export async function setModelPreference(
-  provider: components["schemas"]["app_internal_api_v1_dto.ModelPreferenceRequestDTO"]["provider"],
+  provider: components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"],
   model: string,
   enabled: boolean,
 ): Promise<ActionResponse<void>> {
