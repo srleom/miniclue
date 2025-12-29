@@ -8,6 +8,14 @@ export const providerDisplayNames: Record<Provider, string> = {
   deepseek: "DeepSeek",
 };
 
+export const providerHelpUrls: Record<Provider, string> = {
+  openai: "https://platform.openai.com/api-keys",
+  gemini: "https://aistudio.google.com/app/apikey",
+  anthropic: "https://console.anthropic.com/settings/keys",
+  xai: "https://console.x.ai/",
+  deepseek: "https://platform.deepseek.com/api_keys",
+};
+
 export const providerLogos: Record<Provider, React.ReactNode> = {
   openai: (
     <svg

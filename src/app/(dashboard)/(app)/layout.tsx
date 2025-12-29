@@ -7,6 +7,7 @@ import { CourseWithLectures, NavRecentsItem } from "./_types/types";
 // components
 import { AppSidebar } from "@/app/(dashboard)/(app)/_components/layout/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { OpenAIKeyPromptDialog } from "@/components/elements/openai-key-prompt-dialog";
 
 // code
 import {
@@ -83,6 +84,7 @@ export default async function DashboardLayout({
         <SidebarInset className="flex min-h-0 min-w-0 flex-1 flex-col">
           {children}
         </SidebarInset>
+        <OpenAIKeyPromptDialog />
       </SidebarProvider>
     </div>
   );

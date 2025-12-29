@@ -10,10 +10,19 @@ import { toast } from "sonner";
 import * as z from "zod";
 
 // icons
-import { HelpCircle } from "lucide-react";
+import {
+  CheckCircle2,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  KeyRound,
+  ShieldCheck,
+  AlertCircle,
+} from "lucide-react";
 
 // components
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge"; // Ensure you have this component
 import {
   Dialog,
   DialogContent,
@@ -32,12 +41,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { OpenAIAPIKeyTutorialDialog } from "./openai-api-key-tutorial-dialog";
+import { cn } from "@/lib/utils"; // standard shadcn utility
 
-// actions
+// actions & types
 import { storeAPIKey } from "../_actions/api-key-actions";
 import type { Provider } from "@/lib/chat/models";
-import { providerDisplayNames, providerLogos } from "./provider-constants";
+import {
+  providerDisplayNames,
+  providerLogos,
+  providerHelpUrls,
+} from "./provider-constants";
 
 const apiKeySchema = z.object({
   apiKey: z.string().min(1, "API key is required"),
@@ -61,7 +74,7 @@ export function ApiKeyDialog({
   hasKey,
 }: ApiKeyDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isTutorialOpen, setIsTutorialOpen] = useState(false);
+  const [showKey, setShowKey] = useState(false); // State for visibility toggle
 
   const form = useForm<ApiKeyFormValues>({
     resolver: zodResolver(apiKeySchema),
@@ -70,10 +83,10 @@ export function ApiKeyDialog({
     },
   });
 
-  // Reset form when dialog opens
   useEffect(() => {
     if (open) {
       form.reset({ apiKey: "" });
+      setShowKey(false);
     }
   }, [open, form]);
 
@@ -85,10 +98,11 @@ export function ApiKeyDialog({
         toast.error(result.error);
       } else {
         toast.success(
-          `${providerDisplayNames[provider]} API key ${hasKey ? "updated" : "stored"} successfully`,
+          `${providerDisplayNames[provider]} API key ${hasKey ? "updated" : "connected"}`,
         );
         form.reset();
         onSuccess?.();
+        onOpenChange(false);
       }
     } catch {
       toast.error("Failed to store API key");
@@ -99,64 +113,120 @@ export function ApiKeyDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="gap-6 sm:max-w-[500px]">
+        {/* Header Section */}
         <DialogHeader>
-          <div className="flex items-center gap-3">
-            {providerLogos[provider]}
-            <div>
-              <DialogTitle>{providerDisplayNames[provider]}</DialogTitle>
-              <DialogDescription
-                className={hasKey ? "text-green-500" : "text-muted-foreground"}
-              >
-                {hasKey ? "1 active key" : "No active key"}
-              </DialogDescription>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-muted rounded-md border p-2">
+                {/* Assuming providerLogos returns an SVG/Icon component */}
+                {providerLogos[provider]}
+              </div>
+              <div className="space-y-1">
+                <DialogTitle>{providerDisplayNames[provider]}</DialogTitle>
+                <DialogDescription className="text-xs">
+                  Configure your provider settings
+                </DialogDescription>
+              </div>
             </div>
+            {/* Status Badge */}
+            <Badge
+              variant={hasKey ? "default" : "secondary"}
+              className={cn(
+                "gap-1.5 px-2.5 py-0.5 transition-colors",
+                hasKey
+                  ? "border-emerald-500/20 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25"
+                  : "text-muted-foreground",
+              )}
+            >
+              {hasKey ? (
+                <>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Connected
+                </>
+              ) : (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Not Connected
+                </>
+              )}
+            </Badge>
           </div>
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="apiKey"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>API key</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <KeyRound className="text-muted-foreground h-4 w-4" />
+                    API Key
+                  </FormLabel>
                   <FormControl>
-                    <Input
-                      type="password"
-                      placeholder={
-                        provider === "openai"
-                          ? "sk-..."
-                          : provider === "anthropic"
-                            ? "sk-ant-..."
-                            : "Enter your API key"
-                      }
-                      {...field}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Your API key will be encrypted and stored securely. We
-                    cannot access your key.
-                    {provider === "openai" && (
-                      <button
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type={showKey ? "text" : "password"}
+                        className="pr-10 font-mono text-sm" // Monospace for keys
+                        placeholder={
+                          provider === "openai"
+                            ? "sk-..."
+                            : provider === "anthropic"
+                              ? "sk-ant-..."
+                              : "Enter your API key"
+                        }
+                        disabled={isSubmitting}
+                        autoComplete="off"
+                      />
+                      {/* Toggle Visibility Button */}
+                      <Button
                         type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setIsTutorialOpen(true);
-                        }}
-                        className="text-primary ml-1 inline-flex items-center gap-1 hover:underline"
+                        variant="ghost"
+                        size="sm"
+                        className="text-muted-foreground hover:text-foreground absolute top-0 right-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowKey(!showKey)}
                       >
-                        <HelpCircle className="h-3 w-3" />
-                        How to get your API key
-                      </button>
-                    )}
+                        {showKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                        <span className="sr-only">
+                          {showKey ? "Hide API key" : "Show API key"}
+                        </span>
+                      </Button>
+                    </div>
+                  </FormControl>
+
+                  {/* Security Note */}
+                  <FormDescription className="text-muted-foreground/80 mt-2 flex items-center gap-1.5 text-xs">
+                    <ShieldCheck className="h-3.5 w-3.5 text-green-600/80" />
+                    Encrypted and stored locally. Never shared with third
+                    parties.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {/* Helper Box */}
+            <div className="bg-muted/40 group hover:bg-muted/60 flex items-center justify-between rounded-lg border p-3 text-sm transition-colors">
+              <span className="text-muted-foreground text-xs">
+                Don&apos;t have an API key?
+              </span>
+              <a
+                href={providerHelpUrls[provider]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary inline-flex items-center gap-1 text-xs font-medium hover:underline"
+              >
+                Get {providerDisplayNames[provider]} Key
+                <ExternalLink className="h-3 w-3" />
+              </a>
+            </div>
 
             <DialogFooter>
               <Button
@@ -170,20 +240,18 @@ export function ApiKeyDialog({
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                variant={hasKey ? "destructive" : "default"}
+                className="min-w-[80px]"
               >
-                {isSubmitting ? "Saving..." : hasKey ? "Override" : "Save"}
+                {isSubmitting
+                  ? "Saving..."
+                  : hasKey
+                    ? "Update Key"
+                    : "Save Key"}
               </Button>
             </DialogFooter>
           </form>
         </Form>
       </DialogContent>
-      {provider === "openai" && (
-        <OpenAIAPIKeyTutorialDialog
-          open={isTutorialOpen}
-          onOpenChange={setIsTutorialOpen}
-        />
-      )}
     </Dialog>
   );
 }

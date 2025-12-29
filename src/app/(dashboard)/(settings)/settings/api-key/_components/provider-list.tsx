@@ -11,6 +11,7 @@ import { toast } from "sonner";
 
 // components
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +28,7 @@ import { ApiKeyDialog } from "./api-key-dialog";
 import { deleteAPIKey } from "../_actions/api-key-actions";
 import type { Provider } from "@/lib/chat/models";
 import { providerDisplayNames, providerLogos } from "./provider-constants";
+import { cn } from "@/lib/utils";
 
 interface ProviderInfo {
   id: Provider;
@@ -129,18 +131,35 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
 
   return (
     <>
-      <div className="space-y-2">
+      <div className="space-y-3">
         {providers.map((provider) => {
           const hasKey = apiKeysStatus[provider.id] ?? false;
+          const isRequired = provider.id === "openai";
+
           return (
             <div
               key={provider.id}
-              className="bg-card hover:bg-accent/50 flex items-center justify-between rounded-lg border p-4 transition-colors"
+              className={cn(
+                "bg-card hover:bg-accent/50 flex items-center justify-between rounded-lg border p-4 transition-colors",
+                isRequired &&
+                  !hasKey &&
+                  "border-destructive/50 ring-destructive/20 shadow-sm ring-1",
+              )}
             >
               <div className="flex items-center gap-3">
                 {provider.logo}
                 <div>
-                  <div className="font-medium">{provider.name}</div>
+                  <div className="flex items-center gap-2 font-medium">
+                    {provider.name}
+                    {isRequired && (
+                      <Badge
+                        variant="secondary"
+                        className="text-[10px] font-bold tracking-wider uppercase"
+                      >
+                        Required
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-4">
