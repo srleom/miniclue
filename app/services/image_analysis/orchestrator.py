@@ -135,7 +135,7 @@ async def process_image_analysis_job(
                 "error": str(e),
             }
             await conn.execute(
-                "UPDATE lectures SET search_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
+                "UPDATE lectures SET embedding_error_details = $1::jsonb, updated_at = NOW() WHERE id = $2",
                 json.dumps(error_info),
                 lecture_id,
             )

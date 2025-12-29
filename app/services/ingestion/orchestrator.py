@@ -71,9 +71,9 @@ async def ingest(
             )
             return
 
-        # Clear any previous search-track errors since we're starting fresh
+        # Clear any previous embedding-track errors since we're starting fresh
         await conn.execute(
-            "UPDATE lectures SET search_error_details = NULL, explanation_error_details = NULL WHERE id = $1",
+            "UPDATE lectures SET embedding_error_details = NULL, explanation_error_details = NULL WHERE id = $1",
             lecture_id,
         )
 
@@ -176,7 +176,10 @@ async def ingest(
         if conn:
             error_info = {"service": "ingestion", "error": str(e)}
             await update_lecture_status(
-                conn, lecture_id, "failed", search_error_details=json.dumps(error_info)
+                conn,
+                lecture_id,
+                "failed",
+                embedding_error_details=json.dumps(error_info),
             )
         raise
     finally:

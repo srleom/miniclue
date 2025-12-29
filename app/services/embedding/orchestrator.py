@@ -139,7 +139,7 @@ async def process_embedding_job(payload: EmbeddingPayload):
         if conn:
             error_info = {"service": "embedding", "error": str(e)}
             await conn.execute(
-                "UPDATE lectures SET status = 'failed', search_error_details = $1::jsonb WHERE id = $2",
+                "UPDATE lectures SET status = 'failed', embedding_error_details = $1::jsonb WHERE id = $2",
                 json.dumps(error_info),
                 lecture_id,
             )

@@ -8,6 +8,7 @@ Provider = Literal["openai", "gemini", "anthropic", "xai", "deepseek"]
 # This mapping should be kept in sync with the curatedModelCatalog in the Go backend
 MODEL_TO_PROVIDER_MAP: dict[str, Provider] = {
     # OpenAI models
+    "gpt-5.2": "openai",
     "gpt-5.1": "openai",
     "gpt-5.1-chat-latest": "openai",
     "gpt-5": "openai",
@@ -20,6 +21,7 @@ MODEL_TO_PROVIDER_MAP: dict[str, Provider] = {
     "gpt-4o": "openai",
     "gpt-4o-mini": "openai",
     # Gemini models
+    "gemini-3-flash-preview": "gemini",
     "gemini-3-pro-preview": "gemini",
     "gemini-2.5-pro": "gemini",
     "gemini-2.5-flash": "gemini",

@@ -26,14 +26,14 @@ async def update_lecture_status(
     conn: asyncpg.Connection,
     lecture_id: UUID,
     status: str,
-    search_error_details: str | None = None,
+    embedding_error_details: str | None = None,
 ):
-    """Updates the status and optionally the search_error_details of a lecture."""
-    if search_error_details:
+    """Updates the status and optionally the embedding_error_details of a lecture."""
+    if embedding_error_details:
         await conn.execute(
-            "UPDATE lectures SET status=$1, search_error_details=$2::jsonb, updated_at=NOW() WHERE id=$3",
+            "UPDATE lectures SET status=$1, embedding_error_details=$2::jsonb, updated_at=NOW() WHERE id=$3",
             status,
-            search_error_details,
+            embedding_error_details,
             lecture_id,
         )
     else:
