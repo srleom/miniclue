@@ -16,6 +16,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
 	UpdateAPIKeyFlag(ctx context.Context, userID string, provider string, hasKey bool) error
 	UpdateModelPreference(ctx context.Context, userID string, provider string, model string, enabled bool) error
+	InitializeDefaultModels(ctx context.Context, userID string, provider string, models []string) error
 }
 
 type userRepo struct {
@@ -96,6 +97,38 @@ func (r *userRepo) UpdateModelPreference(ctx context.Context, userID string, pro
 	result, err := r.pool.Exec(ctx, query, provider, modelName, enabled, userID)
 	if err != nil {
 		return fmt.Errorf("updating model preference for user %s, provider %s, model %s: %w", userID, provider, modelName, err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("no rows affected: user %s may not exist in database", userID)
+	}
+	return nil
+}
+
+func (r *userRepo) InitializeDefaultModels(ctx context.Context, userID string, provider string, models []string) error {
+	// Create a JSON object for the models: {"model1": true, "model2": true}
+	prefMap := make(map[string]bool)
+	for _, m := range models {
+		prefMap[m] = true
+	}
+	prefJSON, err := json.Marshal(prefMap)
+	if err != nil {
+		return fmt.Errorf("marshaling default models: %w", err)
+	}
+
+	query := `
+		UPDATE user_profiles
+		SET model_preferences = jsonb_set(
+			COALESCE(model_preferences, '{}'::jsonb),
+			ARRAY[$1::text],
+			$2::jsonb,
+			true
+		),
+		updated_at = NOW()
+		WHERE user_id = $3
+	`
+	result, err := r.pool.Exec(ctx, query, provider, prefJSON, userID)
+	if err != nil {
+		return fmt.Errorf("initializing default models for user %s, provider %s: %w", userID, provider, err)
 	}
 	if result.RowsAffected() == 0 {
 		return fmt.Errorf("no rows affected: user %s may not exist in database", userID)

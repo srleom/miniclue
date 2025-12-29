@@ -41,7 +41,7 @@ lint:
 swagger:
 	@echo "Generating Swagger documentation..."
 	go install github.com/swaggo/swag/cmd/swag@latest
-	swag init --parseDependency --parseInternal --generalInfo cmd/app/main.go --output docs/swagger
+	swag init --parseInternal --generalInfo cmd/app/main.go --output docs/swagger
 	@echo "Swagger documentation generated in docs/swagger"
 
 # Clean generated files

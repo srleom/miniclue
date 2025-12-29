@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS lectures (
 
   -- Error details
   explanation_error_details JSONB           DEFAULT NULL, -- DEPRECATED
-  search_error_details      JSONB           DEFAULT NULL,
+  embedding_error_details   JSONB           DEFAULT NULL,
 
   -- DEPRECATED: Explanation track progress (kept for legacy records)
   total_slides              INT             NOT NULL DEFAULT 0,

@@ -70,6 +70,7 @@ var providerOrder = []string{
 // These are placeholders and can be updated later without changing the API surface.
 var curatedModelCatalog = map[string][]catalogEntry{
 	"openai": {
+		{ID: "gpt-5.2", Name: "GPT-5.2"},
 		{ID: "gpt-5.1", Name: "GPT-5.1"},
 		{ID: "gpt-5.1-chat-latest", Name: "GPT-5.1 chat latest"},
 		{ID: "gpt-5", Name: "GPT-5"},
@@ -84,6 +85,7 @@ var curatedModelCatalog = map[string][]catalogEntry{
 	},
 	"gemini": {
 		{ID: "gemini-3-pro-preview", Name: "Gemini 3 Pro Preview"},
+		{ID: "gemini-3-flash-preview", Name: "Gemini 3 Flash Preview"},
 		{ID: "gemini-2.5-pro", Name: "Gemini 2.5 Pro"},
 		{ID: "gemini-2.5-flash", Name: "Gemini 2.5 Flash"},
 		{ID: "gemini-2.5-flash-lite", Name: "Gemini 2.5 Flash Lite"},
@@ -99,6 +101,29 @@ var curatedModelCatalog = map[string][]catalogEntry{
 	"deepseek": {
 		{ID: "deepseek-chat", Name: "DeepSeek-V3.2 (Non-thinking Mode)"},
 		{ID: "deepseek-reasoner", Name: "DeepSeek-V3.2 (Thinking Mode)"},
+	},
+}
+
+// defaultModelCatalog defines which models are enabled by default for each provider.
+var defaultModelCatalog = map[string][]string{
+	"openai": {
+		"gpt-4.1",
+		"gpt-4.1-mini",
+	},
+	"gemini": {
+		"gemini-3-flash-preview",
+	},
+	"anthropic": {
+		"claude-sonnet-4-5",
+		"claude-haiku-4-5",
+	},
+	"xai": {
+		"grok-4-1-fast-reasoning",
+		"grok-4-1-fast-non-reasoning",
+	},
+	"deepseek": {
+		"deepseek-chat",
+		"deepseek-reasoner",
 	},
 }
 
@@ -182,6 +207,18 @@ func (s *userService) StoreAPIKey(ctx context.Context, userID, provider, apiKey 
 		return errors.New("provider cannot be empty")
 	}
 
+	// Fetch user to check if they already have an API key for this provider
+	user, err := s.userRepo.GetUserByID(ctx, userID)
+	if err != nil {
+		s.userLogger.Error().Err(err).Str("user_id", userID).Msg("Failed to fetch user before storing API key")
+		return err
+	}
+	if user == nil {
+		return ErrUserNotFound
+	}
+
+	alreadyHasKey := user.APIKeysProvided[provider]
+
 	// Validate API key before storing based on provider
 	var validationErr error
 	switch provider {
@@ -205,7 +242,7 @@ func (s *userService) StoreAPIKey(ctx context.Context, userID, provider, apiKey 
 	}
 
 	// Store in Secret Manager with provider-specific naming
-	err := s.secretManagerSvc.StoreUserAPIKey(ctx, userID, provider, apiKey)
+	err = s.secretManagerSvc.StoreUserAPIKey(ctx, userID, provider, apiKey)
 	if err != nil {
 		s.userLogger.Error().Err(err).Str("user_id", userID).Str("provider", provider).Msg("Failed to store API key in Secret Manager")
 		return err
@@ -222,6 +259,22 @@ func (s *userService) StoreAPIKey(ctx context.Context, userID, provider, apiKey 
 			Str("error_type", fmt.Sprintf("%T", err)).
 			Msg("Failed to update API key flag in database")
 		return err
+	}
+
+	// If it's a new API key (not an update), set default models
+	if !alreadyHasKey {
+		if defaultModels, ok := defaultModelCatalog[provider]; ok {
+			err = s.userRepo.InitializeDefaultModels(ctx, userID, provider, defaultModels)
+			if err != nil {
+				s.userLogger.Error().
+					Err(err).
+					Str("user_id", userID).
+					Str("provider", provider).
+					Msg("Failed to initialize default models")
+				// We don't return error here because the API key is already stored and flag updated
+				// Initializing defaults is a "nice to have" but not critical enough to fail the whole request
+			}
+		}
 	}
 
 	return nil
