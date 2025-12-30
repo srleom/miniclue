@@ -70,7 +70,7 @@ export function ChatInput({
             models={availableModels}
             disabled={disabled}
           />
-          {status === "streaming" ? (
+          {status === "streaming" || status === "submitted" ? (
             <Button
               className="bg-foreground text-background hover:bg-foreground/90 size-8 rounded-full p-1 transition-colors duration-200"
               onClick={(event) => {

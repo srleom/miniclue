@@ -9,7 +9,7 @@ export function createChatTransport(
 ): ChatTransport<ChatMessage> {
   const getModel = typeof model === "function" ? model : () => model;
   return {
-    async sendMessages({ messages }) {
+    async sendMessages({ messages, abortSignal }) {
       const lastMessage = messages[messages.length - 1];
       if (!lastMessage || lastMessage.role !== "user") {
         throw new Error("Last message must be from user");
@@ -25,6 +25,7 @@ export function createChatTransport(
           headers: {
             "Content-Type": "application/json",
           },
+          signal: abortSignal,
           body: JSON.stringify({
             model: currentModel,
             parts: lastMessage.parts,
@@ -185,6 +186,12 @@ export function createChatTransport(
           } catch (error) {
             controller.error(error);
           }
+        },
+        cancel(reason) {
+          logger.debug("[Transport] Stream cancelled", reason);
+          reader.cancel(reason).catch((err) => {
+            logger.error("[Transport] Failed to cancel reader", err);
+          });
         },
       });
     },
