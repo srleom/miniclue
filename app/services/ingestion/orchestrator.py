@@ -4,7 +4,8 @@ from app.schemas.ingestion import IngestionPayload
 
 import asyncpg
 import json
-
+import os
+import tempfile
 from app.services.ingestion.db_utils import (
     get_or_create_chunk,
     get_or_create_slide,
@@ -17,7 +18,7 @@ from app.services.ingestion.image_processing import (
     process_slide_sub_images,
     render_and_upload_slide_image,
 )
-from app.services.ingestion.s3_utils import download_pdf
+from app.services.ingestion.s3_utils import download_pdf_to_file
 from app.services.ingestion.text_processing import chunk_text_by_tokens
 from app.services.ingestion.pubsub_utils import (
     publish_embedding_job,
@@ -52,6 +53,7 @@ async def ingest(
 
     conn = None
     doc = None
+    tmp_path = None
     import pymupdf
 
     s3_client = None
@@ -72,8 +74,11 @@ async def ingest(
             lecture_id,
         )
 
-        pdf_bytes = download_pdf(s3_client, settings.s3_bucket_name, storage_path)
-        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
+            tmp_path = tmp.name
+
+        download_pdf_to_file(s3_client, settings.s3_bucket_name, storage_path, tmp_path)
+        doc = pymupdf.open(tmp_path)
         total_slides = doc.page_count
 
         await set_lecture_parsing(conn, lecture_id, total_slides)
@@ -125,29 +130,6 @@ async def ingest(
         # We now set status to 'processing' while embeddings/images are being handled
         await update_lecture_status(conn, lecture_id, "processing")
 
-        # DEPRECATED: Explanation job publishing has been removed (Step 5 in data flow)
-        # Users will only receive chat functionality without slide-by-slide explanations
-        # Keeping this code commented for potential future reactivation
-        # Dispatch explanation jobs for every slide
-        # slides_for_jobs = await get_slides_with_images_for_lecture(conn, lecture_id)
-        # for slide_record in slides_for_jobs:
-        #     slide_image_path = slide_record["slide_image_path"]
-        #     if slide_image_path:
-        #         publish_explanation_job(
-        #             lecture_id=lecture_id,
-        #             slide_id=slide_record["id"],
-        #             slide_number=slide_record["slide_number"],
-        #             total_slides=total_slides,
-        #             slide_image_path=slide_image_path,
-        #             customer_identifier=customer_identifier,
-        #             name=name,
-        #             email=email,
-        #         )
-        #     else:
-        #         logging.warning(
-        #             f"Could not find full slide image for slide_id {slide_record['id']}. Skipping explanation job."
-        #         )
-
         if total_sub_images > 0:
             for job in image_analysis_jobs:
                 publish_image_analysis_job(
@@ -180,6 +162,8 @@ async def ingest(
     finally:
         if doc:
             doc.close()
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
         if s3_client:
             s3_client.close()
         if conn:

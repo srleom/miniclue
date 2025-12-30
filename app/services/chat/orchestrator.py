@@ -28,6 +28,7 @@ async def _parse_message_parts(
     query_text = ""
     resolved_references = []
     marker_map = {}  # Map of REF_X to [Slide X]
+    seen_slide_ids = set()
 
     for part in message:
         part_type = part.get("type")
@@ -51,6 +52,11 @@ async def _parse_message_parts(
                     slide_number = int(slide_number_id)
                     if ref_marker:
                         marker_map[ref_marker] = f"[Slide {slide_number}]"
+
+                    if slide_number in seen_slide_ids:
+                        continue
+
+                    seen_slide_ids.add(slide_number)
 
                     resources = await db_utils.get_slide_resources(
                         conn, lecture_id, slide_number
