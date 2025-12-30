@@ -24,6 +24,7 @@ from app.services.ingestion.pubsub_utils import (
     publish_image_analysis_job,
 )
 from app.utils.config import Settings
+from app.utils.s3_utils import get_s3_client
 
 
 settings = Settings()
@@ -51,17 +52,11 @@ async def ingest(
 
     conn = None
     doc = None
-    import boto3
     import pymupdf
 
     s3_client = None
     try:
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=settings.s3_access_key or None,
-            aws_secret_access_key=settings.s3_secret_key or None,
-            endpoint_url=settings.s3_endpoint_url or None,
-        )
+        s3_client = get_s3_client()
         conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
 
         # Verify the lecture exists before proceeding (Defensive Subscriber)

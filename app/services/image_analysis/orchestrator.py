@@ -11,6 +11,7 @@ from app.utils.secret_manager import (
     SecretNotFoundError,
     InvalidAPIKeyError,
 )
+from app.utils.s3_utils import get_s3_client
 
 settings = Settings()
 
@@ -33,8 +34,6 @@ async def process_image_analysis_job(
     name = payload.name
     email = payload.email
 
-    import boto3
-
     # Initialize resources
     conn = None
     s3_client = None
@@ -45,12 +44,7 @@ async def process_image_analysis_job(
         raise RuntimeError("Required settings are not configured.")
 
     try:
-        s3_client = boto3.client(
-            "s3",
-            aws_access_key_id=settings.s3_access_key or None,
-            aws_secret_access_key=settings.s3_secret_key or None,
-            endpoint_url=settings.s3_endpoint_url or None,
-        )
+        s3_client = get_s3_client()
         conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
 
         # 1. Verify lecture exists (Defensive Subscriber)

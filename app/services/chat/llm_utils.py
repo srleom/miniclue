@@ -6,6 +6,7 @@ from app.utils.config import Settings
 from app.utils.secret_manager import InvalidAPIKeyError
 from app.utils.llm_utils import extract_text_from_response
 from app.utils.posthog_client import get_openai_client
+from app.utils.s3_utils import get_s3_client, download_image_as_base64
 
 # Constants
 TITLE_MAX_LENGTH = 80
@@ -71,6 +72,7 @@ def _create_title_posthog_properties(
 async def stream_chat_response(
     query: str,
     context_chunks: List[Dict[str, Any]],
+    resolved_references: List[Dict[str, Any]],
     lecture_id: str,
     chat_id: str,
     user_id: str,
@@ -81,12 +83,13 @@ async def stream_chat_response(
 ) -> AsyncGenerator[str, None]:
     """
     Stream chat response using OpenAI Chat Completions API streaming.
-    Builds prompt with lecture context from RAG chunks and message history.
+    Builds prompt with lecture context from RAG chunks, message history, and resolved references (images).
     Yields text chunks as they arrive.
 
     Args:
         query: Current user question
         context_chunks: RAG chunks retrieved from lecture
+        resolved_references: References resolved into resources (images/OCR)
         lecture_id: Lecture ID for tracking
         chat_id: Chat ID for PostHog trace tracking
         user_id: User ID for tracking
@@ -125,7 +128,41 @@ async def stream_chat_response(
         for msg in message_history:
             messages.append({"role": msg["role"], "content": msg["text"]})
 
-    # Add the current user query as the final message
+    # 1. Add resolved references (images) as separate messages
+    if resolved_references:
+        s3_client = get_s3_client()
+        try:
+            for ref in resolved_references:
+                if ref["type"] == "slide":
+                    slide_num = ref["id"]
+                    for res in ref["resources"]:
+                        # Add image if path is available
+                        if res.get("storage_path"):
+                            img_base64 = download_image_as_base64(
+                                s3_client, settings.s3_bucket_name, res["storage_path"]
+                            )
+                            if img_base64:
+                                messages.append(
+                                    {
+                                        "role": "user",
+                                        "content": [
+                                            {
+                                                "type": "image_url",
+                                                "image_url": {
+                                                    "url": f"data:image/png;base64,{img_base64}"
+                                                },
+                                            },
+                                            {
+                                                "type": "text",
+                                                "text": f"Reference: Slide {slide_num}",
+                                            },
+                                        ],
+                                    }
+                                )
+        finally:
+            s3_client.close()
+
+    # 2. Add the user query text as the final message
     messages.append({"role": "user", "content": query})
 
     posthog_properties = _create_chat_posthog_properties(
@@ -133,6 +170,26 @@ async def stream_chat_response(
     )
 
     client = get_openai_client(user_api_key, base_url=base_url)
+
+    # Log the prompt for debugging
+    logging.info(f"--- CHAT PROMPT (lecture_id={lecture_id}, chat_id={chat_id}) ---")
+    for msg in messages:
+        role = msg.get("role")
+        content = msg.get("content")
+        if isinstance(content, list):
+            # Handle multi-modal content by summarizing image data
+            log_content = []
+            for item in content:
+                if item.get("type") == "image_url":
+                    log_content.append(
+                        {"type": "image_url", "url": "[IMAGE_DATA_TRUNCATED]"}
+                    )
+                else:
+                    log_content.append(item)
+            logging.info(f"[{role}]: {log_content}")
+        else:
+            logging.info(f"[{role}]: {content}")
+    logging.info("--- END CHAT PROMPT ---")
 
     try:
         stream = await client.chat.completions.create(
@@ -214,6 +271,14 @@ async def generate_chat_title(
 
     # Always use OpenAI default base_url for title generation
     client = get_openai_client(user_api_key)
+
+    # Log the prompt for debugging
+    logging.info(
+        f"--- TITLE GENERATION PROMPT (lecture_id={lecture_id}, chat_id={chat_id}) ---"
+    )
+    for msg in messages:
+        logging.info(f"[{msg.get('role')}]: {msg.get('content')}")
+    logging.info("--- END TITLE GENERATION PROMPT ---")
 
     try:
         response = await client.chat.completions.create(

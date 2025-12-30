@@ -18,6 +18,123 @@ from app.utils.posthog_client import get_base_url_for_provider
 settings = Settings()
 
 
+async def _parse_message_parts(
+    conn: asyncpg.Connection, lecture_id: UUID, message: list[dict]
+) -> tuple[str, list[dict]]:
+    """
+    Extracts text and resolves references from message parts.
+    Returns (query_text, resolved_references).
+    """
+    query_text = ""
+    resolved_references = []
+    marker_map = {}  # Map of REF_X to [Slide X]
+
+    for part in message:
+        part_type = part.get("type")
+        if part_type == "text" and part.get("text"):
+            query_text += part["text"]
+        elif part_type == "data-reference" and part.get("data"):
+            data = part["data"]
+            ref = data.get("reference")
+            if not ref:
+                continue
+
+            # Collect reference marker for replacement
+            ref_marker = data.get("text") or ref.get("metadata", {}).get("ref")
+
+            if ref.get("type") == "slide":
+                try:
+                    slide_number_id = ref.get("id")
+                    if not slide_number_id:
+                        continue
+
+                    slide_number = int(slide_number_id)
+                    if ref_marker:
+                        marker_map[ref_marker] = f"[Slide {slide_number}]"
+
+                    resources = await db_utils.get_slide_resources(
+                        conn, lecture_id, slide_number
+                    )
+                    if resources:
+                        resolved_references.append(
+                            {
+                                "type": "slide",
+                                "id": slide_number,
+                                "resources": resources,
+                            }
+                        )
+                except (ValueError, TypeError):
+                    logging.warning(
+                        f"Invalid slide number in reference: {ref.get('id')}"
+                    )
+
+    # Replace reference markers in query text with descriptive names
+    for marker, replacement in marker_map.items():
+        query_text = query_text.replace(marker, replacement)
+
+    return query_text.strip(), resolved_references
+
+
+async def _get_api_context(user_id: UUID, model: str) -> tuple[str, str, str, str]:
+    """
+    Determines provider and fetches necessary API keys.
+    Returns (provider, openai_api_key, user_api_key, base_url).
+    """
+    provider = get_provider_for_model(model)
+    if provider is None:
+        raise ValueError(f"Unknown model: {model}")
+
+    # Fetch OpenAI API key (for RAG/rewriting)
+    try:
+        openai_api_key = get_user_api_key(str(user_id), provider="openai")
+    except SecretNotFoundError:
+        logging.error(f"OpenAI API key not found for user {user_id}")
+        raise InvalidAPIKeyError(
+            "User OpenAI API key not found. Please configure your API key in settings."
+        )
+    except Exception as e:
+        logging.error(f"Failed to fetch OpenAI API key for {user_id}: {e}")
+        raise InvalidAPIKeyError(f"Failed to access OpenAI API key: {str(e)}")
+
+    # Fetch provider-specific API key (for streaming)
+    if provider == "openai":
+        user_api_key = openai_api_key
+    else:
+        try:
+            user_api_key = get_user_api_key(str(user_id), provider=provider)
+        except SecretNotFoundError:
+            logging.error(f"API key not found for user {user_id}, provider {provider}")
+            raise InvalidAPIKeyError(
+                f"User API key not found for {provider}. Please configure your API key in settings."
+            )
+        except Exception as e:
+            logging.error(
+                f"Failed to fetch user API key for {user_id}, provider {provider}: {e}"
+            )
+            raise InvalidAPIKeyError(f"Failed to access API key: {str(e)}")
+
+    base_url = get_base_url_for_provider(provider)
+    return provider, openai_api_key, user_api_key, base_url
+
+
+async def _get_processed_history(
+    conn: asyncpg.Connection, chat_id: UUID, user_id: UUID
+) -> list[dict]:
+    """
+    Fetches and processes message history, excluding the current user message if present.
+    """
+    # Fetch 11 messages to account for excluding the current user message, ensuring we have up to 5 turns after exclusion
+    message_history = await db_utils.get_message_history(
+        conn=conn, chat_id=chat_id, user_id=user_id, limit=11
+    )
+
+    # Exclude the most recent message if it's a user message (the current message being processed)
+    if message_history and message_history[-1].get("role") == "user":
+        message_history = message_history[:-1]
+
+    return message_history
+
+
 async def process_chat_request(
     lecture_id: UUID,
     chat_id: UUID,
@@ -32,11 +149,9 @@ async def process_chat_request(
     Streams LLM response.
     Returns async generator of text chunks.
     """
-    conn = None
+    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
-
-        # Verify lecture exists and user owns it
+        # 1. Verify lecture exists and user owns it
         if not await db_utils.verify_lecture_exists_and_ownership(
             conn, lecture_id, user_id
         ):
@@ -44,63 +159,22 @@ async def process_chat_request(
                 f"Lecture {lecture_id} not found or user {user_id} does not own it"
             )
 
-        # Extract text from message parts
-        query_text = ""
-        for part in message:
-            if part.get("type") == "text" and part.get("text"):
-                query_text += part["text"] + " "
-
-        query_text = query_text.strip()
+        # 2. Parse message parts and resolve references
+        query_text, resolved_references = await _parse_message_parts(
+            conn, lecture_id, message
+        )
         if not query_text:
             raise ValueError("Message must contain at least one text part")
 
-        # Determine provider from model ID for streaming response
-        provider = get_provider_for_model(model)
-        if provider is None:
-            raise ValueError(f"Unknown model: {model}")
-
-        # Fetch OpenAI API key for query rewriting and RAG (always use OpenAI)
-        try:
-            openai_api_key = get_user_api_key(str(user_id), provider="openai")
-        except SecretNotFoundError:
-            logging.error(f"OpenAI API key not found for user {user_id}")
-            raise InvalidAPIKeyError(
-                "User OpenAI API key not found. Please configure your API key in settings."
-            )
-        except Exception as e:
-            logging.error(f"Failed to fetch OpenAI API key for {user_id}: {e}")
-            raise InvalidAPIKeyError(f"Failed to access OpenAI API key: {str(e)}")
-
-        # Fetch user API key for the determined provider from Secret Manager (for streaming response)
-        try:
-            user_api_key = get_user_api_key(str(user_id), provider=provider)
-        except SecretNotFoundError:
-            logging.error(f"API key not found for user {user_id}, provider {provider}")
-            raise InvalidAPIKeyError(
-                f"User API key not found for {provider}. Please configure your API key in settings."
-            )
-        except Exception as e:
-            logging.error(
-                f"Failed to fetch user API key for {user_id}, provider {provider}: {e}"
-            )
-            raise InvalidAPIKeyError(f"Failed to access API key: {str(e)}")
-
-        # Get base URL for the provider (only for streaming response)
-        base_url = get_base_url_for_provider(provider)
-
-        # Fetch message history once (up to 5 turns = 10 messages) for both query rewriting and final prompt
-        # Fetch 11 messages to account for excluding the current user message, ensuring we have up to 5 turns after exclusion
-        message_history = await db_utils.get_message_history(
-            conn=conn, chat_id=chat_id, user_id=user_id, limit=11
+        # 3. Get API context (provider, keys, base_url)
+        _, openai_api_key, user_api_key, base_url = await _get_api_context(
+            user_id, model
         )
 
-        # Exclude the most recent message if it's a user message (the current message being processed)
-        # The current user message is saved to the database before processing, so we need to exclude it
-        if message_history and message_history[-1].get("role") == "user":
-            message_history = message_history[:-1]
+        # 4. Get message history
+        message_history = await _get_processed_history(conn, chat_id, user_id)
 
-        # Rewrite query using available history (up to last 3 turns) only if history exists
-        # Use OpenAI API key for query rewriting
+        # 5. Rewrite query using available history
         rewritten_query = query_text
         if message_history:
             try:
@@ -114,10 +188,8 @@ async def process_chat_request(
                 )
             except Exception as e:
                 logging.warning(f"Query rewriting failed, using original query: {e}")
-                # Continue with original query if rewriting fails
 
-        # Retrieve relevant chunks via RAG using rewritten query
-        # Use OpenAI API key for RAG embeddings
+        # 6. Retrieve relevant chunks via RAG using rewritten query
         context_chunks = await rag_utils.retrieve_relevant_chunks(
             conn=conn,
             lecture_id=lecture_id,
@@ -128,31 +200,24 @@ async def process_chat_request(
             top_k=settings.rag_top_k,
         )
 
-        # Stream LLM response with message history
-        try:
-            async for chunk in llm_utils.stream_chat_response(
-                query=query_text,
-                context_chunks=context_chunks,
-                message_history=message_history,
-                lecture_id=str(lecture_id),
-                chat_id=str(chat_id),
-                user_id=str(user_id),
-                user_api_key=user_api_key,
-                model=model,
-                base_url=base_url,
-            ):
-                yield chunk
-        except asyncio.CancelledError:
-            logging.warning(
-                f"Chat request cancelled: lecture_id={lecture_id}, "
-                f"chat_id={chat_id}, user_id={user_id}"
-            )
-            raise
+        # 7. Stream LLM response
+        async for chunk in llm_utils.stream_chat_response(
+            query=query_text,
+            context_chunks=context_chunks,
+            resolved_references=resolved_references,
+            message_history=message_history,
+            lecture_id=str(lecture_id),
+            chat_id=str(chat_id),
+            user_id=str(user_id),
+            user_api_key=user_api_key,
+            model=model,
+            base_url=base_url,
+        ):
+            yield chunk
 
     except asyncio.CancelledError:
         logging.warning(
-            f"Chat request cancelled: lecture_id={lecture_id}, "
-            f"chat_id={chat_id}, user_id={user_id}"
+            f"Chat request cancelled: lecture_id={lecture_id}, chat_id={chat_id}, user_id={user_id}"
         )
         raise
     except Exception as e:
@@ -163,8 +228,18 @@ async def process_chat_request(
         )
         raise
     finally:
-        if conn:
-            await conn.close()
+        await conn.close()
+
+
+def _extract_text_from_message(message: list[dict]) -> str:
+    """
+    Extracts plain text from message parts.
+    """
+    text = ""
+    for part in message:
+        if part.get("type") == "text" and part.get("text"):
+            text += part["text"] + " "
+    return text.strip()
 
 
 async def process_title_generation(
@@ -188,11 +263,9 @@ async def process_title_generation(
     Returns:
         Generated title string
     """
-    conn = None
+    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
-
-        # Verify lecture exists and user owns it
+        # 1. Verify lecture exists and user owns it
         if not await db_utils.verify_lecture_exists_and_ownership(
             conn, lecture_id, user_id
         ):
@@ -200,45 +273,28 @@ async def process_title_generation(
                 f"Lecture {lecture_id} not found or user {user_id} does not own it"
             )
 
-        # Extract text from user message parts
-        user_message_text = ""
-        for part in user_message:
-            if part.get("type") == "text" and part.get("text"):
-                user_message_text += part["text"] + " "
-
-        user_message_text = user_message_text.strip()
-        if not user_message_text:
+        # 2. Extract text from messages
+        user_text = _extract_text_from_message(user_message)
+        if not user_text:
             raise ValueError("User message must contain at least one text part")
 
-        # Extract text from assistant message parts
-        assistant_message_text = ""
-        for part in assistant_message:
-            if part.get("type") == "text" and part.get("text"):
-                assistant_message_text += part["text"] + " "
-
-        assistant_message_text = assistant_message_text.strip()
-        if not assistant_message_text:
+        assistant_text = _extract_text_from_message(assistant_message)
+        if not assistant_text:
             raise ValueError("Assistant message must contain at least one text part")
 
-        # For title generation, use OpenAI provider (default)
-        provider = "openai"
+        # 3. Fetch OpenAI API key for title generation (default provider)
         try:
-            user_api_key = get_user_api_key(str(user_id), provider=provider)
+            user_api_key = get_user_api_key(str(user_id), provider="openai")
         except SecretNotFoundError:
-            logging.error(f"API key not found for user {user_id}, provider {provider}")
+            logging.error(f"OpenAI API key not found for user {user_id}")
             raise InvalidAPIKeyError(
-                f"User API key not found for {provider}. Please configure your API key in settings."
+                "User OpenAI API key not found. Please configure your API key in settings."
             )
-        except Exception as e:
-            logging.error(
-                f"Failed to fetch user API key for {user_id}, provider {provider}: {e}"
-            )
-            raise InvalidAPIKeyError(f"Failed to access API key: {str(e)}")
 
-        # Generate title via LLM (always use OpenAI, no custom base_url)
+        # 4. Generate title via LLM
         title, _ = await llm_utils.generate_chat_title(
-            user_message=user_message_text,
-            assistant_message=assistant_message_text,
+            user_message=user_text,
+            assistant_message=assistant_text,
             user_api_key=user_api_key,
             user_id=str(user_id),
             lecture_id=str(lecture_id),
@@ -255,5 +311,4 @@ async def process_title_generation(
         )
         raise
     finally:
-        if conn:
-            await conn.close()
+        await conn.close()

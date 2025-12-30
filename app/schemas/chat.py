@@ -3,9 +3,23 @@ from uuid import UUID
 from typing import List, Dict, Any
 
 
+class Reference(BaseModel):
+    type: str
+    id: str
+    metadata: Dict[str, Any] | None = None
+
+
+class ReferencePart(BaseModel):
+    type: str
+    text: str | None = None
+    reference: Reference | None = None
+
+
 class MessagePart(BaseModel):
     type: str
     text: str | None = None
+    reference: Reference | None = None
+    data: ReferencePart | None = None
 
 
 class ChatRequest(BaseModel):

@@ -176,31 +176,53 @@ async def get_message_history(
             skipped_count += 1
             continue
 
-        # Extract text from parts (handle both dict and list formats)
+        # Extract text and resolve markers from parts
         text_parts = []
-        if isinstance(parts, list):
-            for part in parts:
-                if isinstance(part, dict) and part.get("type") == "text":
-                    text = part.get("text", "")
-                    if text:
-                        text_parts.append(text)
-        elif isinstance(parts, dict):
-            # Handle single part as dict
-            if parts.get("type") == "text":
-                text = parts.get("text", "")
+        marker_map = {}
+
+        parts_list = parts if isinstance(parts, list) else [parts]
+        for part in parts_list:
+            if not isinstance(part, dict):
+                continue
+
+            p_type = part.get("type")
+            if p_type == "text":
+                text = part.get("text", "")
                 if text:
                     text_parts.append(text)
+            elif p_type == "data-reference" and part.get("data"):
+                data = part["data"]
+                ref = data.get("reference")
+
+                marker = data.get("text") or (
+                    ref.get("metadata", {}).get("ref") if ref else None
+                )
+                if marker and ref and ref.get("type") == "slide":
+                    slide_id = ref.get("id")
+                    if slide_id:
+                        marker_map[marker] = f"[Slide {slide_id}]"
+
+        # Build the message text: use text parts, or markers as fallback
+        if text_parts:
+            message_text = "".join(text_parts).strip()
+        elif marker_map:
+            message_text = "".join(marker_map.keys())
+        else:
+            message_text = ""
+
+        # Replace markers with descriptive names (avoiding duplication and unmapped refs)
+        if message_text:
+            for marker, replacement in marker_map.items():
+                message_text = message_text.replace(marker, replacement)
 
         # Only include messages with text content
-        if text_parts:
-            message_text = " ".join(text_parts).strip()
+        if message_text:
             messages.append(
                 {
                     "role": row["role"],
                     "text": message_text,
                 }
             )
-
         else:
             skipped_count += 1
 
@@ -208,3 +230,24 @@ async def get_message_history(
     messages.reverse()
 
     return messages
+
+
+async def get_slide_resources(
+    conn: asyncpg.Connection, lecture_id: UUID, slide_number: int
+) -> List[Dict[str, Any]]:
+    """
+    Fetch image storage path for a specific slide number in a lecture.
+    Only returns the full slide render image.
+    """
+    rows = await conn.fetch(
+        """
+        SELECT 
+            si.storage_path
+        FROM slides s
+        JOIN slide_images si ON s.id = si.slide_id
+        WHERE s.lecture_id = $1 AND s.slide_number = $2 AND si.type = 'full_slide_render'
+        """,
+        lecture_id,
+        slide_number,
+    )
+    return [dict(row) for row in rows]
