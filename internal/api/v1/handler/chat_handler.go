@@ -383,9 +383,33 @@ func (h *ChatHandler) listMessages(w http.ResponseWriter, r *http.Request, lectu
 	for i, msg := range messages {
 		parts := make([]dto.MessagePartDTO, len(msg.Parts))
 		for j, part := range msg.Parts {
+			var ref *dto.ReferenceDTO
+			if part.Reference != nil {
+				ref = &dto.ReferenceDTO{
+					Type:     part.Reference.Type,
+					ID:       part.Reference.ID,
+					Metadata: part.Reference.Metadata,
+				}
+			}
+			var data *dto.ReferencePartDTO
+			if part.Data != nil {
+				data = &dto.ReferencePartDTO{
+					Type: part.Data.Type,
+					Text: part.Data.Text,
+				}
+				if part.Data.Reference != nil {
+					data.Reference = &dto.ReferenceDTO{
+						Type:     part.Data.Reference.Type,
+						ID:       part.Data.Reference.ID,
+						Metadata: part.Data.Reference.Metadata,
+					}
+				}
+			}
 			parts[j] = dto.MessagePartDTO{
-				Type: part.Type,
-				Text: part.Text,
+				Type:      part.Type,
+				Text:      part.Text,
+				Reference: ref,
+				Data:      data,
 			}
 		}
 		resp[i] = dto.MessageResponseDTO{
@@ -439,9 +463,33 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lecture
 	// Convert DTO to model
 	messageParts := make(model.MessageParts, len(req.Parts))
 	for i, part := range req.Parts {
+		var ref *model.Reference
+		if part.Reference != nil {
+			ref = &model.Reference{
+				Type:     part.Reference.Type,
+				ID:       part.Reference.ID,
+				Metadata: part.Reference.Metadata,
+			}
+		}
+		var data *model.ReferencePart
+		if part.Data != nil {
+			data = &model.ReferencePart{
+				Type: part.Data.Type,
+				Text: part.Data.Text,
+			}
+			if part.Data.Reference != nil {
+				data.Reference = &model.Reference{
+					Type:     part.Data.Reference.Type,
+					ID:       part.Data.Reference.ID,
+					Metadata: part.Data.Reference.Metadata,
+				}
+			}
+		}
 		messageParts[i] = model.MessagePart{
-			Type: part.Type,
-			Text: part.Text,
+			Type:      part.Type,
+			Text:      part.Text,
+			Reference: ref,
+			Data:      data,
 		}
 	}
 

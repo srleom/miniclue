@@ -31,8 +31,23 @@ type MessageParts []MessagePart
 
 // MessagePart represents a single part of a message
 type MessagePart struct {
-	Type string `json:"type"` // 'text' for text-only
-	Text string `json:"text,omitempty"`
+	Type      string         `json:"type"` // 'text' or 'data-reference'
+	Text      string         `json:"text,omitempty"`
+	Reference *Reference     `json:"reference,omitempty"`
+	Data      *ReferencePart `json:"data,omitempty"`
+}
+
+type ReferencePart struct {
+	Type      string     `json:"type"`
+	Text      string     `json:"text,omitempty"`
+	Reference *Reference `json:"reference,omitempty"`
+}
+
+// Reference represents a contextual reference in a message part
+type Reference struct {
+	Type     string         `json:"type"` // e.g., 'slide'
+	ID       string         `json:"id"`
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // Value implements the driver.Valuer interface for JSONB

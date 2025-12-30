@@ -20,8 +20,22 @@ type ChatResponseDTO struct {
 }
 
 type MessagePartDTO struct {
-	Type string `json:"type"`
-	Text string `json:"text,omitempty"`
+	Type      string            `json:"type"`
+	Text      string            `json:"text,omitempty"`
+	Reference *ReferenceDTO     `json:"reference,omitempty"`
+	Data      *ReferencePartDTO `json:"data,omitempty"`
+}
+
+type ReferencePartDTO struct {
+	Type      string        `json:"type"`
+	Text      string        `json:"text,omitempty"`
+	Reference *ReferenceDTO `json:"reference,omitempty"`
+}
+
+type ReferenceDTO struct {
+	Type     string         `json:"type"`
+	ID       string         `json:"id"`
+	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 type MessageCreateDTO struct {

@@ -213,19 +213,33 @@ func (s *chatService) GenerateAndUpdateTitle(ctx context.Context, lectureID, cha
 	// Convert user message parts to map for Python service
 	userMessagePartsMap := make([]map[string]interface{}, len(userMessageParts))
 	for i, part := range userMessageParts {
-		userMessagePartsMap[i] = map[string]interface{}{
+		m := map[string]interface{}{
 			"type": part.Type,
 			"text": part.Text,
 		}
+		if part.Reference != nil {
+			m["reference"] = part.Reference
+		}
+		if part.Data != nil {
+			m["data"] = part.Data
+		}
+		userMessagePartsMap[i] = m
 	}
 
 	// Convert assistant message parts to map for Python service
 	assistantMessagePartsMap := make([]map[string]interface{}, len(assistantMessageParts))
 	for i, part := range assistantMessageParts {
-		assistantMessagePartsMap[i] = map[string]interface{}{
+		m := map[string]interface{}{
 			"type": part.Type,
 			"text": part.Text,
 		}
+		if part.Reference != nil {
+			m["reference"] = part.Reference
+		}
+		if part.Data != nil {
+			m["data"] = part.Data
+		}
+		assistantMessagePartsMap[i] = m
 	}
 
 	// Generate title via Python service
@@ -262,10 +276,17 @@ func (s *chatService) StreamChatResponse(ctx context.Context, lectureID, chatID,
 	// Convert message parts to map for JSON serialization
 	messagePartsMap := make([]map[string]interface{}, len(messageParts))
 	for i, part := range messageParts {
-		messagePartsMap[i] = map[string]interface{}{
+		m := map[string]interface{}{
 			"type": part.Type,
 			"text": part.Text,
 		}
+		if part.Reference != nil {
+			m["reference"] = part.Reference
+		}
+		if part.Data != nil {
+			m["data"] = part.Data
+		}
+		messagePartsMap[i] = m
 	}
 
 	// Stream from Python service (Python will retrieve API key)
