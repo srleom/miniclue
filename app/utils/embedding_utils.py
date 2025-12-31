@@ -111,7 +111,7 @@ def generate_embeddings(
             model=settings.embedding_model,
             contents=texts,
             config=types.EmbedContentConfig(
-                output_dimensionality=768, task_type=task_type
+                output_dimensionality=1536, task_type=task_type
             ),
         )
         latency = time.time() - start_time
