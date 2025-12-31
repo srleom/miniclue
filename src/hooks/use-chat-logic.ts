@@ -3,7 +3,7 @@ import { useChat } from "@ai-sdk/react";
 import { toast } from "sonner";
 import { logger } from "@/lib/logger";
 import { createChatTransport } from "@/lib/chat/transport";
-import { DEFAULT_CHAT_MODEL } from "@/lib/chat/models";
+import { DEFAULT_CHAT_MODEL } from "@/lib/chat/constants";
 import { getUserModels } from "@/app/(dashboard)/_actions/user-actions";
 import type { ChatMessage, Chat, MessagePart } from "@/types/chat";
 
@@ -83,7 +83,7 @@ export function useChatLogic({
     { id: string; name: string; enabled: boolean }[]
   >([]);
   const [isLoadingModels, setIsLoadingModels] = React.useState(true);
-  const [hasOpenAIKey, setHasOpenAIKey] = React.useState<boolean | null>(null);
+  const [hasGeminiKey, setHasGeminiKey] = React.useState<boolean | null>(null);
 
   // --- Model Fetching ---
   React.useEffect(() => {
@@ -97,9 +97,9 @@ export function useChatLogic({
           return;
         }
 
-        const hasOpenAI =
-          data.providers?.some((p) => p.provider === "openai") ?? false;
-        setHasOpenAIKey(hasOpenAI);
+        const hasGemini =
+          data.providers?.some((p) => p.provider === "gemini") ?? false;
+        setHasGeminiKey(hasGemini);
 
         const models =
           data.providers?.flatMap(
@@ -350,7 +350,7 @@ export function useChatLogic({
     setInput,
     enabledModels,
     isLoadingModels,
-    hasOpenAIKey,
+    hasGeminiKey,
     // Chat SDK
     messages: convertedMessages,
     setMessages,

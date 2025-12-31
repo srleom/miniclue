@@ -1,4 +1,4 @@
-import type { Provider } from "@/lib/chat/models";
+import type { Provider } from "@/types/chat";
 
 export const providerDisplayNames: Record<Provider, string> = {
   openai: "OpenAI",
@@ -83,14 +83,14 @@ export const providers: {
   logo: React.ReactNode;
 }[] = [
   {
-    id: "openai",
-    name: providerDisplayNames.openai,
-    logo: providerLogos.openai,
-  },
-  {
     id: "gemini",
     name: providerDisplayNames.gemini,
     logo: providerLogos.gemini,
+  },
+  {
+    id: "openai",
+    name: providerDisplayNames.openai,
+    logo: providerLogos.openai,
   },
   {
     id: "anthropic",

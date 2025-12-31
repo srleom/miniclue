@@ -146,7 +146,7 @@ export async function getUserCourses(): Promise<
  */
 export async function deleteUserAccount(): Promise<ActionResponse<void>> {
   try {
-    // First get the current user's profile to get their ID
+    // 1. Get the current user's profile to get their ID before we delete it
     const { data: user, error: profileError } = await getUser();
 
     if (profileError || !user) {
@@ -158,10 +158,25 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
       return { error: "User ID not found in profile" };
     }
 
-    // Create Supabase client with service role key for admin operations
+    // 2. Initialize authenticated API to call the Go backend
+    const { api, error: apiError } = await createAuthenticatedApi();
+    if (apiError || !api) {
+      return { error: apiError || "Failed to initialize API client" };
+    }
+
+    // 3. Call Go backend to clean up resources (S3 files, Secret Manager secrets)
+    // and delete the user profile record. This must happen while the user's
+    // session is still valid.
+    const { error: backendError } = await api.DELETE("/users/me");
+    if (backendError) {
+      logger.error("Delete user backend cleanup error:", backendError);
+      // We continue even if backend cleanup fails to ensure the account is still deleted from Auth
+    }
+
+    // 4. Create Supabase client with service role key for admin operations
     const supabase = await createAdminClient();
 
-    // Delete the user using Supabase admin API
+    // 5. Delete the user from Supabase Auth permanently
     const { error: deleteError } = await supabase.auth.admin.deleteUser(
       user.user_id,
       false, // shouldSoftDelete: false

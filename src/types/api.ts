@@ -1734,7 +1734,48 @@ export interface paths {
         };
       };
     };
-    delete?: never;
+    /**
+     * Delete user profile and resources
+     * @description Deletes the profile of the authenticated user and cleans up all associated resources including S3 files and Secret Manager secrets.
+     */
+    delete: {
+      parameters: {
+        query?: never;
+        header?: never;
+        path?: never;
+        cookie?: never;
+      };
+      requestBody?: never;
+      responses: {
+        /** @description No Content */
+        204: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Unauthorized: User ID not found in context */
+        401: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+        /** @description Failed to delete user and resources */
+        500: {
+          headers: {
+            [name: string]: unknown;
+          };
+          content: {
+            "application/json": string;
+          };
+        };
+      };
+    };
     options?: never;
     head?: never;
     patch?: never;

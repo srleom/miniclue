@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils"; // standard shadcn utility
 
 // actions & types
 import { storeAPIKey } from "../_actions/api-key-actions";
-import type { Provider } from "@/lib/chat/models";
+import type { Provider } from "@/types/chat";
 import {
   providerDisplayNames,
   providerLogos,

@@ -32,8 +32,8 @@ async function ModelsContent() {
     components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"];
 
   const apiKeysStatus = {
-    openai: user?.api_keys_provided?.openai ?? false,
     gemini: user?.api_keys_provided?.gemini ?? false,
+    openai: user?.api_keys_provided?.openai ?? false,
     anthropic: user?.api_keys_provided?.anthropic ?? false,
     xai: user?.api_keys_provided?.xai ?? false,
     deepseek: user?.api_keys_provided?.deepseek ?? false,

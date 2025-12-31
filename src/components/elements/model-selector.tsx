@@ -9,9 +9,8 @@ import {
   SelectSeparator,
   SelectTrigger,
 } from "@/components/ui/select";
-import { chatModels } from "@/lib/chat/models";
 import { cn } from "@/lib/utils";
-import { CpuIcon, PlusIcon } from "lucide-react";
+import { CpuIcon, PlusIcon, Loader2Icon } from "lucide-react";
 import Link from "next/link";
 
 function PureModelSelectorCompact({
@@ -25,8 +24,9 @@ function PureModelSelectorCompact({
   models?: { id: string; name: string }[];
   disabled?: boolean;
 }) {
-  // Use provided models if available, otherwise fall back to the default list
-  const availableModels = useMemo(() => models ?? chatModels, [models]);
+  // Use provided models if available, otherwise fall back to empty list
+  const availableModels = useMemo(() => models ?? [], [models]);
+  const isLoading = models === undefined;
 
   // Determine the model to show - if selected model is not available, use first available
   const displayModel = useMemo(() => {
@@ -74,7 +74,7 @@ function PureModelSelectorCompact({
         }
       }}
       value={displayModel?.id ?? ""}
-      disabled={disabled || availableModels.length === 0}
+      disabled={disabled || isLoading || availableModels.length === 0}
     >
       <SelectTrigger
         className={cn(
@@ -83,9 +83,15 @@ function PureModelSelectorCompact({
         size="sm"
       >
         <div className="flex items-center gap-2">
-          <CpuIcon size={16} className="text-inherit" />
+          {isLoading ? (
+            <Loader2Icon size={16} className="animate-spin text-inherit" />
+          ) : (
+            <CpuIcon size={16} className="text-inherit" />
+          )}
           <span className="hidden text-xs font-medium sm:block">
-            {displayModel?.name}
+            {isLoading
+              ? "Loading models..."
+              : (displayModel?.name ?? "No models")}
           </span>
         </div>
       </SelectTrigger>

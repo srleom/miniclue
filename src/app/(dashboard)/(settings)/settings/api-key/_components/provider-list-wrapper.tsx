@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 // components
 import { ProviderList } from "./provider-list";
-import type { Provider } from "@/lib/chat/models";
+import type { Provider } from "@/types/chat";
 
 interface ProviderListWrapperProps {
   initialStatus: Record<Provider, boolean>;

@@ -1,3 +1,5 @@
+export type Provider = "openai" | "gemini" | "anthropic" | "xai" | "deepseek";
+
 export type MessagePart =
   | {
       type: "text";

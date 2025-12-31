@@ -26,7 +26,7 @@ import { ApiKeyDialog } from "./api-key-dialog";
 
 // actions
 import { deleteAPIKey } from "../_actions/api-key-actions";
-import type { Provider } from "@/lib/chat/models";
+import type { Provider } from "@/types/chat";
 import { providerDisplayNames, providers } from "./provider-constants";
 import { cn } from "@/lib/utils";
 
@@ -100,7 +100,7 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
       <div className="space-y-3">
         {providers.map((provider) => {
           const hasKey = apiKeysStatus[provider.id] ?? false;
-          const isRequired = provider.id === "openai";
+          const isRequired = provider.id === "gemini";
 
           return (
             <div
@@ -123,6 +123,21 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
                         className="text-[10px] font-bold tracking-wider uppercase"
                       >
                         Required
+                      </Badge>
+                    )}
+                    {provider.id === "gemini" ? (
+                      <Badge
+                        variant="secondary"
+                        className="border-emerald-200 bg-emerald-100 text-[10px] font-bold tracking-wider text-emerald-700 uppercase dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
+                      >
+                        Free Tier
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="border-purple-200 bg-purple-100 text-[10px] font-bold tracking-wider text-purple-700 uppercase dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                      >
+                        Paid Credits
                       </Badge>
                     )}
                   </div>

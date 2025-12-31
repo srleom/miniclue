@@ -67,12 +67,7 @@ export function DeleteAccountButton() {
   return (
     <AlertDialog onOpenChange={handleDialogOpenChange}>
       <AlertDialogTrigger asChild>
-        <Button
-          variant="destructive"
-          size="sm"
-          disabled={isDeleting}
-          className="hover:cursor-pointer"
-        >
+        <Button variant="destructive" size="sm" disabled={isDeleting}>
           {isDeleting ? "Deleting..." : "Delete..."}
         </Button>
       </AlertDialogTrigger>
@@ -107,14 +102,11 @@ export function DeleteAccountButton() {
         </div>
 
         <AlertDialogFooter>
-          <AlertDialogCancel className="hover:cursor-pointer">
-            Cancel
-          </AlertDialogCancel>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
             onClick={handleDeleteAccount}
             disabled={isDeleting || !isConfirmationValid}
-            className="hover:cursor-pointer"
           >
             {isDeleting ? "Deleting..." : "Delete Account"}
           </AlertDialogAction>

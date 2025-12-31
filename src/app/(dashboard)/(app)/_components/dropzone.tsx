@@ -147,12 +147,12 @@ export function DropzoneComponent({
 }) {
   const [files, setFiles] = React.useState<File[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [hasOpenAIKey, setHasOpenAIKey] = React.useState<boolean | null>(null);
+  const [hasGeminiKey, setHasGeminiKey] = React.useState<boolean | null>(null);
   const [isCheckingKey, setIsCheckingKey] = React.useState(true);
   const router = useRouter();
 
   React.useEffect(() => {
-    const checkOpenAIKey = async () => {
+    const checkGeminiKey = async () => {
       setIsCheckingKey(true);
       const { data: user, error } = await getUser();
 
@@ -160,23 +160,23 @@ export function DropzoneComponent({
         logger.error("Failed to fetch user profile for API key check", {
           error,
         });
-        setHasOpenAIKey(false);
+        setHasGeminiKey(false);
         setIsCheckingKey(false);
         return;
       }
 
-      const openaiKeyProvided = user.api_keys_provided?.openai ?? false;
-      setHasOpenAIKey(openaiKeyProvided);
+      const geminiKeyProvided = user.api_keys_provided?.gemini ?? false;
+      setHasGeminiKey(geminiKeyProvided);
       setIsCheckingKey(false);
     };
 
-    checkOpenAIKey();
+    checkGeminiKey();
   }, []);
 
   const onDrop = (acceptedFiles: File[]) => {
-    if (hasOpenAIKey === false) {
+    if (hasGeminiKey === false) {
       toast.error(
-        "OpenAI API key is required to upload lectures. Please add your API key in settings.",
+        "Google Gemini API key is required to upload lectures. Please add your API key in settings.",
       );
       return;
     }
@@ -193,9 +193,9 @@ export function DropzoneComponent({
       return;
     }
 
-    if (hasOpenAIKey === false) {
+    if (hasGeminiKey === false) {
       toast.error(
-        "OpenAI API key is required to upload lectures. Please add your API key in settings.",
+        "Google Gemini API key is required to upload lectures. Please add your API key in settings.",
       );
       router.push("/settings/api-key");
       return;
@@ -304,7 +304,7 @@ export function DropzoneComponent({
         "application/pdf": [".pdf"],
       }}
       onDropAccepted={onDrop}
-      disabled={hasOpenAIKey === false || isCheckingKey}
+      disabled={hasGeminiKey === false || isCheckingKey}
     >
       <div className="grid w-full gap-4">
         <DropzoneZone className="flex min-h-[14em] items-center justify-center md:min-h-[16em]">
@@ -315,16 +315,16 @@ export function DropzoneComponent({
               <DropzoneTitle>
                 {isCheckingKey
                   ? "Checking API key..."
-                  : hasOpenAIKey === false
-                    ? "OpenAI API key required"
+                  : hasGeminiKey === false
+                    ? "Google Gemini API key required"
                     : isCoursePage
                       ? "Upload lectures here"
                       : "Drop files here or click to upload"}
               </DropzoneTitle>
               <DropzoneDescription className="text-center">
-                {hasOpenAIKey === false ? (
+                {hasGeminiKey === false ? (
                   <>
-                    Please add your OpenAI API key in{" "}
+                    Please add your Google Gemini API key in{" "}
                     <Link
                       href="/settings/api-key"
                       className="text-primary underline"
@@ -361,7 +361,7 @@ export function DropzoneComponent({
           <div className="flex justify-end">
             <Button
               onClick={handleUpload}
-              disabled={isLoading || hasOpenAIKey === false || isCheckingKey}
+              disabled={isLoading || hasGeminiKey === false || isCheckingKey}
               className="w-full hover:cursor-pointer sm:w-auto"
             >
               {isLoading

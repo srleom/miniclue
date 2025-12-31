@@ -50,7 +50,7 @@ export function ChatComponent({
     setInput,
     enabledModels,
     isLoadingModels,
-    hasOpenAIKey,
+    hasGeminiKey,
     messages,
     setMessages,
     sendMessage,
@@ -89,15 +89,16 @@ export function ChatComponent({
     );
   }
 
-  if (!isLoadingModels && hasOpenAIKey === false) {
+  if (!isLoadingModels && hasGeminiKey === false) {
     return (
       <EmptyStateWrapper>
         <Key className="text-muted-foreground size-8" />
         <h2 className="text-2xl font-semibold tracking-tight">
-          OpenAI API key required
+          Google Gemini API key required
         </h2>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          MiniClue requires an OpenAI API key. Please add your key in settings.
+          MiniClue requires a Google Gemini API key. Please add your key in
+          settings.
         </p>
         <Button asChild size="lg">
           <Link href="/settings/api-key">

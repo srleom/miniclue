@@ -12,7 +12,7 @@ import {
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
 import { logger } from "@/lib/logger";
-import type { Provider } from "@/lib/chat/models";
+import type { Provider } from "@/types/chat";
 
 /**
  * Stores the user's API key securely.
