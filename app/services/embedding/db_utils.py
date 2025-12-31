@@ -5,23 +5,6 @@ from typing import List, Dict, Any, Optional
 import asyncpg
 
 
-async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
-    """Verifies that the lecture exists and is not in a terminal state."""
-    exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1
-            FROM lectures
-            WHERE id = $1 AND status NOT IN ('failed', 'complete')
-        );
-        """,
-        lecture_id,
-    )
-    if not exists:
-        logging.warning(f"Lecture {lecture_id} not found or is in a terminal state.")
-    return exists
-
-
 async def get_lecture_chunks(
     conn: asyncpg.Connection, lecture_id: UUID
 ) -> List[asyncpg.Record]:

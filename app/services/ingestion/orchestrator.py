@@ -12,7 +12,6 @@ from app.services.ingestion.db_utils import (
     set_lecture_parsing,
     update_lecture_sub_image_count,
     update_lecture_status,
-    verify_lecture_exists,
 )
 from app.services.ingestion.image_processing import (
     process_slide_sub_images,
@@ -26,6 +25,7 @@ from app.services.ingestion.pubsub_utils import (
 )
 from app.utils.config import Settings
 from app.utils.s3_utils import get_s3_client
+from app.utils.db_utils import verify_lecture_exists
 
 
 settings = Settings()

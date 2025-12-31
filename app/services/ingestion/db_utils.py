@@ -5,23 +5,6 @@ import asyncpg
 from app.utils.sanitize import sanitize_text
 
 
-async def verify_lecture_exists(conn: asyncpg.Connection, lecture_id: UUID) -> bool:
-    """Verifies that the lecture exists and is not in a terminal state."""
-    exists = await conn.fetchval(
-        """
-        SELECT EXISTS (
-            SELECT 1
-            FROM lectures
-            WHERE id = $1 AND status NOT IN ('failed', 'complete')
-        );
-        """,
-        lecture_id,
-    )
-    if not exists:
-        logging.warning(f"Lecture {lecture_id} not found or is in a terminal state.")
-    return exists
-
-
 async def update_lecture_status(
     conn: asyncpg.Connection,
     lecture_id: UUID,

@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 from app.services.chat import db_utils, rag_utils, llm_utils, query_rewriter
 from app.utils.config import Settings
 from app.utils.llm_utils import get_llm_context
+from app.utils.db_utils import verify_lecture_exists_and_ownership
 
 
 settings = Settings()
@@ -137,9 +138,7 @@ async def process_chat_request(
     conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
     try:
         # 1. Verify lecture exists and user owns it
-        if not await db_utils.verify_lecture_exists_and_ownership(
-            conn, lecture_id, user_id
-        ):
+        if not await verify_lecture_exists_and_ownership(conn, lecture_id, user_id):
             raise ValueError(
                 f"Lecture {lecture_id} not found or user {user_id} does not own it"
             )
@@ -252,9 +251,7 @@ async def process_title_generation(
     conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
     try:
         # 1. Verify lecture exists and user owns it
-        if not await db_utils.verify_lecture_exists_and_ownership(
-            conn, lecture_id, user_id
-        ):
+        if not await verify_lecture_exists_and_ownership(conn, lecture_id, user_id):
             raise ValueError(
                 f"Lecture {lecture_id} not found or user {user_id} does not own it"
             )

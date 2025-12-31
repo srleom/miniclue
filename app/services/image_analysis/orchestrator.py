@@ -8,6 +8,7 @@ from app.utils.config import Settings
 from app.schemas.image_analysis import ImageAnalysisPayload
 from app.utils.llm_utils import get_llm_context
 from app.utils.s3_utils import get_s3_client
+from app.utils.db_utils import verify_lecture_exists
 
 
 settings = Settings()
@@ -45,7 +46,7 @@ async def process_image_analysis_job(
         conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
 
         # 1. Verify lecture exists (Defensive Subscriber)
-        if not await db_utils.verify_lecture_exists(conn, lecture_id):
+        if not await verify_lecture_exists(conn, lecture_id):
             logging.warning(f"Lecture {lecture_id} not found. Stopping job.")
             return
 

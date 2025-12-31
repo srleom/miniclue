@@ -6,27 +6,6 @@ from typing import Optional, Tuple
 from asyncpg import Connection
 
 
-async def verify_lecture_exists(conn: Connection, lecture_id: uuid.UUID) -> bool:
-    """Verifies that the lecture exists and is not in a terminal state."""
-    query = """
-        SELECT EXISTS (
-            SELECT 1
-            FROM lectures
-            WHERE id = $1 AND status NOT IN ('failed', 'complete')
-        );
-    """
-    try:
-        exists = await conn.fetchval(query, lecture_id)
-        if not exists:
-            logging.warning(
-                f"Lecture {lecture_id} not found or is in a terminal state."
-            )
-        return exists
-    except Exception as e:
-        logging.error(f"Error verifying lecture {lecture_id}: {e}", exc_info=True)
-        raise
-
-
 async def get_image_storage_path(
     conn: Connection, slide_image_id: uuid.UUID
 ) -> Optional[str]:

@@ -9,6 +9,7 @@ from app.schemas.embedding import EmbeddingPayload
 from app.utils import embedding_utils
 from app.utils import llm_utils
 from app.utils.config import Settings
+from app.utils.db_utils import verify_lecture_exists
 
 settings = Settings()
 
@@ -26,7 +27,7 @@ async def process_embedding_job(payload: EmbeddingPayload):
     try:
         conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
         # 1. Verify the lecture exists and is in a valid state
-        if not await db_utils.verify_lecture_exists(conn, lecture_id):
+        if not await verify_lecture_exists(conn, lecture_id):
             logging.warning(
                 f"Lecture {lecture_id} not found or in terminal state. Acknowledging message."
             )
