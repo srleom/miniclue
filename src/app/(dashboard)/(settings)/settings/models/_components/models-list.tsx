@@ -227,12 +227,19 @@ export function ModelsList({ providers }: ModelsListProps) {
                         Required
                       </Badge>
                     )}
-                    {provider.provider === "gemini" && (
+                    {provider.provider === "gemini" ? (
                       <Badge
                         variant="secondary"
                         className="border-emerald-200 bg-emerald-100 text-[10px] font-bold tracking-wider text-emerald-700 uppercase dark:border-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400"
                       >
                         Free Tier
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="secondary"
+                        className="border-purple-200 bg-purple-100 text-[10px] font-bold tracking-wider text-purple-700 uppercase dark:border-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                      >
+                        Paid Credits
                       </Badge>
                     )}
                   </div>
