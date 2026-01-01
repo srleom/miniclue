@@ -77,34 +77,40 @@ export const providerLogos: Record<Provider, React.ReactNode> = {
   ),
 };
 
+// Disabled providers that should not appear in the UI
+// Deepseek is disabled because its models are not multimodal
+const disabledProviders: Set<Provider> = new Set(["deepseek"]);
+
 export const providers: {
   id: Provider;
   name: string;
   logo: React.ReactNode;
-}[] = [
-  {
-    id: "gemini",
-    name: providerDisplayNames.gemini,
-    logo: providerLogos.gemini,
-  },
-  {
-    id: "openai",
-    name: providerDisplayNames.openai,
-    logo: providerLogos.openai,
-  },
-  {
-    id: "anthropic",
-    name: providerDisplayNames.anthropic,
-    logo: providerLogos.anthropic,
-  },
-  {
-    id: "xai",
-    name: providerDisplayNames.xai,
-    logo: providerLogos.xai,
-  },
-  {
-    id: "deepseek",
-    name: providerDisplayNames.deepseek,
-    logo: providerLogos.deepseek,
-  },
-];
+}[] = (
+  [
+    {
+      id: "gemini",
+      name: providerDisplayNames.gemini,
+      logo: providerLogos.gemini,
+    },
+    {
+      id: "openai",
+      name: providerDisplayNames.openai,
+      logo: providerLogos.openai,
+    },
+    {
+      id: "anthropic",
+      name: providerDisplayNames.anthropic,
+      logo: providerLogos.anthropic,
+    },
+    {
+      id: "xai",
+      name: providerDisplayNames.xai,
+      logo: providerLogos.xai,
+    },
+    {
+      id: "deepseek",
+      name: providerDisplayNames.deepseek,
+      logo: providerLogos.deepseek,
+    },
+  ] as { id: Provider; name: string; logo: React.ReactNode }[]
+).filter((provider) => !disabledProviders.has(provider.id));

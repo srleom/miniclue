@@ -61,7 +61,17 @@ export function ChatInput({
   return (
     <div className="relative w-full">
       <div className="border-border bg-background focus-within:border-border hover:border-muted-foreground/50 w-full rounded-xl border p-3 shadow-xs transition-all duration-200">
-        <EditorContent editor={editor} />
+        <div className="relative">
+          <EditorContent editor={editor} />
+          {editor.isEmpty && (
+            <div className="text-muted-foreground/60 pointer-events-none absolute top-2 right-2 flex items-center gap-1.5 text-sm">
+              <span className="bg-muted/50 text-muted-foreground flex h-5 items-center justify-center rounded border px-1.5 font-mono text-[10px] font-medium">
+                @
+              </span>
+              <span>for tools</span>
+            </div>
+          )}
+        </div>
 
         <div className="mt-2 flex items-center justify-between pt-2">
           <ModelSelectorCompact
