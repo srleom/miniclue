@@ -2,6 +2,7 @@
 
 // next
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 // icons
 import { CircleUserRound, Cpu, Key, LogOut } from "lucide-react";
@@ -38,6 +39,8 @@ export function NavUser({
   };
   handleLogout: () => Promise<void>;
 }) {
+  const pathname = usePathname();
+
   const handleLogoutWithPostHog = async () => {
     // Reset PostHog first (if initialized)
     if (typeof window !== "undefined" && posthog.__loaded) {
@@ -47,6 +50,13 @@ export function NavUser({
     // Then perform server-side logout
     await handleLogout();
   };
+
+  const settingsLinks = [
+    { href: "/settings/profile", icon: CircleUserRound, label: "Profile" },
+    { href: "/settings/api-key", icon: Key, label: "API Keys" },
+    { href: "/settings/models", icon: Cpu, label: "Models" },
+  ];
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -94,24 +104,20 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                <Link href="/settings/profile">
-                  <CircleUserRound />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                <Link href="/settings/api-key">
-                  <Key />
-                  API Keys
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="hover:cursor-pointer" asChild>
-                <Link href="/settings/models">
-                  <Cpu />
-                  Models
-                </Link>
-              </DropdownMenuItem>
+              {settingsLinks.map((link) => (
+                <DropdownMenuItem
+                  key={link.href}
+                  className="hover:cursor-pointer"
+                  asChild
+                >
+                  <Link
+                    href={`${link.href}?returnTo=${encodeURIComponent(pathname)}`}
+                  >
+                    <link.icon />
+                    {link.label}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
