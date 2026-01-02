@@ -47,7 +47,7 @@ jobs:
 
       - name: Build and Push Docker Image
         env:
-          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }}
+          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }}
         run: |
           docker build -t $IMAGE_URL .
           docker push $IMAGE_URL
@@ -57,7 +57,7 @@ jobs:
         # We use standard shell command instead of the Action to use --set-env-vars
         run: |
           DEPLOY_OUTPUT=$(gcloud run deploy miniclue-be-prod \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }} \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
             --format="value(status.url)" \

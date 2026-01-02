@@ -48,7 +48,7 @@ jobs:
       - name: Check if image exists
         id: check_image
         run: |
-          if gcloud artifacts docker images describe "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }}" --quiet &>/dev/null; then
+          if gcloud artifacts docker images describe "${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }}" --quiet &>/dev/null; then
             echo "Image already exists, skipping build and push."
             echo "exists=true" >> $GITHUB_OUTPUT
           else
@@ -59,7 +59,7 @@ jobs:
       - name: Build and Push Docker Image
         if: steps.check_image.outputs.exists == 'false'
         env:
-          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }}
+          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }}
         run: |
           docker build -t $IMAGE_URL .
           docker push $IMAGE_URL
@@ -69,7 +69,7 @@ jobs:
         # We use standard shell command instead of the Action to use --set-env-vars
         run: |
           DEPLOY_OUTPUT=$(gcloud run deploy miniclue-be-stg \
-            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.sha }} \
+            --image ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-be:${{ github.ref_name }} \
             --region ${{ secrets.GCP_REGION }} \
             --allow-unauthenticated \
             --format="value(status.url)" \

@@ -175,11 +175,6 @@ This will generate the `swagger.json` file in the `docs` directory.
 ### Production Environment
 
 1. After changes are verified in staging, a release can be deployed to production.
-2. A developer creates and pushes a semantic version git tag (e.g., `v1.2.3`) from the `main` branch.
-   ```bash
-   # From the main branch
-   git tag -a v1.0.0 -m "Release notes"
-   git push origin v1.0.0
-   ```
-3. Pushing the tag automatically triggers the release workflow (`release.yml`).
+2. Create a new release on the GitHub repository.
+3. This will trigger the release workflow (`release.yml`).
 4. This workflow builds a Docker image tagged with the version (e.g., `v1.0.0`) and deploys it to the **production** environment.
