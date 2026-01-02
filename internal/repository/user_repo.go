@@ -73,8 +73,8 @@ func (r *userRepo) UpdateAPIKeyFlag(ctx context.Context, userID string, provider
 		return fmt.Errorf("marshaling boolean: %w", err)
 	}
 
-	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1::text], $2, true), updated_at = NOW() WHERE user_id = $3`
-	result, err := r.pool.Exec(ctx, query, provider, boolJSON, userID)
+	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1::text], $2::jsonb, true), updated_at = NOW() WHERE user_id = $3`
+	result, err := r.pool.Exec(ctx, query, provider, string(boolJSON), userID)
 	if err != nil {
 		return fmt.Errorf("updating API key flag for user %s, provider %s: %w", userID, provider, err)
 	}
@@ -99,13 +99,13 @@ func (r *userRepo) UpdateModelPreference(ctx context.Context, userID string, pro
 		SET model_preferences = jsonb_set(
 			COALESCE(model_preferences, '{}'::jsonb) || jsonb_build_object($1::text, COALESCE(model_preferences->$1, '{}'::jsonb)),
 			ARRAY[$1::text, $2::text],
-			$3,
+			$3::jsonb,
 			true
 		),
 		updated_at = NOW()
 		WHERE user_id = $4
 	`
-	result, err := r.pool.Exec(ctx, query, provider, modelName, boolJSON, userID)
+	result, err := r.pool.Exec(ctx, query, provider, modelName, string(boolJSON), userID)
 	if err != nil {
 		return fmt.Errorf("updating model preference for user %s, provider %s, model %s: %w", userID, provider, modelName, err)
 	}
@@ -136,27 +136,27 @@ func (r *userRepo) UpdateAPIKeyFlagAndInitializeModels(ctx context.Context, user
 	}
 
 	// Atomically update both api_keys_provided and model_preferences in a single query
-	// Pass []byte directly to parameters (pgx will handle JSONB correctly)
+	// Pass strings to parameters (Postgres will cast to JSONB from text correctly)
 	query := `
     UPDATE user_profiles
     SET 
         api_keys_provided = jsonb_set(
             COALESCE(api_keys_provided, '{}'::jsonb),
             ARRAY[$1::text],
-            $2::jsonb, -- Force cast here
+            $2::jsonb,
             true
         ),
         model_preferences = jsonb_set(
             COALESCE(model_preferences, '{}'::jsonb),
             ARRAY[$1::text],
-            $3::jsonb, -- Force cast here
+            $3::jsonb,
             true
         ),
         updated_at = NOW()
     WHERE user_id = $4
 `
 
-	result, err := r.pool.Exec(ctx, query, provider, boolJSON, prefJSON, userID)
+	result, err := r.pool.Exec(ctx, query, provider, string(boolJSON), string(prefJSON), userID)
 
 	if err != nil {
 		return fmt.Errorf("updating API key flag and initializing models for user %s, provider %s: %w", userID, provider, err)
