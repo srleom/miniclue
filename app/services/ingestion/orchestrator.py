@@ -129,6 +129,16 @@ async def ingest(
         # We now set status to 'processing' while embeddings/images are being handled
         await update_lecture_status(conn, lecture_id, "processing")
 
+        # DISPATCH: Always publish the embedding job immediately after parsing.
+        # Image analysis jobs are also published and will run concurrently.
+        # The embedding job no longer waits for or uses image analysis content.
+        publish_embedding_job(
+            lecture_id,
+            customer_identifier=customer_identifier,
+            name=name,
+            email=email,
+        )
+
         if total_sub_images > 0:
             for job in image_analysis_jobs:
                 publish_image_analysis_job(
@@ -139,13 +149,6 @@ async def ingest(
                     name=name,
                     email=email,
                 )
-        else:
-            publish_embedding_job(
-                lecture_id,
-                customer_identifier=customer_identifier,
-                name=name,
-                email=email,
-            )
 
     except Exception as e:
         logging.error(f"Ingestion failed for lecture {lecture_id}: {e}", exc_info=True)

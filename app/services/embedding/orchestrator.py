@@ -1,5 +1,4 @@
 import logging
-from collections import defaultdict
 import json
 
 import asyncpg
@@ -33,9 +32,9 @@ async def process_embedding_job(payload: EmbeddingPayload):
             )
             return
 
-        # 2. Get all chunks and content-rich images for the lecture
+        # 2. Get all chunks for the lecture.
+        # Images are no longer used for enrichment to allow for concurrent execution.
         chunks = await db_utils.get_lecture_chunks(conn, lecture_id)
-        images = await db_utils.get_content_images_for_lecture(conn, lecture_id)
 
         if not chunks:
             logging.warning(
@@ -48,22 +47,8 @@ async def process_embedding_job(payload: EmbeddingPayload):
                 await db_utils.set_lecture_status_to_complete(conn, lecture_id)
             return
 
-        # 3. Enrich the text for each chunk
-        image_info_by_slide = defaultdict(list)
-        for image in images:
-            image_info_by_slide[image["slide_id"]].append(image)
-
-        enriched_texts = []
-        for chunk in chunks:
-            texts_to_join = [chunk["text"]]
-            for image in image_info_by_slide[chunk["slide_id"]]:
-                if image["ocr_text"]:
-                    texts_to_join.append(f"OCR Text: {image['ocr_text']}")
-                if image["alt_text"]:
-                    texts_to_join.append(f"Alt Text: {image['alt_text']}")
-
-            enriched_text = " ".join(texts_to_join).strip()
-            enriched_texts.append(enriched_text)
+        # 3. Use raw text for each chunk (no enrichment)
+        enriched_texts = [chunk["text"] for chunk in chunks]
 
         # 4. Fetch user API context (required)
         embedding_client, _ = await llm_utils.get_llm_context(

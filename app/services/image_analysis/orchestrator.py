@@ -3,7 +3,7 @@ import json
 
 import asyncpg
 
-from app.services.image_analysis import db_utils, llm_utils, s3_utils, pubsub_utils
+from app.services.image_analysis import db_utils, llm_utils, s3_utils 
 from app.utils.config import Settings
 from app.schemas.image_analysis import ImageAnalysisPayload
 from app.utils.llm_utils import get_llm_context
@@ -91,20 +91,9 @@ async def process_image_analysis_job(
                 metadata=metadata,
             )
 
-            # 6. Increment counter and check if last job
-            (
-                processed_count,
-                total_count,
-            ) = await db_utils.increment_processed_images_count(conn, lecture_id)
-
-        # 7. Trigger embedding job if all images are processed
-        if total_count > 0 and processed_count == total_count:
-            pubsub_utils.publish_embedding_job(
-                lecture_id,
-                customer_identifier=customer_identifier,
-                name=name,
-                email=email,
-            )
+            # 6. Increment counter
+            # We still track this for progress monitoring, but it no longer triggers embeddings.
+            await db_utils.increment_processed_images_count(conn, lecture_id)
 
     except Exception as e:
         logging.error(
