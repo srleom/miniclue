@@ -1,4 +1,5 @@
 // next
+import { Suspense } from "react";
 
 // components
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -14,7 +15,9 @@ export default async function SettingsLayout({
   return (
     <div className="flex h-[100dvh] w-screen overflow-hidden">
       <SidebarProvider defaultOpen={true}>
-        <SettingsSidebar />
+        <Suspense>
+          <SettingsSidebar />
+        </Suspense>
         <SidebarInset className="flex min-h-0 min-w-0 flex-1 flex-col md:px-15">
           {children}
         </SidebarInset>
