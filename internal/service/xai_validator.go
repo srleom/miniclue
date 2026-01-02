@@ -1,6 +1,7 @@
 package service
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -10,8 +11,8 @@ import (
 )
 
 const (
-	xaiBaseURL        = "https://api.x.ai/v1"
-	xaiModelsEndpoint = "/models"
+	xaiBaseURL                = "https://api.x.ai/v1"
+	xaiChatCompletionEndpoint = "/chat/completions"
 )
 
 // XAIValidator validates X.AI API keys by making a test API call
@@ -34,14 +35,30 @@ func NewXAIValidator() XAIValidator {
 	}
 }
 
-// ValidateAPIKey validates an X.AI API key by making a test call to the models endpoint
+// ValidateAPIKey validates an X.AI API key by making a test call to the chat completions endpoint
 func (v *xaiValidator) ValidateAPIKey(ctx context.Context, apiKey string) error {
 	if apiKey == "" {
 		return fmt.Errorf("API key cannot be empty")
 	}
 
-	// Create request to X.AI models endpoint
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.baseURL+xaiModelsEndpoint, nil)
+	// Create a minimal test request body for chat completion
+	// Using max_tokens: 1 to minimize cost and response time
+	requestBody := map[string]interface{}{
+		"model": "grok-4-1-fast-non-reasoning",
+		"messages": []map[string]string{
+			{"role": "user", "content": "test"},
+		},
+		"max_tokens":  1,
+		"temperature": 0,
+	}
+
+	bodyJSON, err := json.Marshal(requestBody)
+	if err != nil {
+		return fmt.Errorf("failed to marshal request body: %w", err)
+	}
+
+	// Create request to X.AI chat completions endpoint
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, v.baseURL+xaiChatCompletionEndpoint, bytes.NewReader(bodyJSON))
 	if err != nil {
 		return fmt.Errorf("failed to create validation request: %w", err)
 	}
@@ -90,14 +107,6 @@ func (v *xaiValidator) ValidateAPIKey(ctx context.Context, apiKey string) error 
 			return fmt.Errorf("API key validation failed: %s", errorResp.Error.Message)
 		}
 		return fmt.Errorf("API key validation failed: HTTP %d", resp.StatusCode)
-	}
-
-	// Verify response is valid JSON (models list)
-	var modelsResp struct {
-		Data []interface{} `json:"data"`
-	}
-	if err := json.Unmarshal(body, &modelsResp); err != nil {
-		return fmt.Errorf("invalid response format from X.AI: %w", err)
 	}
 
 	return nil

@@ -43,7 +43,7 @@ func (v *anthropicValidator) ValidateAPIKey(ctx context.Context, apiKey string) 
 
 	// Create a minimal test request body
 	requestBody := map[string]interface{}{
-		"model":      "claude-3-5-sonnet-20241022",
+		"model":      "claude-haiku-4-5",
 		"max_tokens": 1,
 		"messages": []map[string]string{
 			{"role": "user", "content": "test"},
