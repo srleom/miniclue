@@ -170,7 +170,7 @@ export function ApiKeyDialog({
                       <Input
                         {...field}
                         type={showKey ? "text" : "password"}
-                        className="pr-10 font-mono text-sm" // Monospace for keys
+                        className="pr-10 font-mono text-sm tracking-tight" // Monospace for keys
                         placeholder={
                           provider === "openai"
                             ? "sk-..."

@@ -115,13 +115,13 @@ export function GeminiKeyPromptDialog() {
             ))}
           </div>
 
-          {/* Pro Tip Box - The Requested Addition */}
+          {/* Pro Tip Box */}
           <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/50 p-4 dark:border-blue-900 dark:bg-blue-950/30">
             <div className="flex gap-3">
               <Sparkles className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" />
               <div className="space-y-1.5">
                 <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">
-                  Did you know?
+                  Good news!
                 </p>
                 <p className="text-xs leading-relaxed text-blue-700 dark:text-blue-300">
                   Google Gemini offers a <strong>generous free tier</strong>.
@@ -153,7 +153,7 @@ export function GeminiKeyPromptDialog() {
               variant="ghost"
               size="sm"
               onClick={() => setOpen(false)}
-              className="text-muted-foreground hover:text-foreground h-9 text-xs"
+              className="text-muted-foreground hover:text-foreground h-9 text-sm"
             >
               I&apos;ll do this later
             </Button>
