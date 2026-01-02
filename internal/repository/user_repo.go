@@ -16,7 +16,7 @@ type UserRepository interface {
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
 	UpdateAPIKeyFlag(ctx context.Context, userID string, provider string, hasKey bool) error
 	UpdateModelPreference(ctx context.Context, userID string, provider string, model string, enabled bool) error
-	InitializeDefaultModels(ctx context.Context, userID string, provider string, models []string) error
+	UpdateAPIKeyFlagAndInitializeModels(ctx context.Context, userID string, provider string, hasKey bool, defaultModels []string) error
 	DeleteUser(ctx context.Context, id string) error
 }
 
@@ -67,10 +67,14 @@ func (r *userRepo) GetUserByID(ctx context.Context, id string) (*model.User, err
 }
 
 func (r *userRepo) UpdateAPIKeyFlag(ctx context.Context, userID string, provider string, hasKey bool) error {
-	// Use jsonb_set with to_jsonb to properly convert the boolean to JSONB
-	// This avoids issues with JSON marshaling and type casting in PostgreSQL
-	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1::text], to_jsonb($2::boolean), true), updated_at = NOW() WHERE user_id = $3`
-	result, err := r.pool.Exec(ctx, query, provider, hasKey, userID)
+	// Marshal the boolean value to JSON bytes (same pattern as CreateUser)
+	boolJSON, err := json.Marshal(hasKey)
+	if err != nil {
+		return fmt.Errorf("marshaling boolean: %w", err)
+	}
+
+	query := `UPDATE user_profiles SET api_keys_provided = jsonb_set(COALESCE(api_keys_provided, '{}'::jsonb), ARRAY[$1::text], $2::jsonb, true), updated_at = NOW() WHERE user_id = $3`
+	result, err := r.pool.Exec(ctx, query, provider, boolJSON, userID)
 	if err != nil {
 		return fmt.Errorf("updating API key flag for user %s, provider %s: %w", userID, provider, err)
 	}
@@ -81,6 +85,12 @@ func (r *userRepo) UpdateAPIKeyFlag(ctx context.Context, userID string, provider
 }
 
 func (r *userRepo) UpdateModelPreference(ctx context.Context, userID string, provider string, modelName string, enabled bool) error {
+	// Marshal the boolean value to JSON bytes (same pattern as CreateUser)
+	boolJSON, err := json.Marshal(enabled)
+	if err != nil {
+		return fmt.Errorf("marshaling boolean: %w", err)
+	}
+
 	// First ensure the provider key exists with an empty object if it doesn't exist,
 	// then set the model value within that provider
 	// This handles the case where model_preferences is empty or the provider key doesn't exist
@@ -89,13 +99,13 @@ func (r *userRepo) UpdateModelPreference(ctx context.Context, userID string, pro
 		SET model_preferences = jsonb_set(
 			COALESCE(model_preferences, '{}'::jsonb) || jsonb_build_object($1::text, COALESCE(model_preferences->$1, '{}'::jsonb)),
 			ARRAY[$1::text, $2::text],
-			to_jsonb($3::boolean),
+			$3::jsonb,
 			true
 		),
 		updated_at = NOW()
 		WHERE user_id = $4
 	`
-	result, err := r.pool.Exec(ctx, query, provider, modelName, enabled, userID)
+	result, err := r.pool.Exec(ctx, query, provider, modelName, boolJSON, userID)
 	if err != nil {
 		return fmt.Errorf("updating model preference for user %s, provider %s, model %s: %w", userID, provider, modelName, err)
 	}
@@ -105,10 +115,13 @@ func (r *userRepo) UpdateModelPreference(ctx context.Context, userID string, pro
 	return nil
 }
 
-func (r *userRepo) InitializeDefaultModels(ctx context.Context, userID string, provider string, models []string) error {
+// UpdateAPIKeyFlagAndInitializeModels atomically updates the API key flag and initializes default models
+// in a single query. This is more robust than separate queries, especially in cloud environments with
+// connection pooling.
+func (r *userRepo) UpdateAPIKeyFlagAndInitializeModels(ctx context.Context, userID string, provider string, hasKey bool, defaultModels []string) error {
 	// Create a JSON object for the models: {"model1": true, "model2": true}
 	prefMap := make(map[string]bool)
-	for _, m := range models {
+	for _, m := range defaultModels {
 		prefMap[m] = true
 	}
 	prefJSON, err := json.Marshal(prefMap)
@@ -116,22 +129,35 @@ func (r *userRepo) InitializeDefaultModels(ctx context.Context, userID string, p
 		return fmt.Errorf("marshaling default models: %w", err)
 	}
 
-	// Use to_jsonb($2::text) to ensure the JSON string is properly converted to JSONB
-	// and ARRAY[$1::text] for explicit type casting
+	// Marshal the boolean value to JSON bytes (same pattern as CreateUser)
+	boolJSON, err := json.Marshal(hasKey)
+	if err != nil {
+		return fmt.Errorf("marshaling boolean: %w", err)
+	}
+
+	// Atomically update both api_keys_provided and model_preferences in a single query
+	// Pass []byte directly to ::jsonb parameters (proven pattern from CreateUser)
 	query := `
 		UPDATE user_profiles
-		SET model_preferences = jsonb_set(
-			COALESCE(model_preferences, '{}'::jsonb),
-			ARRAY[$1::text],
-			to_jsonb($2::text),
-			true
-		),
-		updated_at = NOW()
-		WHERE user_id = $3
+		SET 
+			api_keys_provided = jsonb_set(
+				COALESCE(api_keys_provided, '{}'::jsonb),
+				ARRAY[$1::text],
+				$2::jsonb,
+				true
+			),
+			model_preferences = jsonb_set(
+				COALESCE(model_preferences, '{}'::jsonb),
+				ARRAY[$1::text],
+				$3::jsonb,
+				true
+			),
+			updated_at = NOW()
+		WHERE user_id = $4
 	`
-	result, err := r.pool.Exec(ctx, query, provider, string(prefJSON), userID)
+	result, err := r.pool.Exec(ctx, query, provider, boolJSON, prefJSON, userID)
 	if err != nil {
-		return fmt.Errorf("initializing default models for user %s, provider %s: %w", userID, provider, err)
+		return fmt.Errorf("updating API key flag and initializing models for user %s, provider %s: %w", userID, provider, err)
 	}
 	if result.RowsAffected() == 0 {
 		return fmt.Errorf("no rows affected: user %s may not exist in database", userID)

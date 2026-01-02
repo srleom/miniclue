@@ -271,32 +271,74 @@ func (s *userService) StoreAPIKey(ctx context.Context, userID, provider, apiKey 
 		return err
 	}
 
-	// Update the flag in database
-	err = s.userRepo.UpdateAPIKeyFlag(ctx, userID, provider, true)
-	if err != nil {
-		s.userLogger.Error().
-			Err(err).
+	// Update the database: if it's a new API key, atomically update flag and initialize default models
+	// If it's an update, just update the flag
+	if !alreadyHasKey {
+		s.userLogger.Info().
 			Str("user_id", userID).
 			Str("provider", provider).
-			Bool("context_cancelled", ctx.Err() != nil).
-			Str("error_type", fmt.Sprintf("%T", err)).
-			Msg("Failed to update API key flag in database")
-		return err
-	}
+			Msg("New API key detected, atomically updating flag and initializing default models")
 
-	// If it's a new API key (not an update), set default models
-	if !alreadyHasKey {
 		if defaultModels, ok := defaultModelCatalog[provider]; ok {
-			err = s.userRepo.InitializeDefaultModels(ctx, userID, provider, defaultModels)
+			s.userLogger.Info().
+				Str("user_id", userID).
+				Str("provider", provider).
+				Strs("default_models", defaultModels).
+				Msg("Default models found in catalog, using atomic update...")
+
+			// Use atomic operation to update both flag and models in a single query
+			err = s.userRepo.UpdateAPIKeyFlagAndInitializeModels(ctx, userID, provider, true, defaultModels)
 			if err != nil {
 				s.userLogger.Error().
 					Err(err).
 					Str("user_id", userID).
 					Str("provider", provider).
-					Msg("Failed to initialize default models")
-				// We don't return error here because the API key is already stored and flag updated
-				// Initializing defaults is a "nice to have" but not critical enough to fail the whole request
+					Strs("default_models", defaultModels).
+					Bool("context_cancelled", ctx.Err() != nil).
+					Str("error_detail", err.Error()).
+					Msg("CRITICAL: Failed to update API key flag and initialize default models")
+				// Return the error so it's visible to the user
+				return fmt.Errorf("failed to update API key flag and initialize default chat models: %w", err)
 			}
+
+			s.userLogger.Info().
+				Str("user_id", userID).
+				Str("provider", provider).
+				Msg("Successfully updated API key flag and initialized default models")
+		} else {
+			s.userLogger.Warn().
+				Str("user_id", userID).
+				Str("provider", provider).
+				Msg("No default models found in catalog, only updating API key flag")
+
+			// Fallback to just updating the flag if no default models defined
+			err = s.userRepo.UpdateAPIKeyFlag(ctx, userID, provider, true)
+			if err != nil {
+				s.userLogger.Error().
+					Err(err).
+					Str("user_id", userID).
+					Str("provider", provider).
+					Bool("context_cancelled", ctx.Err() != nil).
+					Msg("Failed to update API key flag in database")
+				return err
+			}
+		}
+	} else {
+		s.userLogger.Info().
+			Str("user_id", userID).
+			Str("provider", provider).
+			Msg("Updating existing API key, only updating flag")
+
+		// For existing keys, just update the flag
+		err = s.userRepo.UpdateAPIKeyFlag(ctx, userID, provider, true)
+		if err != nil {
+			s.userLogger.Error().
+				Err(err).
+				Str("user_id", userID).
+				Str("provider", provider).
+				Bool("context_cancelled", ctx.Err() != nil).
+				Msg("Failed to update API key flag in database")
+			return err
 		}
 	}
 
