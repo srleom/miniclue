@@ -70,7 +70,7 @@ function PureMessages({
                     <p className="text-muted-foreground max-w-[240px] text-xs">
                       {lectureStatus === "failed"
                         ? "Something went wrong while processing your lecture."
-                        : "Processing your lecture content..."}
+                        : "This might take a while..."}
                     </p>
                   </div>
                 </>
