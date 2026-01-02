@@ -148,7 +148,7 @@ async def analyze_image(
 
     messages = [
         {
-            "role": "developer",
+            "role": "system",
             "content": """You are an image analysis API. Your sole function is to analyze the provided image and return a single, raw JSON object.
 
 You MUST strictly adhere to the following JSON structure:

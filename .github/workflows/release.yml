@@ -33,7 +33,7 @@ jobs:
 
       - name: Build and Push Docker Image
         env:
-          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-ai:${{ github.ref_name }}
+          IMAGE_URL: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.GCP_ARTIFACT_REGISTRY_REPO }}/miniclue-ai:${{ github.sha }}
         run: |
           docker build -t $IMAGE_URL .
           docker push $IMAGE_URL
@@ -58,8 +58,6 @@ jobs:
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},\
             INGESTION_TOPIC=${{ secrets.INGESTION_TOPIC }},\
             IMAGE_ANALYSIS_TOPIC=${{ secrets.IMAGE_ANALYSIS_TOPIC }},\
-            EXPLANATION_TOPIC=${{ secrets.EXPLANATION_TOPIC }},\
-            SUMMARY_TOPIC=${{ secrets.SUMMARY_TOPIC }},\
             EMBEDDING_TOPIC=${{ secrets.EMBEDDING_TOPIC }},\
             POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }},\
             POSTHOG_HOST=${{ secrets.POSTHOG_HOST }},\

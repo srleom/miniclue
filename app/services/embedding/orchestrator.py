@@ -112,7 +112,6 @@ async def process_embedding_job(payload: EmbeddingPayload):
         async with conn.transaction():
             await db_utils.batch_upsert_embeddings(conn, embeddings_to_insert)
 
-            # DEPRECATED: Rendezvous point with explanation/summary track removed
             # We now directly set status to 'complete' once embeddings are finished
             await db_utils.set_embeddings_complete(conn, lecture_id)
             await db_utils.set_lecture_status_to_complete(conn, lecture_id)

@@ -99,9 +99,7 @@ Instructions:
         lecture_id, chat_id, history_turns
     )
 
-    messages = [
-        {"role": "developer", "content": REWRITING_SYSTEM_PROMPT}
-    ] + input_messages
+    messages = [{"role": "system", "content": REWRITING_SYSTEM_PROMPT}] + input_messages
 
     try:
         response = await client.chat.completions.create(

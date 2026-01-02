@@ -70,8 +70,6 @@ jobs:
             GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }},\
             INGESTION_TOPIC=${{ secrets.INGESTION_TOPIC }},\
             IMAGE_ANALYSIS_TOPIC=${{ secrets.IMAGE_ANALYSIS_TOPIC }},\
-            EXPLANATION_TOPIC=${{ secrets.EXPLANATION_TOPIC }},\
-            SUMMARY_TOPIC=${{ secrets.SUMMARY_TOPIC }},\
             EMBEDDING_TOPIC=${{ secrets.EMBEDDING_TOPIC }},\
             POSTHOG_API_KEY=${{ secrets.POSTHOG_API_KEY }},\
             POSTHOG_HOST=${{ secrets.POSTHOG_HOST }},\

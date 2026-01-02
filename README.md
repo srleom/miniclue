@@ -1,6 +1,6 @@
 # AI Lecture Service
 
-A FastAPI microservice to handle AI‐driven lecture pipeline jobs (ingestion, image analysis, embedding, explanation, summarization).
+A FastAPI microservice to handle AI‐driven lecture pipeline jobs (ingestion, image analysis, embedding, chat).
 
 ## Setup
 

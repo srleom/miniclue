@@ -99,7 +99,7 @@ Explain the user's query based on the provided Lecture Slides. Your explanations
 - **Be Concise:** Get straight to the point.
 - **Latex:** Use LaTeX for all math formulas."""
 
-    messages = [{"role": "developer", "content": SYSTEM_PROMPT}]
+    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
     # Build context from RAG chunks
     # 1. Formatting context chunks with XML tags for better boundary detection

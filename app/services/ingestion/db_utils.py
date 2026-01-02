@@ -140,7 +140,7 @@ async def get_slides_with_images_for_lecture(
 ):
     """
     Fetches all slides for a given lecture with their corresponding full-slide image path,
-    ready for dispatching explanation jobs.
+    ready for dispatching chat jobs.
     """
     return await conn.fetch(
         """

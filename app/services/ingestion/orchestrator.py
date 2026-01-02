@@ -43,7 +43,7 @@ async def ingest(
     Ingestion and Dispatch Workflow:
     - Parses a PDF into slides, text chunks, and images.
     - Uploads unique images to S3.
-    - Dispatches jobs for image analysis and slide explanations via Pub/Sub.
+    - Dispatches jobs for image analysis via Pub/Sub.
     - Does NOT make any external AI calls.
     """
 
@@ -70,7 +70,7 @@ async def ingest(
 
         # Clear any previous embedding-track errors since we're starting fresh
         await conn.execute(
-            "UPDATE lectures SET embedding_error_details = NULL, explanation_error_details = NULL WHERE id = $1",
+            "UPDATE lectures SET embedding_error_details = NULL WHERE id = $1",
             lecture_id,
         )
 
@@ -126,7 +126,6 @@ async def ingest(
         total_sub_images = len(processed_images_map)
         await update_lecture_sub_image_count(conn, lecture_id, total_sub_images)
 
-        # DEPRECATED: Explanation generation has been removed from the data flow
         # We now set status to 'processing' while embeddings/images are being handled
         await update_lecture_status(conn, lecture_id, "processing")
 

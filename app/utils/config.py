@@ -15,8 +15,6 @@ class Settings(BaseSettings):
     gcp_project_id: str = ""
     ingestion_topic: str = ""
     image_analysis_topic: str | None = None
-    explanation_topic: str | None = None
-    summary_topic: str | None = None
     embedding_topic: str | None = None
     # Pub/Sub
     pubsub_base_url: str = ""
@@ -39,10 +37,6 @@ class Settings(BaseSettings):
     image_analysis_model: str = "gemini-2.5-flash-lite"
     query_rewriter_model: str = "gemini-2.5-flash-lite"
     title_model: str = "gemini-2.5-flash-lite"
-
-    # Models (Deprecated)
-    explanation_model: str = "gpt-4o-mini"
-    summary_model: str = "gpt-4.1-nano"
 
     # RAG
     rag_top_k: int = 5
