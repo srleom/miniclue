@@ -78,7 +78,7 @@ export function BYOKTransitionDialog({
                 open-sourcing MiniClue and transitioning to a Bring Your Own Key
                 (BYOK) model. Learn more{" "}
                 <Link
-                  href="https://www.miniclue.com/blog/ga"
+                  href="https://www.miniclue.com/blog/launch"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary underline"
