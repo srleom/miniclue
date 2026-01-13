@@ -2,6 +2,9 @@
 
 import { type ComponentProps, memo, type ReactNode } from "react";
 import { Streamdown } from "streamdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { cn } from "@/lib/utils";
 
 type ResponseProps = ComponentProps<typeof Streamdown>;
@@ -42,6 +45,8 @@ export const Response = memo(
         "[&_img]:my-4 [&_img]:max-w-full [&_img]:rounded-md",
         className,
       )}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={
         {
           t: ({ children }: { children: ReactNode }) => (
