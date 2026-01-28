@@ -1,0 +1,16 @@
+# Ignore VSCode
+.vscode
+
+# Ignore DS_Store
+.DS_Store
+
+# Ignore env
+.env
+.env.production
+.env.staging
+
+# Ignore swagger docs
+docs
+
+# Ignore bin
+bin
