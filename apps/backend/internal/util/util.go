@@ -1,13 +1,12 @@
 package util
 
 import (
-	"crypto/ecdsa"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
+	"context"
 	"errors"
 	"fmt"
+	"sync"
 
+	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -17,117 +16,55 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
-// ParseECDSAPublicKey parses a PEM-encoded ECDSA public key
-func ParseECDSAPublicKey(pemKey string) (*ecdsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(pemKey))
-	if block == nil {
-		return nil, errors.New("failed to decode PEM block containing public key")
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse public key: %w", err)
-	}
-
-	ecdsaPub, ok := pub.(*ecdsa.PublicKey)
-	if !ok {
-		return nil, errors.New("public key is not ECDSA")
-	}
-
-	return ecdsaPub, nil
+// JWKSValidator handles JWT validation using JWKS endpoint
+type JWKSValidator struct {
+	jwks keyfunc.Keyfunc
+	mu   sync.RWMutex
 }
 
-// ParseRSAPublicKey parses a PEM-encoded RSA public key
-func ParseRSAPublicKey(pemKey string) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(pemKey))
-	if block == nil {
-		return nil, errors.New("failed to decode PEM block containing public key")
-	}
+var (
+	globalValidator *JWKSValidator
+	validatorOnce   sync.Once
+)
 
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse public key: %w", err)
-	}
+// InitJWKSValidator initializes the global JWKS validator
+// This should be called once during application startup
+func InitJWKSValidator(jwksURL string) error {
+	var initErr error
+	validatorOnce.Do(func() {
+		ctx := context.Background()
 
-	rsaPub, ok := pub.(*rsa.PublicKey)
-	if !ok {
-		return nil, errors.New("public key is not RSA")
-	}
-
-	return rsaPub, nil
-}
-
-// getAlgorithmFromToken extracts the algorithm from the JWT header without validation
-func getAlgorithmFromToken(tokenString string) (string, error) {
-	parser := jwt.NewParser()
-	token, _, err := parser.ParseUnverified(tokenString, &Claims{})
-	if err != nil {
-		return "", fmt.Errorf("failed to parse token header: %w", err)
-	}
-
-	alg, ok := token.Header["alg"].(string)
-	if !ok {
-		return "", errors.New("token header missing 'alg' field")
-	}
-
-	return alg, nil
-}
-
-func ValidateJWT(tokenString string, keyMaterial string) (*Claims, error) {
-
-	// Step 1: Detect algorithm from JWT header
-	alg, err := getAlgorithmFromToken(tokenString)
-	if err != nil {
-		return nil, fmt.Errorf("failed to detect algorithm: %w", err)
-	}
-
-	// Step 2: Build appropriate keyFunc based on algorithm
-	var keyFunc jwt.Keyfunc
-
-	switch alg {
-	case "HS256", "HS384", "HS512":
-		// Symmetric key - use keyMaterial as-is
-		secret := []byte(keyMaterial)
-		keyFunc = func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v (expected HMAC)", token.Header["alg"])
-			}
-			return secret, nil
-		}
-
-	case "RS256", "RS384", "RS512":
-		// RSA asymmetric - parse PEM as RSA public key
-		publicKey, err := ParseRSAPublicKey(keyMaterial)
+		// Create JWKS client with automatic refresh (keyfunc v3 handles caching internally)
+		jwks, err := keyfunc.NewDefaultCtx(ctx, []string{jwksURL})
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse RSA public key: %w", err)
-		}
-		keyFunc = func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v (expected RSA)", token.Header["alg"])
-			}
-			return publicKey, nil
+			initErr = fmt.Errorf("failed to create JWKS client: %w", err)
+			return
 		}
 
-	case "ES256", "ES384", "ES512":
-		// ECDSA asymmetric - parse PEM as ECDSA public key
-		publicKey, err := ParseECDSAPublicKey(keyMaterial)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse ECDSA public key: %w", err)
+		globalValidator = &JWKSValidator{
+			jwks: jwks,
 		}
-		keyFunc = func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
-				return nil, fmt.Errorf("unexpected signing method: %v (expected ECDSA)", token.Header["alg"])
-			}
-			return publicKey, nil
-		}
+	})
 
-	default:
-		return nil, fmt.Errorf("unsupported signing algorithm: %s", alg)
+	return initErr
+}
+
+// GetValidator returns the global JWKS validator instance
+func GetValidator() (*JWKSValidator, error) {
+	if globalValidator == nil {
+		return nil, errors.New("JWKS validator not initialized. Call InitJWKSValidator first")
 	}
+	return globalValidator, nil
+}
 
-	// Step 3: Validate token with appropriate key
+// ValidateJWT validates a JWT token using the JWKS
+func (v *JWKSValidator) ValidateJWT(tokenString string) (*Claims, error) {
+	v.mu.RLock()
+	defer v.mu.RUnlock()
+
+	// Parse and validate token
 	claims := &Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, claims, keyFunc)
+	token, err := jwt.ParseWithClaims(tokenString, claims, v.jwks.Keyfunc)
 	if err != nil {
 		return nil, fmt.Errorf("failed to validate token: %w", err)
 	}
@@ -137,4 +74,13 @@ func ValidateJWT(tokenString string, keyMaterial string) (*Claims, error) {
 	}
 
 	return claims, nil
+}
+
+// ValidateJWT is a convenience function that uses the global validator
+func ValidateJWT(tokenString string) (*Claims, error) {
+	validator, err := GetValidator()
+	if err != nil {
+		return nil, err
+	}
+	return validator.ValidateJWT(tokenString)
 }

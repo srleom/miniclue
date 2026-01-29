@@ -90,7 +90,7 @@ jobs:
             --allow-unauthenticated \
             --set-env-vars "ENV=production,\
             DATABASE_URL=${{ secrets.DATABASE_URL }},\
-            SUPABASE_JWT_PUBLIC_KEY=${{ secrets.SUPABASE_JWT_PUBLIC_KEY }},\
+            SUPABASE_JWKS_URL=${{ secrets.SUPABASE_JWKS_URL }},\
             SUPABASE_S3_URL=${{ secrets.SUPABASE_S3_URL }},\
             SUPABASE_S3_BUCKET=${{ secrets.SUPABASE_S3_BUCKET }},\
             SUPABASE_S3_REGION=${{ secrets.SUPABASE_S3_REGION }},\

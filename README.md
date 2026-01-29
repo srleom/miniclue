@@ -65,27 +65,13 @@ Since this is a monorepo, you can manage all services from the root directory.
    cp apps/ai/.env.example apps/ai/.env
    ```
 
-3. **Extract JWT Public Key (Local Supabase):**
-
-   Supabase CLI v2.72+ uses ES256 JWT signing by default. Extract the public key from your local Supabase instance:
-
-   ```bash
-   cd apps/backend
-   supabase start  # Start local Supabase if not running
-   go run ./cmd/jwks-to-pem/main.go > /tmp/supabase-jwt-key.pem
-   ```
-
-   Then copy the PEM key from `/tmp/supabase-jwt-key.pem` to `SUPABASE_JWT_PUBLIC_KEY` in `apps/backend/.env`.
-
-   **Note:** If Supabase signing keys change (e.g., after `supabase db reset`), re-run this command.
-
-4. **Run all services in development mode:**
+3. **Run all services in development mode:**
 
    ```bash
    pnpm dev
    ```
 
-5. **Build all applications:**
+4. **Build all applications:**
    ```bash
    pnpm build
    ```
