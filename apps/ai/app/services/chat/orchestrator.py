@@ -135,7 +135,7 @@ async def process_chat_request(
     Streams LLM response.
     Returns async generator of text chunks.
     """
-    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
+    conn = await asyncpg.connect(settings.database_url, statement_cache_size=0)
     try:
         # 1. Verify lecture exists and user owns it
         if not await verify_lecture_exists_and_ownership(conn, lecture_id, user_id):
@@ -248,7 +248,7 @@ async def process_title_generation(
     Returns:
         Generated title string
     """
-    conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
+    conn = await asyncpg.connect(settings.database_url, statement_cache_size=0)
     try:
         # 1. Verify lecture exists and user owns it
         if not await verify_lecture_exists_and_ownership(conn, lecture_id, user_id):

@@ -18,13 +18,13 @@ async def process_embedding_job(payload: EmbeddingPayload):
     """
     Orchestrates the embedding process for an entire lecture.
     """
-    if not settings.postgres_dsn:
+    if not settings.database_url:
         logging.error("Postgres DSN not configured")
         raise RuntimeError("Postgres DSN not configured")
 
     conn = None
     try:
-        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
+        conn = await asyncpg.connect(settings.database_url, statement_cache_size=0)
         # 1. Verify the lecture exists and is in a valid state
         if not await verify_lecture_exists(conn, lecture_id):
             logging.warning(

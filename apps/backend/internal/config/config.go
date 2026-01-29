@@ -6,7 +6,7 @@ import (
 
 type Config struct {
 	// Local & Github Secrets (Fill up for local development)
-	DBConnectionString   string `envconfig:"DB_CONNECTION_STRING" required:"true"`
+	DatabaseURL          string `envconfig:"DATABASE_URL" required:"true"`
 	JWTSecret            string `envconfig:"SUPABASE_JWT_SECRET" required:"true"`
 	S3URL                string `envconfig:"SUPABASE_S3_URL" required:"true"`
 	S3Bucket             string `envconfig:"SUPABASE_S3_BUCKET" required:"true"`
@@ -24,14 +24,14 @@ type Config struct {
 	SupabaseAuthGoogleSecret   string `envconfig:"SUPABASE_AUTH_GOOGLE_SECRET"`
 
 	// GitHub Secrets (No need to fill up for local development)
-	DLQEndpointURL                string `envconfig:"DLQ_ENDPOINT_URL"`
-	PubSubPushServiceAccountEmail string `envconfig:"PUBSUB_PUSH_SERVICE_ACCOUNT_EMAIL"`
-	GCPProjectID                  string `envconfig:"GCP_PROJECT_ID"`
-	GCPRegion                     string `envconfig:"GCP_REGION"`
-	GCPServiceAccount             string `envconfig:"GCP_SERVICE_ACCOUNT"`
-	GCPWorkloadIdentityProvider   string `envconfig:"GCP_WORKLOAD_IDENTITY_PROVIDER"`
-	SupabaseDBPassword            string `envconfig:"SUPABASE_DB_PASSWORD"`
-	SupabaseProjectID             string `envconfig:"SUPABASE_PROJECT_ID"`
+	DLQEndpointURL              string `envconfig:"DLQ_ENDPOINT_URL"`
+	PubSubServiceAccountEmail   string `envconfig:"PUBSUB_SERVICE_ACCOUNT_EMAIL"`
+	GCPProjectID                string `envconfig:"GCP_PROJECT_ID"`
+	GCPRegion                   string `envconfig:"GCP_REGION"`
+	GCPServiceAccount           string `envconfig:"GCP_SERVICE_ACCOUNT"`
+	GCPWorkloadIdentityProvider string `envconfig:"GCP_WORKLOAD_IDENTITY_PROVIDER"`
+	SupabaseDBPassword          string `envconfig:"SUPABASE_DB_PASSWORD"`
+	SupabaseProjectID           string `envconfig:"SUPABASE_PROJECT_ID"`
 
 	// GCP Setup Pub/Sub Script Secrets
 	APIBaseURLStaging    string `envconfig:"API_BASE_URL_STAGING"`

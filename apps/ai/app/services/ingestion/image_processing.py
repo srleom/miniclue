@@ -50,7 +50,7 @@ async def render_and_upload_slide_image(
 
         storage_key = f"lectures/{lecture_id}/slides/{slide_number}/full_slide.png"
         upload_image(
-            s3_client, settings.s3_bucket_name, storage_key, img_data, "image/png"
+            s3_client, settings.supabase_s3_bucket, storage_key, img_data, "image/png"
         )
         storage_path = storage_key
 
@@ -112,7 +112,7 @@ async def process_slide_sub_images(
                 storage_key = f"lectures/{lecture_id}/images/{image_hash}.{ext}"
                 upload_image(
                     s3_client,
-                    settings.s3_bucket_name,
+                    settings.supabase_s3_bucket,
                     storage_key,
                     img_bytes,
                     f"image/{ext}",

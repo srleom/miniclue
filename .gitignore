@@ -14,3 +14,6 @@ build
 .opencode
 .bashrc
 .rules
+
+# Environment files
+.env.*

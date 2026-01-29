@@ -144,7 +144,9 @@ Explain the user's query based on the provided Lecture Slides. Your explanations
                         # Add image if path is available
                         if res.get("storage_path"):
                             img_base64 = download_image_as_base64(
-                                s3_client, settings.s3_bucket_name, res["storage_path"]
+                                s3_client,
+                                settings.supabase_s3_bucket,
+                                res["storage_path"],
                             )
                             if img_base64:
                                 messages.append(

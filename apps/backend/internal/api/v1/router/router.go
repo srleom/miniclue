@@ -26,7 +26,7 @@ import (
 func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool, error) {
 
 	// 2. Open DB connection (connection pooling)
-	dsn := cfg.DBConnectionString
+	dsn := cfg.DatabaseURL
 	var pool *pgxpool.Pool
 	var err error
 
@@ -132,7 +132,7 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	// 7. Initialize middleware
 	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
 	isLocalDev := cfg.PubSubEmulatorHost != ""
-	pubsubAuthMiddleware := middleware.PubSubAuthMiddleware(isLocalDev, cfg.DLQEndpointURL, cfg.PubSubPushServiceAccountEmail, logger)
+	pubsubAuthMiddleware := middleware.PubSubAuthMiddleware(isLocalDev, cfg.DLQEndpointURL, cfg.PubSubServiceAccountEmail, logger)
 
 	// 8. Create ServeMux router
 	mux := http.NewServeMux()

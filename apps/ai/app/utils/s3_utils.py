@@ -10,9 +10,9 @@ def get_s3_client():
     """Initializes and returns an S3 client."""
     return boto3.client(
         "s3",
-        aws_access_key_id=settings.s3_access_key or None,
-        aws_secret_access_key=settings.s3_secret_key or None,
-        endpoint_url=settings.s3_endpoint_url or None,
+        aws_access_key_id=settings.supabase_s3_access_key or None,
+        aws_secret_access_key=settings.supabase_s3_secret_key or None,
+        endpoint_url=settings.supabase_s3_url or None,
     )
 
 

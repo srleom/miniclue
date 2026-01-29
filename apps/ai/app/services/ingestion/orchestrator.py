@@ -47,7 +47,7 @@ async def ingest(
     - Does NOT make any external AI calls.
     """
 
-    if not settings.postgres_dsn:
+    if not settings.database_url:
         logging.error("Postgres DSN not configured")
         raise RuntimeError("Postgres DSN not configured")
 
@@ -59,7 +59,7 @@ async def ingest(
     s3_client = None
     try:
         s3_client = get_s3_client()
-        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
+        conn = await asyncpg.connect(settings.database_url, statement_cache_size=0)
 
         # Verify the lecture exists before proceeding (Defensive Subscriber)
         if not await verify_lecture_exists(conn, lecture_id):
@@ -77,7 +77,9 @@ async def ingest(
         with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp:
             tmp_path = tmp.name
 
-        download_pdf_to_file(s3_client, settings.s3_bucket_name, storage_path, tmp_path)
+        download_pdf_to_file(
+            s3_client, settings.supabase_s3_bucket, storage_path, tmp_path
+        )
         doc = pymupdf.open(tmp_path)
         total_slides = doc.page_count
 

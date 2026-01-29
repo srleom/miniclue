@@ -37,13 +37,13 @@ async def process_image_analysis_job(
     s3_client = None
     image_bytes = None
 
-    if not settings.postgres_dsn:
+    if not settings.database_url:
         logging.error("Database settings are not configured.")
         raise RuntimeError("Required settings are not configured.")
 
     try:
         s3_client = get_s3_client()
-        conn = await asyncpg.connect(settings.postgres_dsn, statement_cache_size=0)
+        conn = await asyncpg.connect(settings.database_url, statement_cache_size=0)
 
         # 1. Verify lecture exists (Defensive Subscriber)
         # We allow 'complete' state because image analysis might finish after embeddings.
@@ -59,7 +59,7 @@ async def process_image_analysis_job(
 
         # 3. Download image from S3
         image_bytes = s3_utils.download_image(
-            s3_client, settings.s3_bucket_name, storage_path
+            s3_client, settings.supabase_s3_bucket, storage_path
         )
 
         # 4. Fetch user API context (required)

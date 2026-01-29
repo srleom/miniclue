@@ -8,13 +8,13 @@ class Settings(BaseSettings):
     app_env: str = "prod"
 
     # S3
-    s3_access_key: str = ""
-    s3_secret_key: str = ""
-    s3_bucket_name: str = "miniclue-documents-local"
-    s3_endpoint_url: str = ""
+    supabase_s3_access_key: str = ""
+    supabase_s3_secret_key: str = ""
+    supabase_s3_bucket: str = "miniclue-documents-local"
+    supabase_s3_url: str = ""
 
     # Postgres
-    postgres_dsn: str = ""
+    database_url: str = ""
 
     # GCP
     gcp_project_id: str = ""
