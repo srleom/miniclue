@@ -130,7 +130,7 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	dlqHandler := handler.NewDLQHandler(dlqSvc, logger)
 
 	// 7. Initialize middleware
-	authMiddleware := middleware.AuthMiddleware(cfg.JWTSecret)
+	authMiddleware := middleware.AuthMiddleware(cfg.JWTPublicKey)
 	isLocalDev := cfg.PubSubEmulatorHost != ""
 	pubsubAuthMiddleware := middleware.PubSubAuthMiddleware(isLocalDev, cfg.DLQEndpointURL, cfg.PubSubServiceAccountEmail, logger)
 
