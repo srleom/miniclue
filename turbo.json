@@ -3,13 +3,32 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**", "bin/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**", "bin/**"],
+      "inputs": [
+        "src/**",
+        "cmd/**",
+        "internal/**",
+        "go.mod",
+        "go.sum",
+        "**/*.py",
+        "poetry.lock",
+        "pyproject.toml"
+      ]
     },
     "lint": {},
+    "format": {},
     "test": {},
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "start": {
+      "dependsOn": ["build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@miniclue/ai#build": {
+      "outputs": []
     }
   }
 }

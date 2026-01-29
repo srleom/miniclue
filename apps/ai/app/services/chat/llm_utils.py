@@ -107,8 +107,8 @@ Explain the user's query based on the provided Lecture Slides. Your explanations
     context_text = ""
     for chunk in context_chunks:
         context_text += f"""
-    <slide id="{chunk['slide_number']}" chunk="{chunk['chunk_index']}">
-    {chunk['text']}
+    <slide id="{chunk["slide_number"]}" chunk="{chunk["chunk_index"]}">
+    {chunk["text"]}
     </slide>
     """
 

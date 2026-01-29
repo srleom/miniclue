@@ -1,0 +1,13 @@
+{
+  "name": "@miniclue/be",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "go build -o bin/server ./cmd/app",
+    "dev": "go run ./cmd/app",
+    "start": "./bin/server",
+    "lint": "golangci-lint run",
+    "test": "go test ./...",
+    "format": "go fmt ./..."
+  }
+}

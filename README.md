@@ -6,37 +6,79 @@
 
 MiniClue is an educational AI platform allowing students to upload lecture PDFs and interact with them via a RAG-based chat interface. The system automates the ingestion, text extraction, image analysis, and vector embedding of course materials to support context-aware Q&A.
 
+This project is organized as a **monorepo** using [pnpm workspaces](https://pnpm.io/workspaces) and [Turborepo](https://turbo.build/) to manage our frontend, backend, and AI services in a single repository.
+
 > For more details on how to setup and contribute to the project, please refer to the [CONTRIBUTING.md](CONTRIBUTING.md) file.
 
 ---
 
-## 2. High-Level Architecture
+## 2. Project Structure
 
-The system follows a microservices architecture using a **Golang API Gateway** for client traffic and **Python Microservices** for AI/Heavy processing, coupled via **Google Cloud Pub/Sub**.
+The codebase is divided into several applications and packages managed within the `apps/` directory.
 
-### Tech Stack & Component Breakdown
+### Applications
 
-| Layer    | Component      | Technology                                                                                       | Deployment                    |
-| -------- | -------------- | ------------------------------------------------------------------------------------------------ | ----------------------------- |
-| Frontend | Web App        | Next.js 16 (React 19)<br>• TipTap Editor, React PDF Viewer<br>• Vercel AI SDK, PostHog Analytics | Vercel Serverless             |
-| Backend  | API Gateway    | Golang 1.24+<br>• net/http, ServeMux<br>• Middleware: CORS, Auth (JWT), Logging                  | Google Cloud Run (Serverless) |
-| Backend  | AI Worker      | Python 3.13+ (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)    | Google Cloud Run (Serverless) |
-| Async    | Message Queue  | Google Cloud Pub/Sub<br>• Push-based subscriptions                                               | Managed Service               |
-| Data     | Database       | Supabase Postgres<br>• pgvector, Row Level Security (RLS)                                        | Managed Serverless            |
-| Data     | Object Storage | Supabase Storage (S3-compatible)                                                                 | Managed Service               |
+- **[`apps/web`](apps/web)**: Next.js 16 (React 19) frontend application. Dashboard, course management, and RAG chat UI.
+- **[`apps/backend`](apps/backend)**: Golang 1.24+ API Gateway. Handles Auth, DB access, and orchestrates AI pipelines via Pub/Sub.
+- **[`apps/ai`](apps/ai)**: Python 3.13+ (FastAPI) microservices. Handles heavy-duty AI tasks like PDF parsing, OCR, and RAG.
 
-### Repositories
+### Tech Stack Summary
 
-1. **[`miniclue-fe`](https://github.com/srleom/miniclue-fe)**: The main web application (Dashboard, Course/Lecture management, Chat UI).
-2. **[`miniclue-be`](https://github.com/miniclue/miniclue-be)**: The API Gateway and orchestrator. Handles Auth, DB access, and triggers AI pipelines via Pub/Sub.
-3. **[`miniclue-ai`](https://github.com/miniclue/miniclue-ai)**: Python microservices for heavy-duty AI tasks like PDF parsing, OCR, and RAG.
-4. **[`miniclue-mkt`](https://github.com/srleom/miniclue-mkt)**: The marketing landing page.
-
-> Note: Frontend repositories (`miniclue-fe` and `miniclue-mkt`) are located in the `srleom` user account to save on Vercel hosting costs. Backend repositories (`miniclue-be` and `miniclue-ai`) are located in the `miniclue` organization.
+| Layer    | Component      | Technology                                                                                       |
+| -------- | -------------- | ------------------------------------------------------------------------------------------------ |
+| Frontend | Web App        | Next.js 16 (React 19)<br>• TipTap Editor, React PDF Viewer<br>• Vercel AI SDK, PostHog Analytics |
+| Backend  | API Gateway    | Golang 1.24+<br>• net/http, ServeMux<br>• Middleware: CORS, Auth (JWT), Logging                  |
+| Backend  | AI Worker      | Python 3.13+ (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)    |
+| Async    | Message Queue  | Google Cloud Pub/Sub<br>• Push-based subscriptions                                               |
+| Data     | Database       | Supabase Postgres<br>• pgvector, Row Level Security (RLS)                                        |
+| Data     | Object Storage | Supabase Storage (S3-compatible)                                                                 |
 
 ---
 
-## 3. Core Data Pipelines (Ingestion & RAG)
+## 3. Getting Started
+
+Since this is a monorepo, you can manage all services from the root directory.
+
+### Prerequisites
+
+- **Node.js**: >= 20.x
+- **pnpm**: >= 10.x
+- **Go**: >= 1.24
+- **Python**: >= 3.13
+- **Poetry**: For Python dependency management
+- **Docker**: For local Pub/Sub emulator
+
+### Quick Start
+
+1. **Install dependencies:**
+
+   ```bash
+   pnpm install
+   ```
+
+2. **Configure Environment:**
+   Each app has its own `.env.example`. Copy them to `.env` and fill in the required values.
+
+   ```bash
+   cp apps/web/.env.example apps/web/.env
+   cp apps/backend/.env.example apps/backend/.env
+   cp apps/ai/.env.example apps/ai/.env
+   ```
+
+3. **Run all services in development mode:**
+
+   ```bash
+   pnpm dev
+   ```
+
+4. **Build all applications:**
+   ```bash
+   pnpm build
+   ```
+
+---
+
+## 4. Core Data Pipelines (Ingestion & RAG)
 
 The pipeline is designed for robustness and concurrency. The ingestion service acts as a dispatcher, splitting work into a fast "Embedding" track and a slower "Image Analysis" track.
 
@@ -240,6 +282,6 @@ Pub/Sub does not support deleting in-flight messages. To handle race conditions 
 - **Staging**: `stg.api.miniclue.com` / `stg.svc.miniclue.com`
 - **Production**: `api.miniclue.com` / `svc.miniclue.com`
 
-### 7.4 Required Environment Variables (Placeholder)
+### 7.4 Required Environment Variables
 
 > See `.env.example` in the respective repositories for the required environment variables.

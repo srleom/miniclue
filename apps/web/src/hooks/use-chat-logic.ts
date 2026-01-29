@@ -19,9 +19,8 @@ async function pollForTitleUpdate(
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const { getChat } = await import(
-        "@/app/(dashboard)/(app)/_actions/chat-actions"
-      );
+      const { getChat } =
+        await import("@/app/(dashboard)/(app)/_actions/chat-actions");
 
       const { data: updatedChat } = await getChat(lectureId, chatId);
 
@@ -281,9 +280,8 @@ export function useChatLogic({
   // --- Handlers ---
   const handleNewChat = React.useCallback(async () => {
     try {
-      const { createChat } = await import(
-        "@/app/(dashboard)/(app)/_actions/chat-actions"
-      );
+      const { createChat } =
+        await import("@/app/(dashboard)/(app)/_actions/chat-actions");
       const { data, error } = await createChat(lectureId);
 
       if (error || !data || !data.id) {
@@ -316,9 +314,8 @@ export function useChatLogic({
       }
 
       try {
-        const { deleteChat } = await import(
-          "@/app/(dashboard)/(app)/_actions/chat-actions"
-        );
+        const { deleteChat } =
+          await import("@/app/(dashboard)/(app)/_actions/chat-actions");
         const { error } = await deleteChat(lectureId, idToDelete);
 
         if (error) {

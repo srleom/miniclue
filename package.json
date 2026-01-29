@@ -1,14 +1,21 @@
 {
-  "name": "miniclue-monorepo",
+  "name": "@miniclue/monorepo",
   "version": "0.0.0",
   "private": true,
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
+    "start": "pnpm build && turbo start",
     "lint": "turbo lint",
     "test": "turbo test",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\""
+    "format": "turbo format"
+  },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "19.2.7",
+      "@types/react-dom": "19.2.3"
+    }
   },
   "devDependencies": {
     "prettier": "^3.5.3",
