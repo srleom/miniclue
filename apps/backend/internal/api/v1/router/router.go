@@ -7,6 +7,7 @@ import (
 	"app/internal/pubsub"
 	"app/internal/repository"
 	"app/internal/service"
+	"app/internal/util"
 	"context"
 	"net/http"
 	"strings"
@@ -24,6 +25,12 @@ import (
 )
 
 func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool, error) {
+
+	// 1. Initialize JWKS validator for JWT authentication
+	if err := util.InitJWKSValidator(cfg.SupabaseJWKSURL); err != nil {
+		logger.Fatal().Msgf("Failed to initialize JWKS validator: %v", err)
+		return nil, nil, err
+	}
 
 	// 2. Open DB connection (connection pooling)
 	dsn := cfg.DatabaseURL
@@ -130,7 +137,7 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	dlqHandler := handler.NewDLQHandler(dlqSvc, logger)
 
 	// 7. Initialize middleware
-	authMiddleware := middleware.AuthMiddleware(cfg.JWTPublicKey)
+	authMiddleware := middleware.AuthMiddleware()
 	isLocalDev := cfg.PubSubEmulatorHost != ""
 	pubsubAuthMiddleware := middleware.PubSubAuthMiddleware(isLocalDev, cfg.DLQEndpointURL, cfg.PubSubServiceAccountEmail, logger)
 

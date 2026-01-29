@@ -7,7 +7,7 @@ import (
 type Config struct {
 	// Local & Github Secrets (Fill up for local development)
 	DatabaseURL          string `envconfig:"DATABASE_URL" required:"true"`
-	JWTPublicKey         string `envconfig:"SUPABASE_JWT_PUBLIC_KEY" required:"true"`
+	SupabaseJWKSURL      string `envconfig:"SUPABASE_JWKS_URL" required:"true"`
 	S3URL                string `envconfig:"SUPABASE_S3_URL" required:"true"`
 	S3Bucket             string `envconfig:"SUPABASE_S3_BUCKET" required:"true"`
 	S3Region             string `envconfig:"SUPABASE_S3_REGION" required:"true"`

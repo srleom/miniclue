@@ -13,7 +13,7 @@ type contextKey string
 
 const UserContextKey = contextKey("user")
 
-func AuthMiddleware(jwtPublicKey string) func(http.Handler) http.Handler {
+func AuthMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := logger.New()
@@ -30,7 +30,7 @@ func AuthMiddleware(jwtPublicKey string) func(http.Handler) http.Handler {
 				return
 			}
 			tokenString := parts[1]
-			claims, err := util.ValidateJWT(tokenString, jwtPublicKey)
+			claims, err := util.ValidateJWT(tokenString)
 			if err != nil {
 				logger.Error().Msgf("Invalid token: %+v", err)
 				http.Error(w, "Invalid token: "+err.Error(), http.StatusUnauthorized)
