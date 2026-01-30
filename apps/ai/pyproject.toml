@@ -5,7 +5,8 @@ description = ""
 authors = [
     {name = "srleom",email = "shengrui.leom@gmail.com"}
 ]
-requires-python = ">=3.13,<4"
+# Pinned to 3.13: pydantic-core (PyO3) does not support Python 3.14 yet.
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi (>=0.115.14,<0.116.0)",
     "uvicorn (>=0.35.0,<0.36.0)",

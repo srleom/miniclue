@@ -479,10 +479,7 @@ files = [
 google-api-core = {version = ">=1.34.1,<2.0.dev0 || >=2.11.dev0,<3.0.0", extras = ["grpc"]}
 google-auth = ">=2.14.1,<2.24.0 || >2.24.0,<2.25.0 || >2.25.0,<3.0.0"
 grpc-google-iam-v1 = ">=0.14.0,<1.0.0"
-grpcio = [
-    {version = ">=1.75.1,<2.0.0", markers = "python_version >= \"3.14\""},
-    {version = ">=1.33.2,<2.0.0", markers = "python_version < \"3.14\""},
-]
+grpcio = ">=1.33.2,<2.0.0"
 proto-plus = {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""}
 protobuf = ">=3.20.2,<4.21.0 || >4.21.0,<4.21.1 || >4.21.1,<4.21.2 || >4.21.2,<4.21.3 || >4.21.3,<4.21.4 || >4.21.4,<4.21.5 || >4.21.5,<7.0.0"
 
@@ -2099,5 +2096,5 @@ type = ["pytest-mypy"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.13,<4"
-content-hash = "b73069de860e72b10cb6bed74ccc277355dc7c7e9bd001fe74b3b71b2703f836"
+python-versions = ">=3.13,<3.14"
+content-hash = "e2a0879e568e834f2cb39c245a9a30c7367cc76e038dc466ecf7b6954b5d8d79"

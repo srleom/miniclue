@@ -20,7 +20,7 @@ The codebase is divided into several applications and packages managed within th
 
 - **[`apps/web`](apps/web)**: Next.js 16 (React 19) frontend application. Dashboard, course management, and RAG chat UI.
 - **[`apps/backend`](apps/backend)**: Golang 1.24+ API Gateway. Handles Auth, DB access, and orchestrates AI pipelines via Pub/Sub.
-- **[`apps/ai`](apps/ai)**: Python 3.13+ (FastAPI) microservices. Handles heavy-duty AI tasks like PDF parsing, OCR, and RAG.
+- **[`apps/ai`](apps/ai)**: Python 3.13 (FastAPI) microservices. Handles heavy-duty AI tasks like PDF parsing, OCR, and RAG.
 
 ### Tech Stack Summary
 
@@ -28,7 +28,7 @@ The codebase is divided into several applications and packages managed within th
 | -------- | -------------- | ------------------------------------------------------------------------------------------------ |
 | Frontend | Web App        | Next.js 16 (React 19)<br>• TipTap Editor, React PDF Viewer<br>• Vercel AI SDK, PostHog Analytics |
 | Backend  | API Gateway    | Golang 1.24+<br>• net/http, ServeMux<br>• Middleware: CORS, Auth (JWT), Logging                  |
-| Backend  | AI Worker      | Python 3.13+ (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)    |
+| Backend  | AI Worker      | Python 3.13 (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)    |
 | Async    | Message Queue  | Google Cloud Pub/Sub<br>• Push-based subscriptions                                               |
 | Data     | Database       | Supabase Postgres<br>• pgvector, Row Level Security (RLS)                                        |
 | Data     | Object Storage | Supabase Storage (S3-compatible)                                                                 |
@@ -44,7 +44,7 @@ Since this is a monorepo, you can manage all services from the root directory.
 - **Node.js**: >= 20.x
 - **pnpm**: >= 10.x
 - **Go**: >= 1.24
-- **Python**: >= 3.13
+- **Python**: 3.13 (AI app requires 3.13; 3.14 is not yet supported by pydantic-core/PyO3)
 - **Poetry**: For Python dependency management
 - **Docker**: For local Pub/Sub emulator
 
