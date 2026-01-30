@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "bootstrap": "poetry install && ([ ! -f .env ] && cp .env.example .env || echo '.env already exists')",
     "build": "poetry install",
     "dev": "poetry run start",
     "start": "poetry run start",

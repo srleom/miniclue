@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "bootstrap": "[ ! -f .env ] && cp .env.example .env || echo '.env already exists'",
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
