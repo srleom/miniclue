@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 
 from app.utils.config import Settings
 
-# Load environment variables from .env, overriding any existing ones
-load_dotenv(override=True)
+# Load .env but do not override env vars already set (e.g. PORT from Conductor)
+load_dotenv(override=False)
 
 settings = Settings()
 
