@@ -11,25 +11,30 @@ Stack: Supabase (Postgres + Auth), Google Cloud Pub/Sub, OpenAI/Anthropic/Gemini
 ## Quick Commands
 
 ```bash
-# Root (Turborepo)
-pnpm dev/build/test/lint/format
-
-# To run the dev server for all apps, run:
+# Root - Run all services with Conductor
 pnpm conductor:run
 
-# Backend (Go) - apps/backend
-go run ./cmd/app # Dev server
-make swagger # CRITICAL after API changes
-go test ./...
+# Root - Turborepo commands (run from project root)
+pnpm dev      # Start all apps in dev mode
+pnpm build    # Build all apps
+pnpm test     # Run all tests
+pnpm lint     # Lint all apps
+pnpm format   # Format all code
 
-# AI Service (Python) - apps/ai
-poetry run start
-poetry run pytest
+# Backend (Go) - run from apps/backend/
+go run ./cmd/app           # Start dev server
+make swagger               # Generate Swagger docs (CRITICAL after API changes)
+go test ./...              # Run all tests
+make setup-pubsub-local    # Setup Pub/Sub emulator topics/subscriptions
 
-# Frontend (Next.js) - apps/web
-pnpm dev
-pnpm openapi:all # CRITICAL after backend API changes
-pnpm test:ts
+# AI Service (Python) - run from apps/ai/
+poetry run start    # Start FastAPI server
+poetry run pytest   # Run tests
+
+# Frontend (Next.js) - run from apps/web/
+pnpm dev           # Start Next.js dev server
+pnpm openapi:all   # Generate TypeScript types from backend Swagger (CRITICAL after backend API changes)
+pnpm test:ts       # Type check
 ```
 
 ## Critical Patterns
@@ -70,19 +75,45 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
 
 ## Feature Implementation Flow (TDD - MANDATORY)
 
-1. **Plan**: Use plan mode to identify tests needed and implementation approach
+1. **Plan**: Use plan mode to identify implementation approach and tests needed
+
 2. **Write Tests First**:
-   - **Backend**: Create `*_test.go` files for handlers/services/repos
+   - **Backend**: Create `*_test.go` files in appropriate packages (handlers/services/repos)
    - **AI**: Create test files in `tests/` directory
    - **Frontend**: Plan type checks and manual browser test scenarios
+
 3. **Implement** (minimum code to pass tests):
-   - **Schema** (if needed): Edit `schema.sql`, add RLS policies
-   - **Backend**: Update Repository/Service/API, add Swagger comments, run `make swagger`
-   - **AI Service** (if needed): Update schemas/routers, handle Pub/Sub messages
-   - **Frontend**: Run `pnpm openapi:all`, implement UI
-4. **Verify**: Run `go test ./...` (backend), `poetry run pytest` (AI), `pnpm test:ts` + browser testing (frontend)
-5. **Mark complete** only after tests pass and verification succeeds
+
+   **If changing database schema:**
+   - Edit `apps/backend/supabase/schemas/schema.sql` directly
+   - Add RLS policies for new tables (consider `user_id` restrictions)
+   - User will execute migrations manually - do NOT create migration files
+
+   **If changing backend API:**
+   - Update Repository/Service/API code
+   - Add/update Swagger comments on Go handlers in `apps/backend/internal/api/v1/`
+   - From `apps/backend/`: run `make swagger` to regenerate Swagger docs
+   - Ensure backend is running
+   - From `apps/web/`: run `pnpm openapi:all` to generate TypeScript types
+   - Verify `apps/web/src/types/api.ts` is updated
+
+   **If changing AI service:**
+   - Update schemas/routers in `apps/ai/app/`
+   - Handle Pub/Sub message format changes if needed
+
+   **If changing frontend:**
+   - Implement UI using generated types from `src/types/api.ts`
+
+4. **Verify** (run from appropriate directory):
+   - apps/backend: `cd apps/backend && go test ./...`
+   - apps/ai: `cd apps/ai && poetry run pytest`
+   - apps/web: `cd apps/web && pnpm test:ts` + browser testing
+
+   Alternatively:
+   - Run `pnpm conductor:run` from root to start all services in development mode and verify the changes.
+
+5. **Mark complete** only after all tests pass and verification succeeds
 
 ## Rules
 
-- Always update GitHub Actions workflows when changing environment variables.
+- Always update GitHub Actions workflows and .env.example when changing environment variables.
