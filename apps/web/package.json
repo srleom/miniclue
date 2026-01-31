@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:ts": "tsc --noEmit",
-    "openapi:convert": "swagger2openapi http://localhost:8080/swagger/swagger.json --outfile docs/swagger.json --yaml=false --patch",
+    "openapi:convert": "swagger2openapi http://localhost:${CONDUCTOR_BE_PORT:-8080}/swagger/swagger.json --outfile docs/swagger.json --yaml=false --patch",
     "openapi:types": "openapi-typescript docs/swagger.json --output src/types/api.ts",
     "openapi:all": "pnpm openapi:convert && pnpm openapi:types"
   },
