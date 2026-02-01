@@ -7,41 +7,72 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  build-and-test:
-    name: Build, Test, and Lint
+  test-frontend:
+    name: Frontend - Build, Test, and Lint
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
-          fetch-depth: 0 # Important for Turbo to compare against previous commits
+          fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v3
+        uses: pnpm/action-setup@v4
         with:
           version: 10
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 23
           cache: "pnpm"
 
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Run Frontend Pipeline
+        run: pnpm turbo run build test lint --filter=web
+
+  test-backend:
+    name: Backend - Test and Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: "1.24"
           cache: true
           cache-dependency-path: apps/backend/go.sum
 
-      - name: Install golangci-lint
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.0.1
-          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      - name: Install Go Dependencies
+        working-directory: apps/backend
+        run: go mod download
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.0.1
+          working-directory: apps/backend
+
+      - name: Run Go Tests
+        working-directory: apps/backend
+        run: go test ./...
+
+  test-ai:
+    name: AI - Test and Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -52,17 +83,18 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
 
-      - name: Install Dependencies
-        run: pnpm install
-
-      - name: Install Go Dependencies
-        working-directory: apps/backend
-        run: go mod download
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v5
+        with:
+          path: apps/ai/.venv
+          key: venv-${{ runner.os }}-${{ hashFiles('apps/ai/poetry.lock') }}
 
       - name: Install Python Dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         working-directory: apps/ai
-        run: poetry install
+        run: poetry install --no-interaction
 
-      - name: Run Turbo Pipeline
-        # Turbo will automatically run only changed packages
-        run: pnpm turbo run build test lint
+      - name: Run Python Tests
+        working-directory: apps/ai
+        run: poetry run pytest

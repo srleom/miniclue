@@ -53,9 +53,9 @@ jobs:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v3
+      - uses: pnpm/action-setup@v4
         with:
           version: 10
 
@@ -63,22 +63,13 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        # We must link to the specific project.
-        # Note: Vercel might need to be configured to look for the project in apps/web
-        # or we CD into it.
-        run: |
-          cd apps/web
-          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
       - name: Build Project Artifacts
-        run: |
-          cd apps/web
-          vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
       - name: Deploy to Vercel (Preview/Staging)
-        run: |
-          cd apps/web
-          vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
   # ------------------------------------------------------------------
   # Backend Deployment (Cloud Run)
@@ -93,7 +84,7 @@ jobs:
       id-token: "write"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       # Supabase Migration
       - uses: supabase/setup-cli@v1
@@ -162,7 +153,7 @@ jobs:
       id-token: "write"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: auth
         uses: google-github-actions/auth@v2
