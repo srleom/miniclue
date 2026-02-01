@@ -19,8 +19,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -56,7 +54,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.0.1
+          version: v2.1.0
           working-directory: apps/backend
 
       - name: Run Go Tests
@@ -97,4 +95,4 @@ jobs:
 
       - name: Run Python Tests
         working-directory: apps/ai
-        run: poetry run pytest
+        run: poetry run pytest || [[ $? == 5 ]]
