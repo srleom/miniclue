@@ -30,7 +30,7 @@ jobs:
         run: pnpm install
 
       - name: Run Frontend Pipeline
-        run: pnpm turbo run build test lint --filter=web
+        run: pnpm turbo run build test lint --filter=@miniclue/fe
 
   test-backend:
     name: Backend - Test and Lint
