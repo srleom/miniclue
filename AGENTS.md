@@ -73,24 +73,20 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
 
 **Message Queue**: Push-based, 60s Ack deadline, exponential backoff (10s-10m), DLQ logs to DB at `/v1/dlq`
 
-## Feature Implementation Flow (TDD - MANDATORY)
+## Feature/Fix Implementation Flow (MANDATORY)
 
-1. **Plan**: Use plan mode to identify implementation approach and tests needed
+1. **Plan**: Use plan mode to identify implementation approach, edge cases, and verification strategy
 
-2. **Write Tests First**:
-   - **Backend**: Create `*_test.go` files in appropriate packages (handlers/services/repos)
-   - **AI**: Create test files in `tests/` directory
-   - **Frontend**: Plan type checks and manual browser test scenarios
-
-3. **Implement** (minimum code to pass tests):
+2. **Implement with Tests** (write implementation and tests together):
 
    **If changing database schema:**
    - Edit `apps/backend/supabase/schemas/schema.sql` directly
    - Add RLS policies for new tables (consider `user_id` restrictions)
-   - User will execute migrations manually - do NOT create migration files
+   - Do NOT create migration files - User will execute migrations manually
 
    **If changing backend API:**
-   - Update Repository/Service/API code
+   - Update Repository/Service/API code with implementation
+   - Write corresponding tests in `*_test.go` files (handlers/services/repos packages)
    - Add/update Swagger comments on Go handlers in `apps/backend/internal/api/v1/`
    - From `apps/backend/`: run `make swagger` to regenerate Swagger docs
    - Ensure backend is running
@@ -98,21 +94,29 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
    - Verify `apps/web/src/types/api.ts` is updated
 
    **If changing AI service:**
-   - Update schemas/routers in `apps/ai/app/`
+   - Update schemas/routers in `apps/ai/app/` with implementation
+   - Write corresponding tests in `tests/` directory
    - Handle Pub/Sub message format changes if needed
 
    **If changing frontend:**
    - Implement UI using generated types from `src/types/api.ts`
+   - Define manual browser test scenarios for verification using Claude Chrome extension
 
-4. **Verify** (run from appropriate directory):
-   - apps/backend: `cd apps/backend && go test ./...`
-   - apps/ai: `cd apps/ai && poetry run pytest`
-   - apps/web: `cd apps/web && pnpm test:ts` + browser testing
+3. **Verify Immediately** (run tests and fix if needed):
+   - **Backend**: `cd apps/backend && go test ./...`
+   - **AI**: `cd apps/ai && poetry run pytest`
+   - **Frontend**: `cd apps/web && pnpm test:ts` + execute browser test scenarios
 
-   Alternatively:
-   - Run `pnpm conductor:run` from root to start all services in development mode and verify the changes.
+   **Alternatively**: Run `pnpm conductor:run` from root to start all services and verify end-to-end
 
-5. **Mark complete** only after all tests pass and verification succeeds
+4. **Format and Lint** (from project root):
+   - Run `pnpm check` to verify all code is formatted, linted, and tested
+   - Fix all errors if any appear
+   - Re-run until no errors remain
+
+5. **Iterate**: If any step fails (tests, formatting, linting), fix and re-verify from that step
+
+6. **Mark complete** only after all tests pass, code is formatted, and no linting errors remain
 
 ## Rules
 
