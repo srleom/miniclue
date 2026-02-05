@@ -13,7 +13,7 @@ import (
 
 type LectureRepository interface {
 	GetLecturesByUserID(ctx context.Context, userID string, limit, offset int) ([]model.Lecture, error)
-	GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error)
+	GetLecturesByCourseID(ctx context.Context, courseID string, userID string, limit, offset int) ([]model.Lecture, error)
 	GetLectureByID(ctx context.Context, lectureID string) (*model.Lecture, error)
 	DeleteLecture(ctx context.Context, lectureID string) error
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
@@ -72,11 +72,11 @@ func (r *lectureRepository) GetLecturesByUserID(ctx context.Context, userID stri
 	return lectures, nil
 }
 
-func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error) {
+func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID string, userID string, limit, offset int) ([]model.Lecture, error) {
 	query := fmt.Sprintf(`
 		SELECT id, user_id, course_id, title, storage_path, status, total_slides, embeddings_complete, created_at, updated_at, accessed_at
 		FROM lectures
-		WHERE course_id = $1
+		WHERE course_id = $1 AND user_id = $2
 		ORDER BY accessed_at DESC
 		LIMIT %d OFFSET %d
 	`, limit, offset)

@@ -19,7 +19,7 @@ import (
 // LectureService defines lecture-related operations
 // GetLecturesByCourseID retrieves lectures for a given course with pagination
 type LectureService interface {
-	GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error)
+	GetLecturesByCourseID(ctx context.Context, courseID string, userID string, limit, offset int) ([]model.Lecture, error)
 	GetLectureByID(ctx context.Context, lectureID string) (*model.Lecture, error)
 	DeleteLecture(ctx context.Context, lectureID string) error
 	UpdateLecture(ctx context.Context, l *model.Lecture) error
@@ -204,10 +204,10 @@ func (s *lectureService) CompleteUpload(ctx context.Context, lectureID, userID s
 }
 
 // GetLecturesByCourseID retrieves lectures for a given course with pagination
-func (s *lectureService) GetLecturesByCourseID(ctx context.Context, courseID string, limit, offset int) ([]model.Lecture, error) {
-	lectures, err := s.repo.GetLecturesByCourseID(ctx, courseID, limit, offset)
+func (s *lectureService) GetLecturesByCourseID(ctx context.Context, courseID string, userID string, limit, offset int) ([]model.Lecture, error) {
+	lectures, err := s.repo.GetLecturesByCourseID(ctx, courseID, userID, limit, offset)
 	if err != nil {
-		s.lectureLogger.Error().Err(err).Str("course_id", courseID).Msg("Failed to get lectures by course ID")
+		s.lectureLogger.Error().Err(err).Str("course_id", courseID).Str("user_id", userID).Msg("Failed to get lectures by course ID")
 		return nil, err
 	}
 	return lectures, nil

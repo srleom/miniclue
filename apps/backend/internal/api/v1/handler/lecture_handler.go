@@ -47,7 +47,7 @@ func (h *LectureHandler) GetLectures(ctx context.Context, input *operation.GetLe
 		return nil, huma.Error404NotFound("Course not found")
 	}
 
-	lectures, err := h.lectureService.GetLecturesByCourseID(ctx, input.CourseID, input.Limit, input.Offset)
+	lectures, err := h.lectureService.GetLecturesByCourseID(ctx, input.CourseID, userID, input.Limit, input.Offset)
 	if err != nil {
 		return nil, huma.Error500InternalServerError("Failed to retrieve lectures", err)
 	}
