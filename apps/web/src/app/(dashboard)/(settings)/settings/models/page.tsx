@@ -6,7 +6,7 @@ import {
   getUserModels,
   getUser,
 } from "@/app/(dashboard)/_actions/user-actions";
-import type { components } from "@/types/api";
+import type { components } from "@/lib/api/generated/types.gen";
 
 // components
 import { ModelsList } from "./_components/models-list";

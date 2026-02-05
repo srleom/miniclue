@@ -5,7 +5,7 @@ import * as React from "react";
 
 // types
 import { CourseWithLectures } from "../../_types/types";
-import { components } from "@/types/api";
+import { components } from "@/lib/api/generated/types.gen";
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
 // components

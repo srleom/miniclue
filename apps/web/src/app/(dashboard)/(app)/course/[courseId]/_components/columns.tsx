@@ -10,7 +10,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 
 // types
-import { components } from "@/types/api";
+import { components } from "@/lib/api/generated/types.gen";
 
 // components
 import { ItemActions } from "@/app/(dashboard)/(app)/_components/item-actions";

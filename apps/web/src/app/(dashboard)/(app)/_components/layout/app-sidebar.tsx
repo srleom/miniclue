@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sparkle } from "lucide-react";
 
 // types
-import { components } from "@/types/api";
+import { components } from "@/lib/api/generated/types.gen";
 import {
   CourseWithLectures,
   NavRecentsItem,

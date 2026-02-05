@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 // types
 import { ActionResponse } from "@/lib/api/authenticated-api";
-import { components } from "@/types/api";
+import { components } from "@/lib/api/generated/types.gen";
 
 // components
 import { Button } from "@/components/ui/button";

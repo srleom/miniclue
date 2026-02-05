@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 // actions
 import { setModelPreference } from "@/app/(dashboard)/_actions/user-actions";
-import type { components } from "@/types/api";
+import type { components } from "@/lib/api/generated/types.gen";
 
 // components
 import { Button } from "@/components/ui/button";
