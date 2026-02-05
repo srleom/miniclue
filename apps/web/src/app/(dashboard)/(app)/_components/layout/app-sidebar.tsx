@@ -42,9 +42,7 @@ export function AppSidebar({
 }: {
   navCourses: CourseWithLectures[];
   navRecents: NavRecentsItem[];
-  createUntitledCourse: () => Promise<
-    ActionResponse<CourseResponseDTO>
-  >;
+  createUntitledCourse: () => Promise<ActionResponse<CourseResponseDTO>>;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,

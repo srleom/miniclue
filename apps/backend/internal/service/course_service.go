@@ -96,7 +96,7 @@ func (s *courseService) DeleteCourse(ctx context.Context, courseID string) error
 	}
 
 	// Clean up all lectures associated with this course
-	lectures, err := s.lectureSvc.GetLecturesByCourseID(ctx, courseID, math.MaxInt32, 0)
+	lectures, err := s.lectureSvc.GetLecturesByCourseID(ctx, courseID, existingCourse.UserID, math.MaxInt32, 0)
 	if err != nil {
 		s.courseLogger.Error().Err(err).Str("course_id", courseID).Msg("Failed to get lectures for course deletion")
 		return fmt.Errorf("failed to get lectures for course deletion: %w", err)

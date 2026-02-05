@@ -47,9 +47,7 @@ export function NavCourses({
   availableCourses = [],
 }: {
   items: CourseWithLectures[];
-  createUntitledCourse: () => Promise<
-    ActionResponse<CourseResponseDTO>
-  >;
+  createUntitledCourse: () => Promise<ActionResponse<CourseResponseDTO>>;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,
