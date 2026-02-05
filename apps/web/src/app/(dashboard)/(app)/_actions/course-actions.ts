@@ -76,13 +76,10 @@ export async function deleteCourse(
   return { error: undefined };
 }
 
-// TODO: Add pagination support
 export async function getCourseLectures(
   courseId: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _limit: number = 5,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _offset: number = 0,
+  limit: number = 1000,
+  offset: number = 0,
 ): Promise<ActionResponse<GetLecturesResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
@@ -92,6 +89,7 @@ export async function getCourseLectures(
   const { data, error: fetchError } = await getLecturesSDK({
     client: api,
     path: { courseId },
+    query: { limit, offset },
   });
 
   if (fetchError) {

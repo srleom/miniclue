@@ -46,7 +46,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
   const courseRes = await getCourseDetails(courseId);
   const { title: courseTitle, is_default: isDefault } =
     courseRes.data ?? ({} as { title?: string; is_default?: boolean });
-  const lecturesDTO = await getCourseLectures(courseId, 10000, 0);
+  const lecturesDTO = await getCourseLectures(courseId, 1000, 0);
 
   // Get available courses for move functionality
   const { data: availableCourses, error: coursesError } =
