@@ -73,7 +73,8 @@ async function uploadLecturesClient(
 
       if (!file || !upload?.upload_url || !upload?.lecture_id) {
         results.push({
-          lecture_id: upload?.lecture_id,
+          course_id: courseId,
+          lecture_id: upload?.lecture_id || "",
           status: "error",
           message: "Invalid file or upload URL or lecture ID",
         });
@@ -95,6 +96,7 @@ async function uploadLecturesClient(
         .createSignedUploadUrl(key, { upsert: false });
       if (tokenError || !signedData?.token) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: tokenError?.message || "Failed to get upload token",
@@ -107,6 +109,7 @@ async function uploadLecturesClient(
         .uploadToSignedUrl(key, signedData.token!, file);
       if (uploadError) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: uploadError.message,
@@ -120,6 +123,7 @@ async function uploadLecturesClient(
 
       if (completeError) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: completeError,
