@@ -5,7 +5,7 @@ import * as React from "react";
 
 // types
 import { CourseWithLectures } from "../../_types/types";
-import { components } from "@/lib/api/generated/types.gen";
+import type { CourseResponseDTO } from "@/lib/api/generated/types.gen";
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
 // components
@@ -48,13 +48,13 @@ export function NavCourses({
 }: {
   items: CourseWithLectures[];
   createUntitledCourse: () => Promise<
-    ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
+    ActionResponse<CourseResponseDTO>
   >;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,
     title: string,
-  ) => Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>>;
+  ) => Promise<ActionResponse<CourseResponseDTO>>;
   handleUpdateLectureAccessedAt: (
     lectureId: string,
   ) => Promise<ActionResponse<void>>;

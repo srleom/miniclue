@@ -17,7 +17,7 @@ import { toast } from "sonner";
 
 // actions
 import { setModelPreference } from "@/app/(dashboard)/_actions/user-actions";
-import type { components } from "@/lib/api/generated/types.gen";
+import type { ModelPreferenceRequestDTO } from "@/lib/api/generated/types.gen";
 
 // components
 import { Button } from "@/components/ui/button";
@@ -41,8 +41,7 @@ import {
 import type { Provider } from "@/types/chat";
 import { getErrorMessage } from "@/lib/utils";
 
-type ProviderKey =
-  components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"];
+type ProviderKey = ModelPreferenceRequestDTO["provider"];
 
 type ProviderModels = {
   provider: ProviderKey;

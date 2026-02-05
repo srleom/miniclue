@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 // types
 import { ActionResponse } from "@/lib/api/authenticated-api";
-import { components } from "@/lib/api/generated/types.gen";
+import type { LectureUploadCompleteResponseDTO } from "@/lib/api/generated/types.gen";
 
 // components
 import { Button } from "@/components/ui/button";
@@ -52,11 +52,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 async function uploadLecturesClient(
   courseId: string,
   files: File[],
-): Promise<
-  ActionResponse<
-    components["schemas"]["dto.LectureUploadCompleteResponseDTO"][]
-  >
-> {
+): Promise<ActionResponse<LectureUploadCompleteResponseDTO[]>> {
   try {
     // Step 1: Get presigned URLs from server action
     const filenames = files.map((file) => file.name);
@@ -68,8 +64,7 @@ async function uploadLecturesClient(
     }
 
     const uploads = uploadUrlsData.uploads;
-    const results: components["schemas"]["dto.LectureUploadCompleteResponseDTO"][] =
-      [];
+    const results: LectureUploadCompleteResponseDTO[] = [];
 
     // Step 2: Upload each file to S3 using presigned URLs
     for (let i = 0; i < files.length; i++) {

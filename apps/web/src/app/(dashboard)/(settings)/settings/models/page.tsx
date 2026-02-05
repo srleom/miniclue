@@ -6,7 +6,7 @@ import {
   getUserModels,
   getUser,
 } from "@/app/(dashboard)/_actions/user-actions";
-import type { components } from "@/lib/api/generated/types.gen";
+import type { ModelPreferenceRequestDTO } from "@/lib/api/generated/types.gen";
 
 // components
 import { ModelsList } from "./_components/models-list";
@@ -28,8 +28,7 @@ async function ModelsContent() {
     );
   }
 
-  type ProviderKey =
-    components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"];
+  type ProviderKey = ModelPreferenceRequestDTO["provider"];
 
   const apiKeysStatus = {
     gemini: user?.api_keys_provided?.gemini ?? false,
