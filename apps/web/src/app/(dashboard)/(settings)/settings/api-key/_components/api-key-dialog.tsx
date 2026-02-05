@@ -41,7 +41,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils"; // standard shadcn utility
+import { cn, getErrorMessage } from "@/lib/utils"; // standard shadcn utility
 
 // actions & types
 import { storeAPIKey } from "../_actions/api-key-actions";
@@ -95,7 +95,7 @@ export function ApiKeyDialog({
     try {
       const result = await storeAPIKey(provider, values.apiKey);
       if (result.error) {
-        toast.error(result.error);
+        toast.error(getErrorMessage(result.error));
       } else {
         toast.success(
           `${providerDisplayNames[provider]} API key ${hasKey ? "updated" : "connected"}`,
@@ -104,8 +104,8 @@ export function ApiKeyDialog({
         onSuccess?.();
         onOpenChange(false);
       }
-    } catch {
-      toast.error("Failed to store API key");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

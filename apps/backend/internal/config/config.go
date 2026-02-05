@@ -16,6 +16,7 @@ type Config struct {
 	Environment          string `envconfig:"ENV" default:"development"`
 	PubSubIngestionTopic string `envconfig:"PUBSUB_INGESTION_TOPIC" default:"ingestion"`
 	PythonServiceBaseURL string `envconfig:"PYTHON_SERVICE_BASE_URL" required:"true"`
+	APIBaseURL           string `envconfig:"API_BASE_URL" default:"http://localhost:8080"`
 
 	// Local Secrets (Fill up for local development)
 	Port                       string `envconfig:"PORT" default:"8080"`

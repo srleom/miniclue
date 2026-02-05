@@ -8,456 +8,187 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"app/internal/api/v1/dto"
+	"app/internal/api/v1/operation"
 	"app/internal/middleware"
 	"app/internal/model"
 	"app/internal/service"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 
 type ChatHandler struct {
 	chatService service.ChatService
-	validate    *validator.Validate
 	logger      zerolog.Logger
 }
 
-func NewChatHandler(chatService service.ChatService, validate *validator.Validate, logger zerolog.Logger) *ChatHandler {
+func NewChatHandler(chatService service.ChatService, logger zerolog.Logger) *ChatHandler {
 	return &ChatHandler{
 		chatService: chatService,
-		validate:    validate,
 		logger:      logger,
 	}
 }
 
-func (h *ChatHandler) RegisterRoutes(mux *http.ServeMux, authMw func(http.Handler) http.Handler) {
-	// ChatHandler routes are registered through LectureHandler to avoid route conflicts
-	// Chat routes are handled via delegation from LectureHandler.handleLecture
-}
-
-func (h *ChatHandler) handleChatRoutes(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Path
-	if !strings.HasPrefix(path, "/lectures/") {
-		http.NotFound(w, r)
-		return
-	}
-
-	// Extract lecture ID and remaining path
-	pathParts := strings.Split(strings.TrimPrefix(path, "/lectures/"), "/")
-	if len(pathParts) < 2 {
-		http.NotFound(w, r)
-		return
-	}
-
-	lectureID := pathParts[0]
-	remainingPath := strings.Join(pathParts[1:], "/")
-
-	switch {
-	case remainingPath == "chats" && r.Method == http.MethodPost:
-		h.createChat(w, r, lectureID)
-	case remainingPath == "chats" && r.Method == http.MethodGet:
-		h.listChats(w, r, lectureID)
-	case strings.HasPrefix(remainingPath, "chats/") && strings.HasSuffix(remainingPath, "/stream") && r.Method == http.MethodPost:
-		chatID := strings.TrimSuffix(strings.TrimPrefix(remainingPath, "chats/"), "/stream")
-		h.streamChat(w, r, lectureID, chatID)
-	case strings.HasPrefix(remainingPath, "chats/") && strings.HasSuffix(remainingPath, "/messages") && r.Method == http.MethodGet:
-		chatID := strings.TrimSuffix(strings.TrimPrefix(remainingPath, "chats/"), "/messages")
-		h.listMessages(w, r, lectureID, chatID)
-	case strings.HasPrefix(remainingPath, "chats/") && r.Method == http.MethodPatch:
-		chatID := strings.TrimPrefix(remainingPath, "chats/")
-		h.updateChat(w, r, lectureID, chatID)
-	case strings.HasPrefix(remainingPath, "chats/") && r.Method == http.MethodGet:
-		chatID := strings.TrimPrefix(remainingPath, "chats/")
-		h.getChat(w, r, lectureID, chatID)
-	case strings.HasPrefix(remainingPath, "chats/") && r.Method == http.MethodDelete:
-		chatID := strings.TrimPrefix(remainingPath, "chats/")
-		h.deleteChat(w, r, lectureID, chatID)
-	default:
-		http.NotFound(w, r)
-	}
-}
-
-// createChat godoc
-// @Summary Create a new chat
-// @Description Creates a new chat conversation for a lecture. The chat title is optional and defaults to "New Chat".
-// @Tags chats
-// @Accept json
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param chat body dto.ChatCreateDTO false "Chat creation request"
-// @Success 201 {object} dto.ChatResponseDTO
-// @Failure 400 {string} string "Invalid JSON payload"
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Lecture not found"
-// @Failure 500 {string} string "Failed to create chat"
-// @Router /lectures/{lectureId}/chats [post]
-func (h *ChatHandler) createChat(w http.ResponseWriter, r *http.Request, lectureID string) {
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
-	}
-
-	var req dto.ChatCreateDTO
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	title := "New Chat"
-	if req.Title != nil && *req.Title != "" {
-		title = *req.Title
-	}
-
-	chat, err := h.chatService.CreateChat(r.Context(), lectureID, userID, title)
+// GetChats retrieves all chats for a lecture
+func (h *ChatHandler) GetChats(ctx context.Context, input *operation.GetChatsInput) (*operation.GetChatsOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
 	if err != nil {
-		if err == service.ErrUnauthorized || err == service.ErrLectureNotFound {
-			http.Error(w, "Lecture not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to create chat: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
-	resp := dto.ChatResponseDTO{
-		ID:        chat.ID,
-		LectureID: chat.LectureID,
-		UserID:    chat.UserID,
-		Title:     chat.Title,
-		CreatedAt: chat.CreatedAt,
-		UpdatedAt: chat.UpdatedAt,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
-}
-
-// listChats godoc
-// @Summary List chats for a lecture
-// @Description Retrieves all chats for a specific lecture with pagination support.
-// @Tags chats
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param limit query int false "Maximum number of chats to return" default(50)
-// @Param offset query int false "Number of chats to skip" default(0)
-// @Success 200 {array} dto.ChatResponseDTO
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Lecture not found"
-// @Failure 500 {string} string "Failed to list chats"
-// @Router /lectures/{lectureId}/chats [get]
-func (h *ChatHandler) listChats(w http.ResponseWriter, r *http.Request, lectureID string) {
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
-	}
-
-	limit := 50
-	offset := 0
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
-			limit = parsedLimit
-		}
-	}
-	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
-		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
-			offset = parsedOffset
-		}
-	}
-
-	chats, err := h.chatService.ListChats(r.Context(), lectureID, userID, limit, offset)
+	chats, err := h.chatService.ListChats(ctx, input.LectureID, userID, input.Limit, input.Offset)
 	if err != nil {
-		if err == service.ErrUnauthorized || err == service.ErrLectureNotFound {
-			http.Error(w, "Lecture not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to list chats: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("Failed to retrieve chats", err)
 	}
 
-	resp := make([]dto.ChatResponseDTO, len(chats))
-	for i, chat := range chats {
-		resp[i] = dto.ChatResponseDTO{
+	// Convert to DTOs
+	dtos := make([]dto.ChatResponseDTO, 0, len(chats))
+	for _, chat := range chats {
+		dtos = append(dtos, dto.ChatResponseDTO{
 			ID:        chat.ID,
 			LectureID: chat.LectureID,
 			UserID:    chat.UserID,
 			Title:     chat.Title,
 			CreatedAt: chat.CreatedAt,
 			UpdatedAt: chat.UpdatedAt,
-		}
+		})
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
+	return &operation.GetChatsOutput{Body: dtos}, nil
 }
 
-// getChat godoc
-// @Summary Get a chat
-// @Description Retrieves a specific chat by its ID.
-// @Tags chats
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param chatId path string true "Chat ID"
-// @Success 200 {object} dto.ChatResponseDTO
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Chat not found"
-// @Failure 500 {string} string "Failed to get chat"
-// @Router /lectures/{lectureId}/chats/{chatId} [get]
-func (h *ChatHandler) getChat(w http.ResponseWriter, r *http.Request, lectureID, chatID string) {
-	_ = lectureID
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
+// GetChat retrieves a specific chat by ID
+func (h *ChatHandler) GetChat(ctx context.Context, input *operation.GetChatInput) (*operation.GetChatOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	chat, err := h.chatService.GetChat(r.Context(), chatID, userID)
+	chat, err := h.chatService.GetChat(ctx, input.ChatID, userID)
 	if err != nil {
 		if err == service.ErrChatNotFound {
-			http.Error(w, "Chat not found", http.StatusNotFound)
-			return
+			return nil, huma.Error404NotFound("Chat not found")
 		}
-		http.Error(w, "Failed to get chat: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("Failed to get chat", err)
 	}
 
-	resp := dto.ChatResponseDTO{
-		ID:        chat.ID,
-		LectureID: chat.LectureID,
-		UserID:    chat.UserID,
-		Title:     chat.Title,
-		CreatedAt: chat.CreatedAt,
-		UpdatedAt: chat.UpdatedAt,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
+	return &operation.GetChatOutput{
+		Body: dto.ChatResponseDTO{
+			ID:        chat.ID,
+			LectureID: chat.LectureID,
+			UserID:    chat.UserID,
+			Title:     chat.Title,
+			CreatedAt: chat.CreatedAt,
+			UpdatedAt: chat.UpdatedAt,
+		},
+	}, nil
 }
 
-// deleteChat godoc
-// @Summary Delete a chat
-// @Description Deletes a chat and all its associated messages.
-// @Tags chats
-// @Param lectureId path string true "Lecture ID"
-// @Param chatId path string true "Chat ID"
-// @Success 204 {string} string "No Content"
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Chat not found"
-// @Failure 500 {string} string "Failed to delete chat"
-// @Router /lectures/{lectureId}/chats/{chatId} [delete]
-func (h *ChatHandler) deleteChat(w http.ResponseWriter, r *http.Request, lectureID, chatID string) {
-	_ = lectureID
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
+// CreateChat creates a new chat for a lecture
+func (h *ChatHandler) CreateChat(ctx context.Context, input *operation.CreateChatInput) (*operation.CreateChatOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := h.chatService.DeleteChat(r.Context(), chatID, userID)
+	// Default title if not provided
+	title := "New Chat"
+	if input.Body.Title != nil && *input.Body.Title != "" {
+		title = *input.Body.Title
+	}
+
+	chat, err := h.chatService.CreateChat(ctx, input.LectureID, userID, title)
+	if err != nil {
+		if err == service.ErrLectureNotFound || err == service.ErrUnauthorized {
+			return nil, huma.Error404NotFound("Lecture not found")
+		}
+		return nil, huma.Error500InternalServerError("Failed to create chat", err)
+	}
+
+	return &operation.CreateChatOutput{
+		Body: dto.ChatResponseDTO{
+			ID:        chat.ID,
+			LectureID: chat.LectureID,
+			UserID:    chat.UserID,
+			Title:     chat.Title,
+			CreatedAt: chat.CreatedAt,
+			UpdatedAt: chat.UpdatedAt,
+		},
+	}, nil
+}
+
+// UpdateChat updates a chat's title
+func (h *ChatHandler) UpdateChat(ctx context.Context, input *operation.UpdateChatInput) (*operation.UpdateChatOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if input.Body.Title == nil || *input.Body.Title == "" {
+		return nil, huma.Error400BadRequest("Title is required")
+	}
+
+	chat, err := h.chatService.UpdateChat(ctx, input.ChatID, userID, *input.Body.Title)
 	if err != nil {
 		if err == service.ErrChatNotFound || err == service.ErrUnauthorized {
-			http.Error(w, "Chat not found", http.StatusNotFound)
-			return
+			return nil, huma.Error404NotFound("Chat not found")
 		}
-		http.Error(w, "Failed to delete chat: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("Failed to update chat", err)
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	return &operation.UpdateChatOutput{
+		Body: dto.ChatResponseDTO{
+			ID:        chat.ID,
+			LectureID: chat.LectureID,
+			UserID:    chat.UserID,
+			Title:     chat.Title,
+			CreatedAt: chat.CreatedAt,
+			UpdatedAt: chat.UpdatedAt,
+		},
+	}, nil
 }
 
-// updateChat godoc
-// @Summary Update a chat
-// @Description Updates a chat's title.
-// @Tags chats
-// @Accept json
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param chatId path string true "Chat ID"
-// @Param request body dto.ChatUpdateDTO false "Chat update request"
-// @Success 200 {object} dto.ChatResponseDTO
-// @Failure 400 {string} string "Invalid JSON payload or validation failed"
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Chat not found"
-// @Failure 500 {string} string "Failed to update chat"
-// @Router /lectures/{lectureId}/chats/{chatId} [patch]
-func (h *ChatHandler) updateChat(w http.ResponseWriter, r *http.Request, lectureID, chatID string) {
-	_ = lectureID
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
+// DeleteChat deletes a chat and all its messages
+func (h *ChatHandler) DeleteChat(ctx context.Context, input *operation.DeleteChatInput) (*operation.DeleteChatOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var req dto.ChatUpdateDTO
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON payload: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := h.validate.Struct(&req); err != nil {
-		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if req.Title == nil || *req.Title == "" {
-		http.Error(w, "Title is required", http.StatusBadRequest)
-		return
-	}
-
-	chat, err := h.chatService.UpdateChat(r.Context(), chatID, userID, *req.Title)
+	err = h.chatService.DeleteChat(ctx, input.ChatID, userID)
 	if err != nil {
 		if err == service.ErrChatNotFound || err == service.ErrUnauthorized {
-			http.Error(w, "Chat not found", http.StatusNotFound)
-			return
+			return nil, huma.Error404NotFound("Chat not found")
 		}
-		http.Error(w, "Failed to update chat: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, huma.Error500InternalServerError("Failed to delete chat", err)
 	}
 
-	resp := dto.ChatResponseDTO{
-		ID:        chat.ID,
-		LectureID: chat.LectureID,
-		UserID:    chat.UserID,
-		Title:     chat.Title,
-		CreatedAt: chat.CreatedAt,
-		UpdatedAt: chat.UpdatedAt,
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
+	return &operation.DeleteChatOutput{}, nil
 }
 
-// listMessages godoc
-// @Summary List messages in a chat
-// @Description Retrieves all messages for a specific chat. Messages are returned in chronological order (oldest first).
-// @Tags chats
-// @Produce json
-// @Param lectureId path string true "Lecture ID"
-// @Param chatId path string true "Chat ID"
-// @Param limit query int false "Maximum number of messages to return" default(100)
-// @Success 200 {array} dto.MessageResponseDTO
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Chat not found"
-// @Failure 500 {string} string "Failed to list messages"
-// @Router /lectures/{lectureId}/chats/{chatId}/messages [get]
-func (h *ChatHandler) listMessages(w http.ResponseWriter, r *http.Request, lectureID, chatID string) {
-	_ = lectureID
+// StreamChat handles SSE streaming for chat responses
+// This is mounted as a raw HTTP handler on the Chi router
+func (h *ChatHandler) StreamChat(w http.ResponseWriter, r *http.Request) {
+	// Extract path parameters from Chi
+	lectureID := chi.URLParam(r, "lectureId")
+	chatID := chi.URLParam(r, "chatId")
+
+	// Get user ID from context (set by auth middleware)
 	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
 	if !ok || userID == "" {
 		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
 		return
 	}
 
-	limit := 100
-	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
-		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
-			limit = parsedLimit
-		}
-	}
-
-	messages, err := h.chatService.ListMessages(r.Context(), chatID, userID, limit)
-	if err != nil {
-		if err == service.ErrChatNotFound || err == service.ErrUnauthorized {
-			http.Error(w, "Chat not found", http.StatusNotFound)
-			return
-		}
-		http.Error(w, "Failed to list messages: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp := make([]dto.MessageResponseDTO, len(messages))
-	for i, msg := range messages {
-		parts := make([]dto.MessagePartDTO, len(msg.Parts))
-		for j, part := range msg.Parts {
-			var ref *dto.ReferenceDTO
-			if part.Reference != nil {
-				ref = &dto.ReferenceDTO{
-					Type:     part.Reference.Type,
-					ID:       part.Reference.ID,
-					Metadata: part.Reference.Metadata,
-				}
-			}
-			var data *dto.ReferencePartDTO
-			if part.Data != nil {
-				data = &dto.ReferencePartDTO{
-					Type: part.Data.Type,
-					Text: part.Data.Text,
-				}
-				if part.Data.Reference != nil {
-					data.Reference = &dto.ReferenceDTO{
-						Type:     part.Data.Reference.Type,
-						ID:       part.Data.Reference.ID,
-						Metadata: part.Data.Reference.Metadata,
-					}
-				}
-			}
-			parts[j] = dto.MessagePartDTO{
-				Type:      part.Type,
-				Text:      part.Text,
-				Reference: ref,
-				Data:      data,
-			}
-		}
-		resp[i] = dto.MessageResponseDTO{
-			ID:        msg.ID,
-			ChatID:    msg.ChatID,
-			Role:      msg.Role,
-			Parts:     parts,
-			CreatedAt: msg.CreatedAt,
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		h.logger.Error().Err(err).Msg("Failed to encode response")
-	}
-}
-
-// streamChat godoc
-// @Summary Stream chat response
-// @Description Sends a user message and streams the AI assistant's response using Server-Sent Events (SSE). The user message is saved immediately, and the assistant response is saved after streaming completes. The model parameter specifies which LLM model to use for the response.
-// @Tags chats
-// @Accept json
-// @Produce text/event-stream
-// @Param lectureId path string true "Lecture ID"
-// @Param chatId path string true "Chat ID"
-// @Param request body dto.ChatStreamRequestDTO true "Chat stream request with message parts and model"
-// @Success 200 {string} string "Server-Sent Events stream"
-// @Failure 400 {string} string "Invalid JSON payload, validation failed, or API key required"
-// @Failure 401 {string} string "Unauthorized: User ID not found in context"
-// @Failure 404 {string} string "Chat or lecture not found"
-// @Failure 500 {string} string "Failed to stream chat response"
-// @Router /lectures/{lectureId}/chats/{chatId}/stream [post]
-func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lectureID, chatID string) {
-	userID, ok := r.Context().Value(middleware.UserContextKey).(string)
-	if !ok || userID == "" {
-		http.Error(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
-		return
-	}
-
+	// Decode request body
 	var req dto.ChatStreamRequestDTO
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid JSON payload: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := h.validate.Struct(&req); err != nil {
-		http.Error(w, "Validation failed: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -525,12 +256,13 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lecture
 		}
 	}()
 
-	// Set SSE headers according to AI SDK Data Stream Protocol
+	// Set SSE headers - ALL 5 REQUIRED HEADERS
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no")             // Disable nginx buffering
 	w.Header().Set("x-vercel-ai-ui-message-stream", "v1") // Required for AI SDK Data Stream Protocol
+	w.WriteHeader(http.StatusOK)
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
@@ -557,12 +289,21 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lecture
 	flusher.Flush()
 
 	for {
+		// Check for context cancellation (client disconnect)
+		select {
+		case <-r.Context().Done():
+			h.logger.Debug().Msg("Stream stopped by client disconnect")
+			return
+		default:
+			// Continue streaming
+		}
+
 		chunk, err := service.ParseSSEChunk(reader)
 		if err != nil {
 			if err == io.EOF {
 				break
 			}
-			// If the context was canceled, it's likely a user-initiated stop, so we log it as Info/Debug
+			// If the context was canceled, it's likely a user-initiated stop
 			if errors.Is(err, context.Canceled) || errors.Is(r.Context().Err(), context.Canceled) {
 				h.logger.Debug().Err(err).Msg("Stream reading stopped by user (context canceled)")
 			} else {
@@ -579,38 +320,26 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lecture
 
 		done, _ := chunk["done"].(bool)
 
-		// Send text-delta parts according to AI SDK protocol
-		if content != "" {
-			deltaPart := map[string]interface{}{
-				"type":  "text-delta",
-				"id":    textPartID,
-				"delta": content,
-			}
-			deltaJSON, err := json.Marshal(deltaPart)
-			if err != nil {
-				h.logger.Error().Err(err).Interface("deltaPart", deltaPart).Msg("Failed to marshal delta part")
-				continue
-			}
-			if _, err := fmt.Fprintf(w, "data: %s\n\n", deltaJSON); err != nil {
-				if errors.Is(r.Context().Err(), context.Canceled) {
-					h.logger.Debug().Err(err).Msg("Failed to write delta part: client disconnected")
-				} else {
-					h.logger.Error().Err(err).Msg("Failed to write delta part")
-				}
-				break
-			}
-			flusher.Flush()
-		}
-
-		// Accumulate content for saving
+		// Stream text delta
 		fullContent.WriteString(content)
+		textDeltaPart := map[string]interface{}{
+			"type":  "text-delta",
+			"id":    textPartID,
+			"delta": content,
+		}
+		textDeltaJSON, _ := json.Marshal(textDeltaPart)
+		if _, err := fmt.Fprintf(w, "data: %s\n\n", textDeltaJSON); err != nil {
+			h.logger.Error().Err(err).Msg("Failed to write text-delta part")
+			return
+		}
+		flusher.Flush()
 
 		if done {
 			break
 		}
 	}
 
-	// Send text-end part according to AI SDK protocol
+	// Send text-end part
 	textEndPart := map[string]interface{}{
 		"type": "text-end",
 		"id":   textPartID,
@@ -694,4 +423,65 @@ func (h *ChatHandler) streamChat(w http.ResponseWriter, r *http.Request, lecture
 	} else {
 		h.logger.Warn().Str("chat_id", chatID).Msg("No content to save for assistant message")
 	}
+}
+
+// ListMessages retrieves all messages for a chat
+func (h *ChatHandler) ListMessages(ctx context.Context, input *operation.ListMessagesInput) (*operation.ListMessagesOutput, error) {
+	userID, err := getUserIDFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	messages, err := h.chatService.ListMessages(ctx, input.ChatID, userID, input.Limit)
+	if err != nil {
+		if err == service.ErrChatNotFound || err == service.ErrUnauthorized {
+			return nil, huma.Error404NotFound("Chat not found")
+		}
+		return nil, huma.Error500InternalServerError("Failed to list messages", err)
+	}
+
+	// Convert to DTOs
+	dtos := make([]dto.MessageResponseDTO, 0, len(messages))
+	for _, msg := range messages {
+		parts := make([]dto.MessagePartDTO, len(msg.Parts))
+		for j, part := range msg.Parts {
+			var ref *dto.ReferenceDTO
+			if part.Reference != nil {
+				ref = &dto.ReferenceDTO{
+					Type:     part.Reference.Type,
+					ID:       part.Reference.ID,
+					Metadata: part.Reference.Metadata,
+				}
+			}
+			var data *dto.ReferencePartDTO
+			if part.Data != nil {
+				data = &dto.ReferencePartDTO{
+					Type: part.Data.Type,
+					Text: part.Data.Text,
+				}
+				if part.Data.Reference != nil {
+					data.Reference = &dto.ReferenceDTO{
+						Type:     part.Data.Reference.Type,
+						ID:       part.Data.Reference.ID,
+						Metadata: part.Data.Reference.Metadata,
+					}
+				}
+			}
+			parts[j] = dto.MessagePartDTO{
+				Type:      part.Type,
+				Text:      part.Text,
+				Reference: ref,
+				Data:      data,
+			}
+		}
+		dtos = append(dtos, dto.MessageResponseDTO{
+			ID:        msg.ID,
+			ChatID:    msg.ChatID,
+			Role:      msg.Role,
+			Parts:     parts,
+			CreatedAt: msg.CreatedAt,
+		})
+	}
+
+	return &operation.ListMessagesOutput{Body: dtos}, nil
 }

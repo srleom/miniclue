@@ -38,6 +38,7 @@ import Link from "next/link";
 
 // lib
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/utils";
 
 // server actions
 import {
@@ -234,7 +235,7 @@ export function DropzoneComponent({
 
     if (result?.error) {
       logger.error("Upload API returned error", { error: result.error });
-      toast.error(result.error);
+      toast.error(getErrorMessage(result.error));
       return;
     }
 

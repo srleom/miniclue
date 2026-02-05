@@ -26,6 +26,7 @@ import { deleteUserAccount } from "@/app/(dashboard)/_actions/user-actions";
 
 // lib
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/utils";
 
 export function DeleteAccountButton() {
   const [isDeleting, setIsDeleting] = useState(false);
@@ -36,7 +37,7 @@ export function DeleteAccountButton() {
     try {
       const result = await deleteUserAccount();
       if (result.error) {
-        toast.error(result.error);
+        toast.error(getErrorMessage(result.error));
         setIsDeleting(false);
       } else {
         toast.success("Account deleted successfully");

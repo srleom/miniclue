@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/button";
 import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
+// lib
+import { getErrorMessage } from "@/lib/utils";
+
 export interface RenameFormProps {
   id: string;
   defaultValue: string;
@@ -32,7 +35,7 @@ export function RenameForm({
         const name = formData.get("name") as string;
         const result = await action(id, name);
         if (result.error) {
-          toast.error(result.error);
+          toast.error(getErrorMessage(result.error));
         } else {
           toast.success(successMessage);
           onSuccess?.();

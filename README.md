@@ -24,14 +24,14 @@ The codebase is divided into several applications and packages managed within th
 
 ### Tech Stack Summary
 
-| Layer    | Component      | Technology                                                                                       |
-| -------- | -------------- | ------------------------------------------------------------------------------------------------ |
-| Frontend | Web App        | Next.js 16 (React 19)<br>• TipTap Editor, React PDF Viewer<br>• Vercel AI SDK, PostHog Analytics |
-| Backend  | API Gateway    | Golang 1.24+<br>• net/http, ServeMux<br>• Middleware: CORS, Auth (JWT), Logging                  |
-| Backend  | AI Worker      | Python 3.13 (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)    |
-| Async    | Message Queue  | Google Cloud Pub/Sub<br>• Push-based subscriptions                                               |
-| Data     | Database       | Supabase Postgres<br>• pgvector, Row Level Security (RLS)                                        |
-| Data     | Object Storage | Supabase Storage (S3-compatible)                                                                 |
+| Layer    | Component      | Technology                                                                                                                           |
+| -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Frontend | Web App        | Next.js 16 (React 19)<br>• TipTap Editor, React PDF Viewer<br>• Vercel AI SDK, PostHog Analytics<br>• HeyAPI Client (Auto-generated) |
+| Backend  | API Gateway    | Golang 1.24+<br>• Huma v2 (OpenAPI 3.1)<br>• Middleware: CORS, Auth (JWT), Logging<br>• Automatic type generation                    |
+| Backend  | AI Worker      | Python 3.13 (FastAPI)<br>• PyMuPDF (Parsing)<br>• OpenAI/Anthropic/Gemini (LLM & Embeddings)                                         |
+| Async    | Message Queue  | Google Cloud Pub/Sub<br>• Push-based subscriptions                                                                                   |
+| Data     | Database       | Supabase Postgres<br>• pgvector, Row Level Security (RLS)                                                                            |
+| Data     | Object Storage | Supabase Storage (S3-compatible)                                                                                                     |
 
 ---
 
@@ -156,7 +156,20 @@ sequenceDiagram
 
 ## 4. API Reference (Gateway)
 
-**Base URL**: `https://api.miniclue.com` (Prod) | `/v1` prefix required.
+**Base URL**: `https://api.miniclue.com` (Prod) | `/v1` prefix required
+
+**API Documentation**:
+
+- **OpenAPI 3.1 Spec**: `GET /v1/openapi.json` - Auto-generated from code
+- **Type Generation**: Frontend automatically generates TypeScript types from OpenAPI spec
+- **Interactive Docs**: Visit `/docs` for Swagger UI (coming soon)
+
+**Developer Workflow**:
+
+1. Update backend handler → Restart server
+2. OpenAPI spec auto-updates at `/v1/openapi.json`
+3. Run `pnpm openapi:generate` in frontend to regenerate types
+4. File watcher auto-detects changes during `pnpm dev` (polls every 2s)
 
 ### Course & Lecture Management
 

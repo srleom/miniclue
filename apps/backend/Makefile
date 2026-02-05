@@ -1,4 +1,4 @@
-.PHONY: all build run swagger clean fmt build-worker worker-ingestion worker-embedding lint build-setup-pubsub-local setup-pubsub-local deploy-pubsub
+.PHONY: all build run clean fmt build-worker worker-ingestion worker-embedding lint build-setup-pubsub-local setup-pubsub-local deploy-pubsub
 
 # Default target
 all: build
@@ -37,14 +37,7 @@ lint:
 	golangci-lint run
 	@echo "Linting completed"
 
-# Generate Swagger documentation
-swagger:
-	@echo "Generating Swagger documentation..."
-	swag init --parseInternal --generalInfo cmd/app/main.go --output docs/swagger
-	@echo "Swagger documentation generated in docs/swagger"
-
 # Clean generated files
 clean: 
 	rm -f bin/app
 	rm -f bin/setup-pubsub-local
-	rm -rf docs/swagger

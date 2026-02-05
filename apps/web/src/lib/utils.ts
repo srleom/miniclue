@@ -32,3 +32,7 @@ export function generateUUID(): string {
 export function sanitizeText(text: string): string {
   return text.replace("<has_function_call>", "");
 }
+
+// Re-export error utilities for convenience
+// The actual implementation is in error-utils.ts which can be used in both server and client contexts
+export { getErrorMessage } from "./error-utils";

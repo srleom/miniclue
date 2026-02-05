@@ -23,7 +23,6 @@ pnpm format   # Format all code
 
 # Backend (Go) - run from apps/backend/
 go run ./cmd/app           # Start dev server
-make swagger               # Generate Swagger docs (CRITICAL after API changes)
 go test ./...              # Run all tests
 make setup-pubsub-local    # Setup Pub/Sub emulator topics/subscriptions
 
@@ -32,18 +31,28 @@ poetry run start    # Start FastAPI server
 poetry run pytest   # Run tests
 
 # Frontend (Next.js) - run from apps/web/
-pnpm dev           # Start Next.js dev server
-pnpm openapi:all   # Generate TypeScript types from backend Swagger (CRITICAL after backend API changes)
+pnpm dev           # Start Next.js dev server + file watcher (auto-regenerates types)
+pnpm openapi:all   # Manually regenerate TypeScript types from backend OpenAPI spec
 pnpm test:ts       # Type check
 ```
 
 ## Critical Patterns
 
-### Type Generation (MANDATORY for API changes)
+### ✅ Type Generation (Huma v2 + HeyAPI)
 
-1. Update Go handlers with Swagger comments
-2. Run `make swagger` in apps/backend
-3. Run `pnpm openapi:all` in apps/web → generates `src/types/api.ts`
+**For API changes**:
+
+1. Update Huma handler operations in `internal/api/v1/handler/*_handler.go`
+2. Restart backend → OpenAPI 3.1 spec auto-generated at `/v1/openapi.json`
+3. Run `pnpm openapi:generate` in `apps/web` to regenerate TypeScript types
+4. File watcher auto-regenerates types during `pnpm dev` (polls every 2s)
+
+**Manual type generation** (if needed):
+
+```bash
+cd apps/web
+pnpm openapi:generate  # Fetches /v1/openapi.json and generates types
+```
 
 ### Database Schema
 
@@ -63,9 +72,9 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
 
 ### Code Organization
 
-- **Backend (Go)**: `internal/{api/v1, service, repository, model, pubsub, middleware}` - All handlers need Swagger comments
+- **Backend (Go)**: `internal/{api/v1, service, repository, model, pubsub, middleware}` - Uses Huma v2 for automatic OpenAPI generation
 - **AI (Python)**: `app/{routers, services, schemas, utils}` - SSE streaming for chat
-- **Frontend (Next.js)**: `src/{lib/api, hooks, components, types}` - shadcn/ui patterns
+- **Frontend (Next.js)**: `src/{lib/api, hooks, components}` - Uses auto-generated HeyAPI client
 
 ## Architecture Notes
 
@@ -85,13 +94,11 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
    - Do NOT create migration files - User will execute migrations manually
 
    **If changing backend API:**
-   - Update Repository/Service/API code with implementation
+   - Update Repository/Service/Handler code with implementation
    - Write corresponding tests in `*_test.go` files (handlers/services/repos packages)
-   - Add/update Swagger comments on Go handlers in `apps/backend/internal/api/v1/`
-   - From `apps/backend/`: run `make swagger` to regenerate Swagger docs
-   - Ensure backend is running
-   - From `apps/web/`: run `pnpm openapi:all` to generate TypeScript types
-   - Verify `apps/web/src/types/api.ts` is updated
+   - Restart backend (OpenAPI spec auto-updates at `/v1/openapi.json`)
+   - From `apps/web/`: run `pnpm openapi:generate` to regenerate TypeScript types
+   - Verify `apps/web/src/lib/api/generated/` files are updated
 
    **If changing AI service:**
    - Update schemas/routers in `apps/ai/app/` with implementation
@@ -99,7 +106,8 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
    - Handle Pub/Sub message format changes if needed
 
    **If changing frontend:**
-   - Implement UI using generated types from `src/types/api.ts`
+   - Implement UI using generated types from `src/lib/api/generated/`
+   - Use HeyAPI client methods (e.g., `getUser()`, `createCourse()`)
    - Define manual browser test scenarios for verification using Claude Chrome extension
 
 3. **Verify Immediately** (run tests and fix if needed):

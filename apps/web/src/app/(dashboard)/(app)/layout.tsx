@@ -53,7 +53,7 @@ export default async function DashboardLayout({
   const userEmail = userRes.data?.email ?? "";
   const userName = userRes.data?.name ?? "";
 
-  const recentsRes = await getUserRecents(10000, 0);
+  const recentsRes = await getUserRecents(1000, 0);
   if (recentsRes.data) {
     navRecents = recentsRes.data;
   }
@@ -61,10 +61,10 @@ export default async function DashboardLayout({
   const coursesRes = await getUserCourses();
   if (coursesRes.data) {
     const lecturePromises = coursesRes.data.map(async (course) => {
-      const result = await getCourseLectures(course.courseId, 10000, 0);
+      const result = await getCourseLectures(course.courseId, 1000, 0);
       const lectures =
         result.data?.filter(
-          (lecture): lecture is { lecture_id: string; title: string } =>
+          (lecture) =>
             lecture.lecture_id !== undefined && lecture.title !== undefined,
         ) || [];
       return {
@@ -84,7 +84,7 @@ export default async function DashboardLayout({
     })) ?? [];
 
   return (
-    <div className="flex h-[100dvh] w-screen overflow-hidden">
+    <div className="flex h-dvh w-screen overflow-hidden">
       {/* Identify user in PostHog */}
       {userId && userEmail && (
         <PostHogIdentifier userId={userId} email={userEmail} name={userName} />

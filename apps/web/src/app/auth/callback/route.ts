@@ -5,6 +5,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import createApi from "@/lib/api";
 
+// HeyAPI generated SDK
+import { createUser as createUserSDK } from "@/lib/api/generated";
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
@@ -23,11 +26,12 @@ export async function GET(request: Request) {
     if (!error && data) {
       const api = createApi(data.session.access_token);
       // create/update user profile
-      await api.POST("/users/me", {
+      await createUserSDK({
+        client: api,
         body: {
-          name: data.user?.user_metadata?.name,
-          email: data.user?.email,
-          avatar_url: data.user?.user_metadata?.avatar_url,
+          name: data.user?.user_metadata?.name ?? "",
+          email: data.user?.email ?? "",
+          avatar_url: data.user?.user_metadata?.avatar_url ?? "",
         },
       });
 

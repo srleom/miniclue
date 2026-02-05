@@ -39,6 +39,7 @@ import {
   providerLogos,
 } from "@/app/(dashboard)/(settings)/settings/api-key/_components/provider-constants";
 import type { Provider } from "@/types/chat";
+import { getErrorMessage } from "@/lib/utils";
 
 type ProviderKey =
   components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"];
@@ -128,7 +129,7 @@ export function ModelsList({ providers }: ModelsListProps) {
                 : p,
             ),
           );
-          toast.error(error);
+          toast.error(getErrorMessage(error));
         } else {
           toast.success(`${modelName} ${nextEnabled ? "enabled" : "disabled"}`);
         }

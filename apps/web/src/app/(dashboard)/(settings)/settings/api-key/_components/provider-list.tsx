@@ -28,7 +28,7 @@ import { ApiKeyDialog } from "./api-key-dialog";
 import { deleteAPIKey } from "../_actions/api-key-actions";
 import type { Provider } from "@/types/chat";
 import { providerDisplayNames, providers } from "./provider-constants";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 
 interface ProviderListProps {
   apiKeysStatus: Record<Provider, boolean>;
@@ -74,7 +74,7 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
     try {
       const result = await deleteAPIKey(deleteProvider);
       if (result.error) {
-        toast.error(result.error);
+        toast.error(getErrorMessage(result.error));
       } else {
         toast.success(
           `${providerDisplayNames[deleteProvider]} API key deleted successfully`,
@@ -83,8 +83,8 @@ export function ProviderList({ apiKeysStatus, onUpdate }: ProviderListProps) {
         setIsDeleteDialogOpen(false);
         setDeleteProvider(null);
       }
-    } catch {
-      toast.error("Failed to delete API key");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setIsDeleting(false);
     }

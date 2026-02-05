@@ -4,15 +4,28 @@
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
-// types
-import { components } from "@/types/api";
-
 // lib
 import {
   ActionResponse,
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/error-utils";
+
+// HeyAPI generated SDK
+import {
+  updateLecture as updateLectureSDK,
+  batchUploadUrl as batchUploadUrlSDK,
+  uploadComplete as uploadCompleteSDK,
+  getLecture as getLectureSDK,
+  deleteLecture as deleteLectureSDK,
+  getSignedUrl as getSignedUrlSDK,
+  type UpdateLectureResponse,
+  type BatchUploadUrlResponse,
+  type UploadCompleteResponse,
+  type GetLectureResponse,
+  type GetSignedUrlResponse,
+} from "@/lib/api/generated";
 
 export async function handleUpdateLectureAccessedAt(
   lectureId: string,
@@ -22,8 +35,9 @@ export async function handleUpdateLectureAccessedAt(
     return { error };
   }
 
-  const { error: lectureError } = await api.PATCH("/lectures/{lectureId}", {
-    params: { path: { lectureId } },
+  const { error: lectureError } = await updateLectureSDK({
+    client: api,
+    path: { lectureId },
     body: {
       accessed_at: new Date().toISOString(),
     },
@@ -31,7 +45,7 @@ export async function handleUpdateLectureAccessedAt(
 
   if (lectureError) {
     logger.error("Update lecture error:", lectureError);
-    return { error: lectureError };
+    return { error: String(lectureError) };
   }
 
   revalidateTag("recents", "max");
@@ -42,27 +56,23 @@ export async function handleUpdateLectureAccessedAt(
 export async function getUploadUrls(
   courseId: string,
   filenames: string[],
-): Promise<
-  ActionResponse<components["schemas"]["dto.LectureBatchUploadURLResponseDTO"]>
-> {
+): Promise<ActionResponse<BatchUploadUrlResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: uploadError } = await api.POST(
-    "/lectures/batch-upload-url",
-    {
-      body: {
-        course_id: courseId,
-        filenames,
-      },
+  const { data, error: uploadError } = await batchUploadUrlSDK({
+    client: api,
+    body: {
+      course_id: courseId,
+      filenames,
     },
-  );
+  });
 
   if (uploadError) {
     logger.error("Get upload URLs error:", uploadError);
-    return { error: uploadError };
+    return { error: String(uploadError) };
   }
 
   return { data, error: undefined };
@@ -70,25 +80,21 @@ export async function getUploadUrls(
 
 export async function completeUpload(
   lectureId: string,
-): Promise<
-  ActionResponse<components["schemas"]["dto.LectureUploadCompleteResponseDTO"]>
-> {
+): Promise<ActionResponse<UploadCompleteResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: completeError } = await api.POST(
-    "/lectures/{lectureId}/upload-complete",
-    {
-      params: { path: { lectureId } },
-      body: {},
-    },
-  );
+  const { data, error: completeError } = await uploadCompleteSDK({
+    client: api,
+    path: { lectureId },
+    body: {},
+  });
 
   if (completeError) {
     logger.error("Complete upload error:", completeError);
-    return { error: completeError };
+    return { error: String(completeError) };
   }
 
   if (data?.course_id) {
@@ -102,9 +108,7 @@ export async function completeUpload(
 export async function uploadLecturesFromClient(
   courseId: string,
   filenames: string[],
-): Promise<
-  ActionResponse<components["schemas"]["dto.LectureBatchUploadURLResponseDTO"]>
-> {
+): Promise<ActionResponse<BatchUploadUrlResponse>> {
   try {
     // Step 1: Get presigned URLs for all files
     const { data: uploadUrlsData, error: urlsError } = await getUploadUrls(
@@ -125,28 +129,26 @@ export async function uploadLecturesFromClient(
 
 export async function completeUploadFromClient(
   lectureId: string,
-): Promise<
-  ActionResponse<components["schemas"]["dto.LectureUploadCompleteResponseDTO"]>
-> {
+): Promise<ActionResponse<UploadCompleteResponse>> {
   return await completeUpload(lectureId);
 }
 
 export async function getLecture(
   lectureId: string,
-): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
+): Promise<ActionResponse<GetLectureResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/lectures/{lectureId}", {
-    params: { path: { lectureId } },
-    next: { tags: [`lecture:${lectureId}`] },
+  const { data, error: fetchError } = await getLectureSDK({
+    client: api,
+    path: { lectureId },
   });
 
   if (fetchError) {
     logger.error("Get lecture error:", fetchError);
-    return { data: undefined, error: fetchError };
+    return { data: undefined, error: getErrorMessage(fetchError) };
   }
 
   return { data: data ?? undefined, error: undefined };
@@ -160,20 +162,19 @@ export async function deleteLecture(
     return { error };
   }
 
-  const { data: lecture, error: fetchError } = await api.GET(
-    "/lectures/{lectureId}",
-    {
-      params: { path: { lectureId } },
-    },
-  );
+  const { data: lecture, error: fetchError } = await getLectureSDK({
+    client: api,
+    path: { lectureId },
+  });
 
   if (fetchError || !lecture?.course_id) {
     logger.error("Fetch lecture for delete error:", fetchError);
     return { error: "Failed to fetch lecture to determine course." };
   }
 
-  const { error: deleteError } = await api.DELETE("/lectures/{lectureId}", {
-    params: { path: { lectureId } },
+  const { error: deleteError } = await deleteLectureSDK({
+    client: api,
+    path: { lectureId },
   });
 
   if (deleteError) {
@@ -188,45 +189,43 @@ export async function deleteLecture(
 
 export async function getSignedPdfUrl(
   lectureId: string,
-): Promise<ActionResponse<components["schemas"]["dto.SignedURLResponseDTO"]>> {
+): Promise<ActionResponse<GetSignedUrlResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
-  const { data, error: fetchError } = await api.GET(
-    "/lectures/{lectureId}/url",
-    {
-      params: { path: { lectureId } },
-      next: { tags: [`url:${lectureId}`] },
-    },
-  );
+
+  const { data, error: fetchError } = await getSignedUrlSDK({
+    client: api,
+    path: { lectureId },
+  });
+
   if (fetchError) {
     logger.error("Get signed PDF URL error:", fetchError);
-    return { data: undefined, error: fetchError };
+    return { error: getErrorMessage(fetchError) };
   }
+
   return { data: data ?? undefined, error: undefined };
 }
 
 export async function updateLecture(
   lectureId: string,
   title: string,
-): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
+): Promise<ActionResponse<UpdateLectureResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: updateError } = await api.PATCH(
-    "/lectures/{lectureId}",
-    {
-      params: { path: { lectureId } },
-      body: { title },
-    },
-  );
+  const { data, error: updateError } = await updateLectureSDK({
+    client: api,
+    path: { lectureId },
+    body: { title },
+  });
 
   if (updateError) {
     logger.error("Update lecture error:", updateError);
-    return { error: updateError };
+    return { error: String(updateError) };
   }
 
   // Revalidate lecture list and detail
@@ -241,7 +240,7 @@ export async function updateLecture(
 export async function moveLecture(
   lectureId: string,
   newCourseId: string,
-): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"]>> {
+): Promise<ActionResponse<UpdateLectureResponse>> {
   // Validate inputs
   if (!lectureId || lectureId.trim() === "") {
     logger.error("Invalid lecture ID:", lectureId);
@@ -260,12 +259,10 @@ export async function moveLecture(
   }
 
   // Get current lecture for revalidation
-  const { data: currentLecture, error: fetchError } = await api.GET(
-    "/lectures/{lectureId}",
-    {
-      params: { path: { lectureId } },
-    },
-  );
+  const { data: currentLecture, error: fetchError } = await getLectureSDK({
+    client: api,
+    path: { lectureId },
+  });
 
   if (fetchError || !currentLecture) {
     logger.error("Failed to fetch current lecture:", fetchError);
@@ -275,17 +272,15 @@ export async function moveLecture(
   const oldCourseId = currentLecture.course_id;
 
   // Update the lecture with the new course_id
-  const { data, error: updateError } = await api.PATCH(
-    "/lectures/{lectureId}",
-    {
-      params: { path: { lectureId } },
-      body: { course_id: newCourseId },
-    },
-  );
+  const { data, error: updateError } = await updateLectureSDK({
+    client: api,
+    path: { lectureId },
+    body: { course_id: newCourseId },
+  });
 
   if (updateError) {
     logger.error("Move lecture error:", updateError);
-    return { error: updateError };
+    return { error: String(updateError) };
   }
 
   // Revalidate lecture lists for both old and new courses

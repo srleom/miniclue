@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import NavLecture from "./nav-lecture";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/utils";
 
 //icons
 import { ChevronRight, Folder, MoreHorizontal, Plus } from "lucide-react";
@@ -83,7 +84,7 @@ export function NavCourses({
           onClick={async () => {
             const result = await createUntitledCourse();
             if (result.error) {
-              toast.error(result.error);
+              toast.error(getErrorMessage(result.error));
               return;
             }
             toast.success("Course created");
