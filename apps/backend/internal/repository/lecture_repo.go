@@ -81,7 +81,7 @@ func (r *lectureRepository) GetLecturesByCourseID(ctx context.Context, courseID 
 		LIMIT %d OFFSET %d
 	`, limit, offset)
 
-	rows, err := r.pool.Query(ctx, query, courseID)
+	rows, err := r.pool.Query(ctx, query, courseID, userID)
 	if err != nil {
 		return nil, fmt.Errorf("querying lectures for course %s: %w", courseID, err)
 	}
