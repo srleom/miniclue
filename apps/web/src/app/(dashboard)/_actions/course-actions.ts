@@ -4,25 +4,37 @@
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
-// types
-import { components } from "@/types/api";
-
 // lib
 import {
   ActionResponse,
   createAuthenticatedApi,
 } from "@/lib/api/authenticated-api";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/error-utils";
+
+// HeyAPI generated SDK
+import {
+  createCourse as createCourseSDK,
+  deleteCourse as deleteCourseSDK,
+  getCourse as getCourseSDK,
+  updateCourse as updateCourseSDK,
+  getLectures as getLecturesSDK,
+  type CreateCourseResponse,
+  type GetCourseResponse,
+  type UpdateCourseResponse,
+  type GetLecturesResponse,
+} from "@/lib/api/generated";
 
 export async function createUntitledCourse(): Promise<
-  ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
+  ActionResponse<CreateCourseResponse>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { error: courseError } = await api.POST("/courses", {
+  const { error: courseError } = await createCourseSDK({
+    client: api,
     body: {
       title: "Untitled Course",
       description: "",
@@ -31,7 +43,7 @@ export async function createUntitledCourse(): Promise<
 
   if (courseError) {
     logger.error("Create course error:", courseError);
-    return { error: courseError };
+    return { error: String(courseError) };
   }
 
   revalidateTag("courses", "max");
@@ -46,13 +58,14 @@ export async function deleteCourse(
     return { error };
   }
 
-  const { error: deleteError } = await api.DELETE("/courses/{courseId}", {
-    params: { path: { courseId } },
+  const { error: deleteError } = await deleteCourseSDK({
+    client: api,
+    path: { courseId },
   });
 
   if (deleteError) {
     logger.error("Delete course error:", deleteError);
-    return { error: deleteError };
+    return { error: String(deleteError) };
   }
 
   revalidateTag("courses", "max");
@@ -61,26 +74,27 @@ export async function deleteCourse(
   return { error: undefined };
 }
 
+// TODO: Add pagination support
 export async function getCourseLectures(
   courseId: string,
-  limit: number = 5,
-  offset: number = 0,
-): Promise<ActionResponse<components["schemas"]["dto.LectureResponseDTO"][]>> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _limit: number = 5,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _offset: number = 0,
+): Promise<ActionResponse<GetLecturesResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/lectures", {
-    params: {
-      query: { course_id: courseId, limit, offset },
-    },
-    next: { tags: [`lectures:${courseId}`], revalidate: 300 },
+  const { data, error: fetchError } = await getLecturesSDK({
+    client: api,
+    path: { courseId },
   });
 
   if (fetchError) {
     logger.error("Get lectures error:", fetchError);
-    return { data: [], error: fetchError };
+    return { data: [], error: getErrorMessage(fetchError) };
   }
 
   return { data, error: undefined };
@@ -88,20 +102,20 @@ export async function getCourseLectures(
 
 export async function getCourseDetails(
   courseId: string,
-): Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>> {
+): Promise<ActionResponse<GetCourseResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/courses/{courseId}", {
-    params: { path: { courseId } },
-    next: { tags: [`course:${courseId}`] },
+  const { data, error: fetchError } = await getCourseSDK({
+    client: api,
+    path: { courseId },
   });
 
   if (fetchError) {
-    logger.error("Get lecture error:", fetchError);
-    return { data: undefined, error: fetchError };
+    logger.error("Get course error:", fetchError);
+    return { data: undefined, error: getErrorMessage(fetchError) };
   }
 
   return { data: data ?? undefined, error: undefined };
@@ -111,20 +125,21 @@ export async function updateCourse(
   courseId: string,
   title: string,
   description?: string,
-): Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>> {
+): Promise<ActionResponse<UpdateCourseResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: updateError } = await api.PATCH("/courses/{courseId}", {
-    params: { path: { courseId } },
+  const { data, error: updateError } = await updateCourseSDK({
+    client: api,
+    path: { courseId },
     body: { title, description },
   });
 
   if (updateError) {
     logger.error("Update course error:", updateError);
-    return { error: updateError };
+    return { error: String(updateError) };
   }
 
   revalidateTag("courses", "max");

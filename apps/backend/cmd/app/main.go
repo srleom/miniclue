@@ -15,13 +15,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// @title MiniClue API
-// @version 1.0
-// @description MiniClue API documentation
-// @host localhost:8080
-// @BasePath /api/v1
-// @Schemes http https
-
 func main() {
 	// It's important to load the .env file before anything else,
 	// so that components like the logger can initialize correctly based on the environment.

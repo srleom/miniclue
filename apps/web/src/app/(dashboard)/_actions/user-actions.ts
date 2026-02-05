@@ -4,9 +4,6 @@
 import { revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 
-// types
-import type { components } from "@/types/api";
-
 // lib
 import {
   ActionResponse,
@@ -14,26 +11,37 @@ import {
 } from "@/lib/api/authenticated-api";
 import { createAdminClient } from "@/lib/supabase/server";
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/error-utils";
+
+// HeyAPI generated SDK
+import {
+  getUser as getUserSDK,
+  deleteUser as deleteUserSDK,
+  getRecentLectures as getRecentLecturesSDK,
+  getUserCourses as getUserCoursesSDK,
+  listModels as listModelsSDK,
+  updateModelPreference as updateModelPreferenceSDK,
+  type GetUserResponse,
+  type ListModelsResponse,
+} from "@/lib/api/generated";
 
 /**
  * Gets the authenticated user's profile info.
- * @returns {Promise<ActionResponse<components["schemas"]["dto.UserResponseDTO"]>>}
+ * @returns {Promise<ActionResponse<GetUserResponse>>}
  */
-export async function getUser(): Promise<
-  ActionResponse<components["schemas"]["dto.UserResponseDTO"]>
-> {
+export async function getUser(): Promise<ActionResponse<GetUserResponse>> {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/users/me", {
-    next: { tags: ["user-profile"] },
+  const { data, error: fetchError } = await getUserSDK({
+    client: api,
   });
 
   if (fetchError) {
     logger.error("Get user error:", fetchError);
-    return { error: fetchError };
+    return { error: getErrorMessage(fetchError) };
   }
 
   return { data, error: undefined };
@@ -68,33 +76,29 @@ export async function getUserRecents(
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/users/me/recents", {
-    params: {
-      query: {
-        limit,
-        offset,
-      },
+  const { data, error: fetchError } = await getRecentLecturesSDK({
+    client: api,
+    query: {
+      limit,
+      offset,
     },
-    next: { tags: ["recents"] },
   });
 
   if (fetchError) {
     logger.error("Get recents error:", fetchError);
-    return { error: fetchError };
+    return { error: getErrorMessage(fetchError) };
   }
 
   const recentsData = data?.lectures ?? [];
   const totalCount = data?.total_count ?? 0;
 
-  const navRecents = recentsData.map(
-    (r: components["schemas"]["dto.UserRecentLectureResponseDTO"]) => ({
-      name: r.title ?? "",
-      lectureId: r.lecture_id!,
-      url: `/lecture/${r.lecture_id!}`,
-      courseId: r.course_id!,
-      totalCount,
-    }),
-  );
+  const navRecents = recentsData.map((r) => ({
+    name: r.title ?? "",
+    lectureId: r.lecture_id!,
+    url: `/lecture/${r.lecture_id!}`,
+    courseId: r.course_id!,
+    totalCount,
+  }));
 
   return { data: navRecents, error: undefined };
 }
@@ -118,24 +122,22 @@ export async function getUserCourses(): Promise<
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/users/me/courses", {
-    next: { tags: ["courses"] },
+  const { data, error: fetchError } = await getUserCoursesSDK({
+    client: api,
   });
 
   if (fetchError) {
     logger.error("Get courses error:", fetchError);
-    return { error: fetchError };
+    return { error: getErrorMessage(fetchError) };
   }
 
   const coursesData = data ?? [];
-  const navCourses = coursesData.map(
-    (c: components["schemas"]["dto.UserCourseResponseDTO"]) => ({
-      title: c.title ?? "",
-      url: `/course/${c.course_id!}`,
-      courseId: c.course_id!,
-      isDefault: c.is_default!,
-    }),
-  );
+  const navCourses = coursesData.map((c) => ({
+    title: c.title ?? "",
+    url: `/course/${c.course_id!}`,
+    courseId: c.course_id!,
+    isDefault: c.is_default!,
+  }));
 
   return { data: navCourses, error: undefined };
 }
@@ -167,7 +169,9 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
     // 3. Call Go backend to clean up resources (S3 files, Secret Manager secrets)
     // and delete the user profile record. This must happen while the user's
     // session is still valid.
-    const { error: backendError } = await api.DELETE("/users/me");
+    const { error: backendError } = await deleteUserSDK({
+      client: api,
+    });
     if (backendError) {
       logger.error("Delete user backend cleanup error:", backendError);
       // We continue even if backend cleanup fails to ensure the account is still deleted from Auth
@@ -209,22 +213,20 @@ export async function deleteUserAccount(): Promise<ActionResponse<void>> {
  * List available models and enabled state for the current user.
  */
 export async function getUserModels(): Promise<
-  ActionResponse<components["schemas"]["dto.ModelsResponseDTO"]>
+  ActionResponse<ListModelsResponse>
 > {
   const { api, error } = await createAuthenticatedApi();
   if (error || !api) {
     return { error };
   }
 
-  const { data, error: fetchError } = await api.GET("/users/me/models", {
-    next: { tags: ["user-models"] },
+  const { data, error: fetchError } = await listModelsSDK({
+    client: api,
   });
 
   if (fetchError) {
     logger.error("Get user models error:", fetchError);
-    const message =
-      typeof fetchError === "string" ? fetchError : JSON.stringify(fetchError);
-    return { error: message };
+    return { error: getErrorMessage(fetchError) };
   }
 
   return {
@@ -237,7 +239,7 @@ export async function getUserModels(): Promise<
  * Toggle a model on or off for the current user.
  */
 export async function setModelPreference(
-  provider: components["schemas"]["dto.ModelPreferenceRequestDTO"]["provider"],
+  provider: "openai" | "gemini" | "anthropic" | "xai" | "deepseek",
   model: string,
   enabled: boolean,
 ): Promise<ActionResponse<void>> {
@@ -246,7 +248,8 @@ export async function setModelPreference(
     return { error };
   }
 
-  const { error: fetchError } = await api.PUT("/users/me/models", {
+  const { error: fetchError } = await updateModelPreferenceSDK({
+    client: api,
     body: {
       provider,
       model,
@@ -256,9 +259,7 @@ export async function setModelPreference(
 
   if (fetchError) {
     logger.error("Set model preference error:", fetchError);
-    const message =
-      typeof fetchError === "string" ? fetchError : JSON.stringify(fetchError);
-    return { error: message };
+    return { error: getErrorMessage(fetchError) };
   }
 
   return { error: undefined };

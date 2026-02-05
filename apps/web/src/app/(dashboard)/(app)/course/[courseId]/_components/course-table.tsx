@@ -2,7 +2,10 @@
 
 // components
 import { DataTable } from "./data-table";
-import { createColumns, LectureResponseDTO } from "./columns";
+import { createColumns } from "./columns";
+
+// types
+import type { LectureResponseDTO } from "@/lib/api/generated/types.gen";
 
 interface CourseTableProps {
   data: LectureResponseDTO[];

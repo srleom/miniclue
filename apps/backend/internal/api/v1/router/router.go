@@ -17,7 +17,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	awsmiddleware "github.com/aws/smithy-go/middleware"
-	"github.com/go-playground/validator/v10"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/cors"
@@ -91,28 +90,24 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 		o.UsePathStyle = true
 	})
 
-	// 4. Initialize validator
-	validate := validator.New(validator.WithRequiredStructEnabled())
-
-	// 5. Initialize Pub/Sub publisher
+	// 4. Initialize Pub/Sub publisher
 	pubSubPublisher, err := pubsub.NewPublisher(context.Background(), cfg)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to create Pub/Sub publisher: %v", err)
 		return nil, nil, err
 	}
 
-	// 6. Initialize Secret Manager service
+	// 5. Initialize Secret Manager service
 	secretManagerSvc, err := service.NewSecretManagerService(context.Background(), cfg)
 	if err != nil {
 		logger.Fatal().Msgf("Failed to create Secret Manager service: %v", err)
 		return nil, nil, err
 	}
 
-	// 7. Initialize repositories & services & handlers
+	// 6. Initialize repositories & services & handlers
 	userRepo := repository.NewUserRepo(pool)
 	lectureRepo := repository.NewLectureRepository(pool)
 	courseRepo := repository.NewCourseRepo(pool)
-	noteRepo := repository.NewNoteRepository(pool)
 	chatRepo := repository.NewChatRepo(pool)
 	dlqRepo := repository.NewDLQRepository(pool)
 
@@ -126,14 +121,14 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	lectureSvc := service.NewLectureService(lectureRepo, userRepo, s3Client, cfg.S3Bucket, pubSubPublisher, cfg.PubSubIngestionTopic, logger)
 	userSvc := service.NewUserService(userRepo, courseRepo, lectureRepo, lectureSvc, secretManagerSvc, openAIValidator, geminiValidator, anthropicValidator, xaiValidator, deepseekValidator, logger)
 	courseSvc := service.NewCourseService(courseRepo, lectureSvc, logger)
-	noteSvc := service.NewNoteService(noteRepo, logger)
 	chatSvc := service.NewChatService(chatRepo, lectureRepo, pythonClient, logger)
 	dlqSvc := service.NewDLQService(dlqRepo, logger)
 
-	userHandler := handler.NewUserHandler(userSvc, validate, logger)
-	courseHandler := handler.NewCourseHandler(courseSvc, validate, logger)
-	chatHandler := handler.NewChatHandler(chatSvc, validate, logger)
-	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, noteSvc, chatHandler, validate, cfg.S3URL, cfg.S3Bucket, logger)
+	// Huma-based handlers
+	userHandler := handler.NewUserHandler(userSvc, logger)
+	courseHandler := handler.NewCourseHandler(courseSvc, logger)
+	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, logger)
+	chatHandler := handler.NewChatHandler(chatSvc, logger)
 	dlqHandler := handler.NewDLQHandler(dlqSvc, logger)
 
 	// 7. Initialize middleware
@@ -141,43 +136,17 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	isLocalDev := cfg.PubSubEmulatorHost != ""
 	pubsubAuthMiddleware := middleware.PubSubAuthMiddleware(isLocalDev, cfg.DLQEndpointURL, cfg.PubSubServiceAccountEmail, logger)
 
-	// 8. Create ServeMux router
+	// 8. Create router and mount Huma API
 	mux := http.NewServeMux()
 
-	// Create a subrouter for API v1 with the /api/v1 prefix
-	apiV1Mux := http.NewServeMux()
-	userHandler.RegisterRoutes(apiV1Mux, authMiddleware)
-	courseHandler.RegisterRoutes(apiV1Mux, authMiddleware)
-	lectureHandler.RegisterRoutes(apiV1Mux, authMiddleware)
-	chatHandler.RegisterRoutes(apiV1Mux, authMiddleware)
-	dlqHandler.RegisterRoutes(apiV1Mux, pubsubAuthMiddleware)
+	// Initialize Huma API
+	humaHandler, humaAPI := SetupHumaAPI(cfg, authMiddleware, pubsubAuthMiddleware, chatHandler, logger)
+	RegisterRoutes(humaAPI, userHandler, courseHandler, lectureHandler, chatHandler, dlqHandler, logger)
 
-	// Mount the API v1 routes under /v1
-	mux.Handle("/v1/", http.StripPrefix("/v1", apiV1Mux))
+	// Mount Huma API on /v1
+	mux.Handle("/v1/", http.StripPrefix("/v1", humaHandler))
 
-	// Add Swagger documentation
-	mux.HandleFunc("/swagger/swagger.json", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "./docs/swagger/swagger.json")
-	})
-	mux.Handle("/swagger/", http.StripPrefix("/swagger/", http.FileServer(http.Dir("./docs/swagger/swagger-ui"))))
-
-	// Redirect /api/* to /v1/* for backward compatibility
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		rest := strings.TrimPrefix(r.URL.Path, "/api/")
-		http.Redirect(w, r, "/v1/"+rest, http.StatusMovedPermanently)
-	})
-
-	// Redirect all other root-level requests to /v1/{path}
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Avoid redirect loops by checking if already under /v1 or /swagger or /api
-		if strings.HasPrefix(r.URL.Path, "/v1/") || strings.HasPrefix(r.URL.Path, "/swagger/") || strings.HasPrefix(r.URL.Path, "/api/") {
-			http.NotFound(w, r)
-			return
-		}
-		http.Redirect(w, r, "/v1"+r.URL.Path, http.StatusMovedPermanently)
-	})
-
-	// 8. Apply CORS middleware
+	// 9. Apply CORS middleware
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"}, // Allow all origins for development
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},

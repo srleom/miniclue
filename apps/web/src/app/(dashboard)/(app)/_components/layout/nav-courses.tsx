@@ -5,7 +5,7 @@ import * as React from "react";
 
 // types
 import { CourseWithLectures } from "../../_types/types";
-import { components } from "@/types/api";
+import type { CourseResponseDTO } from "@/lib/api/generated/types.gen";
 import { ActionResponse } from "@/lib/api/authenticated-api";
 
 // components
@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/sidebar";
 import NavLecture from "./nav-lecture";
 import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/utils";
 
 //icons
 import { ChevronRight, Folder, MoreHorizontal, Plus } from "lucide-react";
@@ -47,13 +48,13 @@ export function NavCourses({
 }: {
   items: CourseWithLectures[];
   createUntitledCourse: () => Promise<
-    ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
+    ActionResponse<CourseResponseDTO>
   >;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,
     title: string,
-  ) => Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>>;
+  ) => Promise<ActionResponse<CourseResponseDTO>>;
   handleUpdateLectureAccessedAt: (
     lectureId: string,
   ) => Promise<ActionResponse<void>>;
@@ -83,7 +84,7 @@ export function NavCourses({
           onClick={async () => {
             const result = await createUntitledCourse();
             if (result.error) {
-              toast.error(result.error);
+              toast.error(getErrorMessage(result.error));
               return;
             }
             toast.success("Course created");

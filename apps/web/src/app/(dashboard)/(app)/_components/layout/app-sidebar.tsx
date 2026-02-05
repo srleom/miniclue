@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Sparkle } from "lucide-react";
 
 // types
-import { components } from "@/types/api";
+import type { CourseResponseDTO } from "@/lib/api/generated/types.gen";
 import {
   CourseWithLectures,
   NavRecentsItem,
@@ -43,13 +43,13 @@ export function AppSidebar({
   navCourses: CourseWithLectures[];
   navRecents: NavRecentsItem[];
   createUntitledCourse: () => Promise<
-    ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>
+    ActionResponse<CourseResponseDTO>
   >;
   deleteCourse: (courseId: string) => Promise<ActionResponse<void>>;
   renameCourse: (
     courseId: string,
     title: string,
-  ) => Promise<ActionResponse<components["schemas"]["dto.CourseResponseDTO"]>>;
+  ) => Promise<ActionResponse<CourseResponseDTO>>;
   handleUpdateLectureAccessedAt: (
     lectureId: string,
   ) => Promise<ActionResponse<void>>;

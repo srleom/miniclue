@@ -59,13 +59,3 @@ func (e *EmbeddingErrorDetails) Scan(value interface{}) error {
 
 	return json.Unmarshal(bytes, e)
 }
-
-// Note represents a user's saved note or snippet from chat.
-type Note struct {
-	ID        string    `db:"id" json:"id"`                 // UUID
-	UserID    string    `db:"user_id" json:"user_id"`       // foreign key to Supabase Auth user
-	LectureID string    `db:"lecture_id" json:"lecture_id"` // foreign key
-	Content   string    `db:"content" json:"content"`       // rich text/HTML or markdown
-	CreatedAt time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt time.Time `db:"updated_at" json:"updated_at"`
-}

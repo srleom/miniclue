@@ -10,7 +10,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { MoreHorizontal } from "lucide-react";
 
 // types
-import { components } from "@/types/api";
+import type { LectureResponseDTO } from "@/lib/api/generated/types.gen";
 
 // components
 import { ItemActions } from "@/app/(dashboard)/(app)/_components/item-actions";
@@ -25,8 +25,7 @@ import {
   updateLecture,
 } from "@/app/(dashboard)/(app)/_actions/lecture-actions";
 
-export type LectureResponseDTO =
-  components["schemas"]["dto.LectureResponseDTO"];
+// LectureResponseDTO is imported from generated types
 
 interface ColumnsProps {
   currentCourseId: string;

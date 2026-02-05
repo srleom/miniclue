@@ -20,8 +20,8 @@ type UserResponseDTO struct {
 }
 
 type APIKeyRequestDTO struct {
-	Provider string `json:"provider" validate:"required,oneof=openai gemini anthropic xai deepseek"`
-	APIKey   string `json:"api_key" validate:"required"`
+	Provider string `json:"provider" validate:"required,oneof=openai gemini anthropic xai deepseek" enum:"openai,gemini,anthropic,xai,deepseek" doc:"API provider (openai, gemini, anthropic, xai, or deepseek)"`
+	APIKey   string `json:"api_key" validate:"required" minLength:"1" doc:"API key for the provider"`
 }
 
 type APIKeyResponseDTO struct {
@@ -30,9 +30,9 @@ type APIKeyResponseDTO struct {
 }
 
 type ModelPreferenceRequestDTO struct {
-	Provider string `json:"provider" validate:"required,oneof=openai gemini anthropic xai deepseek"`
-	Model    string `json:"model" validate:"required"`
-	Enabled  bool   `json:"enabled"`
+	Provider string `json:"provider" validate:"required,oneof=openai gemini anthropic xai deepseek" enum:"openai,gemini,anthropic,xai,deepseek" doc:"API provider"`
+	Model    string `json:"model" validate:"required" minLength:"1" doc:"Model ID to toggle"`
+	Enabled  bool   `json:"enabled" doc:"Whether to enable or disable the model"`
 }
 
 // ModelToggleDTO represents a single model and whether it is enabled.

@@ -138,7 +138,8 @@ jobs:
             GCP_PROJECT_ID_STAGING=${{ secrets.GCP_PROJECT_ID }},\
             DLQ_ENDPOINT_URL=${{ secrets.DLQ_ENDPOINT_URL }},\
             PUBSUB_SERVICE_ACCOUNT_EMAIL=${{ secrets.PUBSUB_SERVICE_ACCOUNT_EMAIL }},\
-            PYTHON_SERVICE_BASE_URL=${{ secrets.PYTHON_SERVICE_BASE_URL }}"
+            PYTHON_SERVICE_BASE_URL=${{ secrets.PYTHON_SERVICE_BASE_URL }},\
+            API_BASE_URL=${{ secrets.API_BASE_URL }}"
 
   # ------------------------------------------------------------------
   # AI Deployment (Cloud Run)

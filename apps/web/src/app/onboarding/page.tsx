@@ -24,7 +24,7 @@ import { Input } from "@/components/ui/input";
 import { storeAPIKey } from "@/app/(dashboard)/(settings)/settings/api-key/_actions/api-key-actions";
 import { getUser } from "@/app/(dashboard)/_actions/user-actions";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 
 import {
   Form,
@@ -117,17 +117,13 @@ export default function OnboardingPage() {
     try {
       const result = await storeAPIKey("gemini", values.apiKey);
       if (result.error) {
-        toast.error(
-          typeof result.error === "string"
-            ? result.error
-            : "Failed to verify key",
-        );
+        toast.error(getErrorMessage(result.error));
       } else {
         toast.success("API key successfully added");
         handleNext();
       }
-    } catch {
-      toast.error("System error occurred");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

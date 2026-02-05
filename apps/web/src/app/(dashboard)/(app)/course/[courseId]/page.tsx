@@ -1,8 +1,10 @@
 // next
 import { Metadata } from "next";
 
+// types
+import type { LectureResponseDTO } from "@/lib/api/generated/types.gen";
+
 // components
-import { LectureResponseDTO } from "@/app/(dashboard)/(app)/course/[courseId]/_components/columns";
 import { CourseTable } from "@/app/(dashboard)/(app)/course/[courseId]/_components/course-table";
 import { DropzoneComponent } from "@/app/(dashboard)/(app)/_components/dropzone";
 import CourseHeader from "./_components/course-header";
@@ -53,12 +55,7 @@ export default async function CoursePage({ params }: CoursePageProps) {
     logger.error("Failed to load available courses:", coursesError);
   }
 
-  const tableLectures: LectureResponseDTO[] =
-    lecturesDTO.data?.map((lec) => ({
-      lecture_id: lec.lecture_id ?? "",
-      title: lec.title ?? "",
-      created_at: lec.created_at ?? "",
-    })) ?? [];
+  const tableLectures: LectureResponseDTO[] = lecturesDTO.data ?? [];
 
   // Transform available courses for the move functionality
   const moveAvailableCourses = coursesError

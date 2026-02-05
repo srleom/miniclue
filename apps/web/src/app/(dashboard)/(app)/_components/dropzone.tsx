@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 // types
 import { ActionResponse } from "@/lib/api/authenticated-api";
-import { components } from "@/types/api";
+import type { LectureUploadCompleteResponseDTO } from "@/lib/api/generated/types.gen";
 
 // components
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import Link from "next/link";
 
 // lib
 import { logger } from "@/lib/logger";
+import { getErrorMessage } from "@/lib/utils";
 
 // server actions
 import {
@@ -51,11 +52,7 @@ import { createClient as createSupabaseClient } from "@/lib/supabase/client";
 async function uploadLecturesClient(
   courseId: string,
   files: File[],
-): Promise<
-  ActionResponse<
-    components["schemas"]["dto.LectureUploadCompleteResponseDTO"][]
-  >
-> {
+): Promise<ActionResponse<LectureUploadCompleteResponseDTO[]>> {
   try {
     // Step 1: Get presigned URLs from server action
     const filenames = files.map((file) => file.name);
@@ -67,8 +64,7 @@ async function uploadLecturesClient(
     }
 
     const uploads = uploadUrlsData.uploads;
-    const results: components["schemas"]["dto.LectureUploadCompleteResponseDTO"][] =
-      [];
+    const results: LectureUploadCompleteResponseDTO[] = [];
 
     // Step 2: Upload each file to S3 using presigned URLs
     for (let i = 0; i < files.length; i++) {
@@ -77,7 +73,8 @@ async function uploadLecturesClient(
 
       if (!file || !upload?.upload_url || !upload?.lecture_id) {
         results.push({
-          lecture_id: upload?.lecture_id,
+          course_id: courseId,
+          lecture_id: upload?.lecture_id || "",
           status: "error",
           message: "Invalid file or upload URL or lecture ID",
         });
@@ -99,6 +96,7 @@ async function uploadLecturesClient(
         .createSignedUploadUrl(key, { upsert: false });
       if (tokenError || !signedData?.token) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: tokenError?.message || "Failed to get upload token",
@@ -111,6 +109,7 @@ async function uploadLecturesClient(
         .uploadToSignedUrl(key, signedData.token!, file);
       if (uploadError) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: uploadError.message,
@@ -124,6 +123,7 @@ async function uploadLecturesClient(
 
       if (completeError) {
         results.push({
+          course_id: courseId,
           lecture_id: upload.lecture_id,
           status: "error",
           message: completeError,
@@ -234,7 +234,7 @@ export function DropzoneComponent({
 
     if (result?.error) {
       logger.error("Upload API returned error", { error: result.error });
-      toast.error(result.error);
+      toast.error(getErrorMessage(result.error));
       return;
     }
 

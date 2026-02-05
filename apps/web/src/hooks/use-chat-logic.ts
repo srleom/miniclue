@@ -5,6 +5,7 @@ import { logger } from "@/lib/logger";
 import { createChatTransport } from "@/lib/chat/transport";
 import { DEFAULT_CHAT_MODEL } from "@/lib/chat/constants";
 import { getUserModels } from "@/app/(dashboard)/_actions/user-actions";
+import { getErrorMessage } from "@/lib/utils";
 import type { ChatMessage, Chat, MessagePart } from "@/types/chat";
 
 // --- Utility: Title Polling ---
@@ -193,7 +194,7 @@ export function useChatLogic({
     body: { modelId: currentModelId },
     onError: (error: Error) => {
       logger.error("Chat error:", error);
-      toast.error(error.message || "An error occurred");
+      toast.error(getErrorMessage(error));
     },
     onFinish: async (event: { messages: ChatMessage[] }) => {
       const history = (event.messages as ChatMessage[]) || [];
@@ -285,7 +286,7 @@ export function useChatLogic({
       const { data, error } = await createChat(lectureId);
 
       if (error || !data || !data.id) {
-        toast.error(error || "Failed to create chat");
+        toast.error(getErrorMessage(error));
         return;
       }
 
@@ -299,8 +300,8 @@ export function useChatLogic({
 
       await onChatsChange([newChat, ...chats]);
       onChatChange(data.id);
-    } catch {
-      toast.error("Failed to create chat");
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     }
   }, [lectureId, chats, onChatChange, onChatsChange]);
 
@@ -319,7 +320,7 @@ export function useChatLogic({
         const { error } = await deleteChat(lectureId, idToDelete);
 
         if (error) {
-          toast.error(error);
+          toast.error(getErrorMessage(error));
           return;
         }
 
