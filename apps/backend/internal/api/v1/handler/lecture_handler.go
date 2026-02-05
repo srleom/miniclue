@@ -15,20 +15,17 @@ import (
 type LectureHandler struct {
 	lectureService service.LectureService
 	courseService  service.CourseService
-	noteService    service.NoteService
 	logger         zerolog.Logger
 }
 
 func NewLectureHandler(
 	lectureService service.LectureService,
 	courseService service.CourseService,
-	noteService service.NoteService,
 	logger zerolog.Logger,
 ) *LectureHandler {
 	return &LectureHandler{
 		lectureService: lectureService,
 		courseService:  courseService,
-		noteService:    noteService,
 		logger:         logger,
 	}
 }
@@ -244,130 +241,6 @@ func (h *LectureHandler) UploadComplete(ctx context.Context, input *operation.Up
 			Message:   "Upload completed successfully",
 		},
 	}, nil
-}
-
-// Lecture Note Operations
-
-func (h *LectureHandler) GetLectureNotes(ctx context.Context, input *operation.GetLectureNotesInput) (*operation.GetLectureNotesOutput, error) {
-	userID, err := getUserIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify lecture ownership
-	lecture, err := h.lectureService.GetLectureByID(ctx, input.LectureID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to retrieve lecture", err)
-	}
-	if lecture == nil || lecture.UserID != userID {
-		return nil, huma.Error404NotFound("Lecture not found")
-	}
-
-	note, err := h.noteService.GetNoteByLectureID(ctx, input.LectureID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to retrieve note", err)
-	}
-
-	if note == nil {
-		// Return empty array if no notes exist
-		return &operation.GetLectureNotesOutput{Body: []dto.LectureNoteResponseDTO{}}, nil
-	}
-
-	return &operation.GetLectureNotesOutput{
-		Body: []dto.LectureNoteResponseDTO{
-			{
-				ID:        note.ID,
-				LectureID: note.LectureID,
-				Content:   note.Content,
-				CreatedAt: note.CreatedAt,
-				UpdatedAt: note.UpdatedAt,
-			},
-		},
-	}, nil
-}
-
-func (h *LectureHandler) CreateLectureNote(ctx context.Context, input *operation.CreateLectureNoteInput) (*operation.CreateLectureNoteOutput, error) {
-	userID, err := getUserIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify lecture ownership
-	lecture, err := h.lectureService.GetLectureByID(ctx, input.LectureID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to retrieve lecture", err)
-	}
-	if lecture == nil || lecture.UserID != userID {
-		return nil, huma.Error404NotFound("Lecture not found")
-	}
-
-	note, err := h.noteService.CreateNoteByLectureID(ctx, userID, input.LectureID, input.Body.Content)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to create note", err)
-	}
-
-	return &operation.CreateLectureNoteOutput{
-		Body: dto.LectureNoteResponseDTO{
-			ID:        note.ID,
-			LectureID: note.LectureID,
-			Content:   note.Content,
-			CreatedAt: note.CreatedAt,
-			UpdatedAt: note.UpdatedAt,
-		},
-	}, nil
-}
-
-func (h *LectureHandler) UpdateLectureNote(ctx context.Context, input *operation.UpdateLectureNoteInput) (*operation.UpdateLectureNoteOutput, error) {
-	userID, err := getUserIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify lecture ownership
-	lecture, err := h.lectureService.GetLectureByID(ctx, input.LectureID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to retrieve lecture", err)
-	}
-	if lecture == nil || lecture.UserID != userID {
-		return nil, huma.Error404NotFound("Lecture not found")
-	}
-
-	note, err := h.noteService.UpdateNoteByLectureID(ctx, input.LectureID, input.Body.Content)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to update note", err)
-	}
-
-	return &operation.UpdateLectureNoteOutput{
-		Body: dto.LectureNoteResponseDTO{
-			ID:        note.ID,
-			LectureID: note.LectureID,
-			Content:   note.Content,
-			CreatedAt: note.CreatedAt,
-			UpdatedAt: note.UpdatedAt,
-		},
-	}, nil
-}
-
-func (h *LectureHandler) DeleteLectureNote(ctx context.Context, input *operation.DeleteLectureNoteInput) (*operation.DeleteLectureNoteOutput, error) {
-	userID, err := getUserIDFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Verify lecture ownership
-	lecture, err := h.lectureService.GetLectureByID(ctx, input.LectureID)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("Failed to retrieve lecture", err)
-	}
-	if lecture == nil || lecture.UserID != userID {
-		return nil, huma.Error404NotFound("Lecture not found")
-	}
-
-	if err := h.noteService.DeleteNoteByLectureID(ctx, input.LectureID); err != nil {
-		return nil, huma.Error500InternalServerError("Failed to delete note", err)
-	}
-
-	return &operation.DeleteLectureNoteOutput{}, nil
 }
 
 // Lecture Signed URL Operations

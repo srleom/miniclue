@@ -44,14 +44,14 @@ pnpm test:ts       # Type check
 
 1. Update Huma handler operations in `internal/api/v1/handler/*_handler.go`
 2. Restart backend → OpenAPI 3.1 spec auto-generated at `/v1/openapi.json`
-3. Run `pnpm openapi:generate` in `apps/web` to regenerate TypeScript types
+3. Run `pnpm openapi` in `apps/web` to regenerate TypeScript types
 4. File watcher auto-regenerates types during `pnpm dev` (polls every 2s)
 
 **Manual type generation** (if needed):
 
 ```bash
 cd apps/web
-pnpm openapi:generate  # Fetches /v1/openapi.json and generates types
+pnpm openapi  # Fetches /v1/openapi.json and generates types
 ```
 
 ### Database Schema
@@ -97,7 +97,7 @@ Supabase Google OAuth → JWT in cookie → Go Gateway validates → extracts `u
    - Update Repository/Service/Handler code with implementation
    - Write corresponding tests in `*_test.go` files (handlers/services/repos packages)
    - Restart backend (OpenAPI spec auto-updates at `/v1/openapi.json`)
-   - From `apps/web/`: run `pnpm openapi:generate` to regenerate TypeScript types
+   - From `apps/web/`: run `pnpm openapi` to regenerate TypeScript types
    - Verify `apps/web/src/lib/api/generated/` files are updated
 
    **If changing AI service:**

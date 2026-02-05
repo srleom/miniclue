@@ -168,7 +168,7 @@ sequenceDiagram
 
 1. Update backend handler → Restart server
 2. OpenAPI spec auto-updates at `/v1/openapi.json`
-3. Run `pnpm openapi:generate` in frontend to regenerate types
+3. Run `pnpm openapi` in frontend to regenerate types
 4. File watcher auto-detects changes during `pnpm dev` (polls every 2s)
 
 ### Course & Lecture Management

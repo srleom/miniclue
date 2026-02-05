@@ -108,7 +108,6 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	userRepo := repository.NewUserRepo(pool)
 	lectureRepo := repository.NewLectureRepository(pool)
 	courseRepo := repository.NewCourseRepo(pool)
-	noteRepo := repository.NewNoteRepository(pool)
 	chatRepo := repository.NewChatRepo(pool)
 	dlqRepo := repository.NewDLQRepository(pool)
 
@@ -122,14 +121,13 @@ func New(cfg *config.Config, logger zerolog.Logger) (http.Handler, *pgxpool.Pool
 	lectureSvc := service.NewLectureService(lectureRepo, userRepo, s3Client, cfg.S3Bucket, pubSubPublisher, cfg.PubSubIngestionTopic, logger)
 	userSvc := service.NewUserService(userRepo, courseRepo, lectureRepo, lectureSvc, secretManagerSvc, openAIValidator, geminiValidator, anthropicValidator, xaiValidator, deepseekValidator, logger)
 	courseSvc := service.NewCourseService(courseRepo, lectureSvc, logger)
-	noteSvc := service.NewNoteService(noteRepo, logger)
 	chatSvc := service.NewChatService(chatRepo, lectureRepo, pythonClient, logger)
 	dlqSvc := service.NewDLQService(dlqRepo, logger)
 
 	// Huma-based handlers
 	userHandler := handler.NewUserHandler(userSvc, logger)
 	courseHandler := handler.NewCourseHandler(courseSvc, logger)
-	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, noteSvc, logger)
+	lectureHandler := handler.NewLectureHandler(lectureSvc, courseSvc, logger)
 	chatHandler := handler.NewChatHandler(chatSvc, logger)
 	dlqHandler := handler.NewDLQHandler(dlqSvc, logger)
 

@@ -259,45 +259,6 @@ func RegisterRoutes(
 		Tags:        []string{"lectures"},
 	}, lectureHandler.UploadComplete)
 
-	// Lecture Notes
-	huma.Register(api, huma.Operation{
-		OperationID: "getLectureNotes",
-		Method:      "GET",
-		Path:        "/lectures/{lectureId}/notes",
-		Summary:     "Get lecture notes",
-		Description: "Retrieves notes for a specific lecture",
-		Tags:        []string{"lectures", "notes"},
-	}, lectureHandler.GetLectureNotes)
-
-	huma.Register(api, huma.Operation{
-		OperationID:   "createLectureNote",
-		Method:        "POST",
-		Path:          "/lectures/{lectureId}/notes",
-		Summary:       "Create lecture note",
-		Description:   "Creates a new note for a lecture",
-		Tags:          []string{"lectures", "notes"},
-		DefaultStatus: 201,
-	}, lectureHandler.CreateLectureNote)
-
-	huma.Register(api, huma.Operation{
-		OperationID: "updateLectureNote",
-		Method:      "PUT",
-		Path:        "/lectures/{lectureId}/notes",
-		Summary:     "Update lecture note",
-		Description: "Updates the content of a lecture note",
-		Tags:        []string{"lectures", "notes"},
-	}, lectureHandler.UpdateLectureNote)
-
-	huma.Register(api, huma.Operation{
-		OperationID:   "deleteLectureNote",
-		Method:        "DELETE",
-		Path:          "/lectures/{lectureId}/notes",
-		Summary:       "Delete lecture note",
-		Description:   "Deletes a lecture note",
-		Tags:          []string{"lectures", "notes"},
-		DefaultStatus: 204,
-	}, lectureHandler.DeleteLectureNote)
-
 	huma.Register(api, huma.Operation{
 		OperationID: "getSignedURL",
 		Method:      "GET",
@@ -378,5 +339,5 @@ func RegisterRoutes(
 	}, dlqHandler.RecordDLQ)
 
 	logger.Info().Msg("All operations registered successfully")
-	logger.Info().Int("total_operations", 35).Msg("Total registered operations")
+	logger.Info().Int("total_operations", 31).Msg("Total registered operations")
 }

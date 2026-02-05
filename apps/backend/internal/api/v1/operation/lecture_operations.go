@@ -58,42 +58,6 @@ type UploadCompleteOutput struct {
 	Body dto.LectureUploadCompleteResponseDTO `json:"body"`
 }
 
-// Lecture Note Operations
-
-type GetLectureNotesInput struct {
-	LectureID string `path:"lectureId" doc:"Lecture ID"`
-}
-
-type GetLectureNotesOutput struct {
-	Body []dto.LectureNoteResponseDTO `json:"body"`
-}
-
-type CreateLectureNoteInput struct {
-	LectureID string                   `path:"lectureId" doc:"Lecture ID"`
-	Body      dto.LectureNoteCreateDTO `json:"body"`
-}
-
-type CreateLectureNoteOutput struct {
-	Body dto.LectureNoteResponseDTO `json:"body"`
-}
-
-type UpdateLectureNoteInput struct {
-	LectureID string                   `path:"lectureId" doc:"Lecture ID"`
-	Body      dto.LectureNoteUpdateDTO `json:"body"`
-}
-
-type UpdateLectureNoteOutput struct {
-	Body dto.LectureNoteResponseDTO `json:"body"`
-}
-
-type DeleteLectureNoteInput struct {
-	LectureID string `path:"lectureId" doc:"Lecture ID"`
-}
-
-type DeleteLectureNoteOutput struct {
-	// 204 No Content
-}
-
 // Lecture Signed URL Operations
 
 type GetSignedURLInput struct {

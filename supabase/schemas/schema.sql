@@ -148,21 +148,7 @@ CREATE TABLE IF NOT EXISTS slide_images (
 CREATE INDEX IF NOT EXISTS idx_slide_images_lecture_hash ON slide_images(lecture_id, image_hash);
 
 -------------------------------------------------------------------------------
--- 8. Note Table
--------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS notes (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id    UUID        NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  lecture_id UUID        NOT NULL REFERENCES lectures(id) ON DELETE CASCADE,
-  content    TEXT        NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE INDEX IF NOT EXISTS idx_notes_user_id    ON notes(user_id);
-CREATE INDEX IF NOT EXISTS idx_notes_lecture_id ON notes(lecture_id);
-
--------------------------------------------------------------------------------
--- 9. Chat Table
+-- 8. Chat Table
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chats (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -177,7 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_chats_user_id ON chats(user_id);
 CREATE INDEX IF NOT EXISTS idx_chats_lecture_user ON chats(lecture_id, user_id);
 
 -------------------------------------------------------------------------------
--- 10. Message Table
+-- 9. Message Table
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -191,7 +177,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_chat_id ON messages(chat_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON messages(created_at);
 
 -------------------------------------------------------------------------------
--- 11. Dead-Letter Queue Table
+-- 10. Dead-Letter Queue Table
 -------------------------------------------------------------------------------
 CREATE TYPE dlq_message_status AS ENUM (
   'unprocessed',
@@ -213,7 +199,7 @@ CREATE INDEX IF NOT EXISTS idx_dead_letter_messages_status ON dead_letter_messag
 CREATE INDEX IF NOT EXISTS idx_dead_letter_messages_created_at ON dead_letter_messages(created_at);
 
 -------------------------------------------------------------------------------
--- 12. Waitlist Table
+-- 11. Waitlist Table
 -------------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS waitlist (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -224,7 +210,7 @@ CREATE TABLE IF NOT EXISTS waitlist (
 CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist(email);
 
 -------------------------------------------------------------------------------
--- 13. Row-Level Security (RLS) Policies
+-- 12. Row-Level Security (RLS) Policies
 -------------------------------------------------------------------------------
 
 -- Enable RLS for all relevant tables
@@ -235,7 +221,6 @@ ALTER TABLE public.slides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chunks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.embeddings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.slide_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.chats ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.dead_letter_messages ENABLE ROW LEVEL SECURITY;
@@ -283,17 +268,7 @@ CREATE POLICY "Allow read access to slide_images of own lectures" ON public.slid
   FOR SELECT
   USING (EXISTS (SELECT 1 FROM lectures WHERE lectures.id = slide_images.lecture_id AND lectures.user_id = auth.uid()));
 
--- 8. notes: Users can manage their own notes.
--- The check ensures notes can only be created for lectures the user owns.
-CREATE POLICY "Allow all access to own notes" ON public.notes
-  FOR ALL
-  USING (auth.uid() = user_id)
-  WITH CHECK (
-    auth.uid() = user_id AND
-    EXISTS (SELECT 1 FROM lectures WHERE lectures.id = notes.lecture_id AND lectures.user_id = auth.uid())
-  );
-
--- 11. chats: Users can manage their own chats for lectures they own.
+-- 8. chats: Users can manage their own chats for lectures they own.
 CREATE POLICY "Allow all access to own chats" ON public.chats
   FOR ALL
   USING (
@@ -305,7 +280,7 @@ CREATE POLICY "Allow all access to own chats" ON public.chats
     EXISTS (SELECT 1 FROM lectures WHERE lectures.id = chats.lecture_id AND lectures.user_id = auth.uid())
   );
 
--- 12. messages: Users can manage messages for chats they own.
+-- 9. messages: Users can manage messages for chats they own.
 CREATE POLICY "Allow all access to own messages" ON public.messages
   FOR ALL
   USING (
@@ -333,14 +308,14 @@ CREATE POLICY "Allow all access to own messages" ON public.messages
     )
   );
 
--- 13. dead_letter_messages: No access for regular users.
+-- 10. dead_letter_messages: No access for regular users.
 -- These are internal records for backend debugging, accessible only via service_role.
 CREATE POLICY "Deny all access to dead_letter_messages" ON public.dead_letter_messages
   FOR ALL
   USING (false)
   WITH CHECK (false);
 
--- 14. Waitlist Table
+-- 11. Waitlist Table
 CREATE POLICY "Allow anyone to insert into waitlist" ON public.waitlist
   FOR INSERT
   WITH CHECK (true);

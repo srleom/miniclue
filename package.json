@@ -5,6 +5,17 @@
   "packageManager": "pnpm@10.12.1",
   "scripts": {
     "bootstrap": "turbo run bootstrap",
+    "infra:env": "[ ! -f .env ] && cp .env.example .env || echo 'Root .env already exists'",
+    "infra:pubsub-up": "docker-compose up -d",
+    "infra:pubsub-down": "docker-compose down",
+    "infra:pubsub-setup": "node scripts/setup-pubsub-local.js",
+    "infra:supabase-start": "supabase start",
+    "infra:supabase-stop": "supabase stop",
+    "infra:supabase-status": "supabase status",
+    "infra:supabase-reset": "supabase db reset",
+    "infra:up": "pnpm infra:pubsub-up && pnpm infra:supabase-start",
+    "infra:down": "pnpm infra:supabase-stop && pnpm infra:pubsub-down",
+    "infra:bootstrap": "pnpm infra:env && pnpm infra:pubsub-up && sleep 2 && pnpm infra:pubsub-setup && pnpm infra:supabase-start",
     "build": "turbo build",
     "dev": "turbo dev",
     "start": "pnpm build && turbo start",
@@ -13,6 +24,10 @@
     "format": "turbo format",
     "check": "pnpm format && pnpm lint && pnpm test",
     "conductor:run": "concurrently -n web,be,ai \"cd apps/web && PORT=${CONDUCTOR_WEB_PORT:-3000} API_BASE_URL=http://localhost:${CONDUCTOR_BE_PORT:-8080}/v1 NEXT_PUBLIC_FE_BASE_URL=http://localhost:${CONDUCTOR_WEB_PORT:-3000} pnpm dev\" \"cd apps/backend && PORT=${CONDUCTOR_BE_PORT:-8080} API_BASE_URL=http://localhost:${CONDUCTOR_BE_PORT:-8080} PYTHON_SERVICE_BASE_URL=http://localhost:${CONDUCTOR_AI_PORT:-8000} pnpm dev\" \"cd apps/ai && PORT=${CONDUCTOR_AI_PORT:-8000} poetry run start\""
+  },
+  "dependencies": {
+    "@google-cloud/pubsub": "^4.10.0",
+    "dotenv": "^16.4.7"
   },
   "pnpm": {
     "overrides": {
