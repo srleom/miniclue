@@ -61,13 +61,13 @@ jobs:
         run: npm install --global vercel@latest
 
       - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
       - name: Build Project Artifacts
-        run: vercel build --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
-      - name: Deploy to Vercel (Preview/Staging)
-        run: vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
+      - name: Deploy to Vercel (Staging as Prod)
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} --cwd=apps/web
 
   # ------------------------------------------------------------------
   # Backend Deployment (Cloud Run)
